@@ -32,12 +32,12 @@
 | **M3-004** | M3 Library | Implement Brotli share codes and CRC32 checks | done | §11.1 | Complete |
 | **M3-005** | M3 Library | Implement Valorant code import parser | done | §11.2 | Complete |
 | **M3-006** | M3 Library | Round-trip tests and cargo-fuzz fuzzers | done | §11.2 | Complete |
-| **M4-001** | M4 Overlay | Win32 transparent click-through layered window | todo | §8.1 | |
-| **M4-002** | M4 Overlay | DPI awareness and multi-monitor handling | todo | §6.5 | |
-| **M4-003** | M4 Overlay | Foreground game process detection and follow rect | todo | §8.1, §8.2 | |
-| **M4-004** | M4 Overlay | Global hotkey registration and conflict checks | todo | §8.4 | |
-| **M4-005** | M4 Overlay | System tray icon, context menu, and tooltip states | todo | §8.3 | |
-| **M4-006** | M4 Overlay | Overlay calibration test pattern overlay | todo | §6.7 | |
+| **M4-001** | M4 Overlay | Win32 transparent click-through layered window | done | §8.1 | Complete |
+| **M4-002** | M4 Overlay | DPI awareness and multi-monitor handling | done | §6.5 | Complete |
+| **M4-003** | M4 Overlay | Foreground game process detection and follow rect | done | §8.1, §8.2 | Complete |
+| **M4-004** | M4 Overlay | Global hotkey registration and conflict checks | done | §8.4 | Complete |
+| **M4-005** | M4 Overlay | System tray icon, context menu, and tooltip states | done | §8.3 | Complete |
+| **M4-006** | M4 Overlay | Overlay calibration test pattern overlay | done | §6.7 | Complete |
 | **M5-001** | M5 UI | Setup Svelte 5 + Vite + Tauri 2 shell | todo | §3.1 | |
 | **M5-002** | M5 UI | High-performance canvas grid view with DPR scaling | todo | §6.8 | |
 | **M5-003** | M5 UI | Descriptor-driven inspector controls and tooltips | todo | §5.2, §5.3 | |

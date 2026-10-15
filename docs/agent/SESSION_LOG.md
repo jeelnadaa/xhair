@@ -72,6 +72,24 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
   - `cargo run --package xtask -- schema --check`: verified up to date.
   - `pnpm -C ui test; pnpm -C ui lint`: green.
-- **Next:** Milestone 4: `xhair-platform-win` overlay daemon (Win32 transparent click-through layered window, DPI awareness, multi-monitor handling, foreground game tracking, global hotkeys, tray icon, and calibration test pattern).
+## 2026-10-15 — Session 5
+- **Goal:** Milestone 4 Overlay Daemon: Win32 click-through transparent layered window, Per-Monitor-V2 DPI awareness, foreground game tracking and window following, global hotkeys with conflict checks, system tray icon, and calibration test pattern.
+- **Planned Tasks:** M4-001, M4-002, M4-003, M4-004, M4-005, M4-006.
+- **Completed:**
+  - `xhair-platform-win`:
+    - `overlay.rs`: Dedicated background message-loop thread with `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE` window. 32-bit premultiplied BGRA DIB surface rasterized via `tiny-skia` and committed via `UpdateLayeredWindow`. Zero CPU idle render loop: renders strictly on update commands or geometry change.
+    - `monitor.rs`: Per-Monitor-V2 DPI awareness initialization and physical pixel monitor bounds enumeration via `EnumDisplayMonitors` + `GetMonitorInfoW` + `GetDpiForMonitor`.
+    - `foreground.rs`: Safe limited-query foreground process tracking (`VALORANT-Win64-Shipping.exe`) and game window client rect following (`follow_game_window`).
+    - `hotkey.rs`: Global hotkeys manager (`RegisterHotKey`) with conflict detection (`HotkeyManager::test_conflict`).
+    - `tray.rs`: System tray icon with status flags tooltip (`TrayIcon`).
+    - `calibration.rs`: Calibration test pattern generator (`create_calibration_crosshair`).
+  - **Tests & Quality:**
+    - `cargo test --workspace`: 67 tests passing across 12 workspace crates (100% green).
+    - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+    - `cargo fmt --check`: 0 diffs.
+    - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+    - `cargo run --package xtask -- schema --check`: verified up to date.
+    - `pnpm -C ui test; pnpm -C ui lint`: green.
+- **Next:** Milestone 5: Editor UI (`ui/` Svelte 5 + Vite + Tauri 2 shell, high-performance canvas grid with DPR scaling, descriptor-driven inspector, layers panel, and 8-way nudge pad).
 
 

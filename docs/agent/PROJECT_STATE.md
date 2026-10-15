@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-15
-- **Session:** 4
-- **Phase / Milestone:** M3 Library + Format — Done | Next: M4 Overlay Daemon
+- **Session:** 5
+- **Phase / Milestone:** M4 Overlay Daemon — Done | Next: M5 Editor UI
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
@@ -11,7 +11,7 @@
 - [x] M1 Foundations (completed 2026-10-15)
 - [x] M2 Renderer + CLI (completed 2026-10-15)
 - [x] M3 Library + Format (completed 2026-10-15)
-- [ ] M4 Overlay Daemon
+- [x] M4 Overlay Daemon (completed 2026-10-15)
 - [ ] M5 Editor UI
 - [ ] M6 MCP Server
 - [ ] M7 Effects & Polish
@@ -20,32 +20,29 @@
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M4 Overlay Daemon: Implement Win32 layered click-through window, DPI awareness, foreground game tracking, and calibration test pattern.
+- M5 Editor UI: Svelte 5 + Vite + Tauri 2 editor UI, high-performance canvas grid with DPR scaling, descriptor-driven inspector, layers panel, and 8-way nudge pad.
 
 ## Next exact step
-- Implement Win32 transparent click-through window with `UpdateLayeredWindow`, DPI handling, monitor enumeration, and foreground process following in `xhair-platform-win`.
+- Scaffold Tauri 2 + Svelte 5 application shell in `ui/` integrating tokens from `design/tokens.json` and WASM renderer.
 
 ## WIP notes
-- `xhair-format`:
-  - Canonical JSON serializer with float normalization (max 4 decimal places) and stable key order.
-  - Brotli compressed share code format (`XH1-<payload>-<crc32>`) with 8 KB safety limit and CRC32 verification.
-  - `.xhairpack` bundle ZIP archiver with `PackManifest` for multi-crosshair sharing.
-  - Schema version migration framework (`migrate_document_json`) rejecting future versions cleanly.
-  - Valorant in-game profile code parser importing inner/outer lines, center dot, outlines, colors, and gaps with unmappable warnings.
-  - Fixtures in `tests/fixtures/formats/` validating format limits (assets, path points, group nesting <= 8, cycle detection, names, layers).
-- `xhair-library`:
-  - Atomic file writer with fsync, temporary file rename on same volume, and `.bak` preservation.
-  - Portable mode resolution (`xhair.portable` marker beside executable) and `%APPDATA%/xhair` fallback.
-  - `LibraryEngine` with full CRUD, folders, tagging, favorites, 1..=20 quick-select slots, 30-day trash lifecycle with purge, search, and bulk operations.
-  - Bounded LRU thumbnail cache (8 MB budget) with LRU eviction.
+- `xhair-platform-win`:
+  - Dedicated background message-loop thread with `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE` popup window.
+  - 32-bit premultiplied BGRA DIB surface rasterized via `tiny-skia` and committed via `UpdateLayeredWindow`.
+  - Zero CPU idle render loop: renders strictly on update commands or geometry change.
+  - Per-Monitor-V2 DPI awareness and physical pixel monitor bounds enumeration.
+  - Safe limited-query foreground process tracking (`VALORANT-Win64-Shipping.exe`) and game window client rect following (`follow_game_window`).
+  - System tray icon with status flags tooltip (`TrayIcon`).
+  - Global hotkeys manager (`RegisterHotKey`) with conflict detection.
+  - Calibration test pattern generator (`create_calibration_crosshair`).
 
 ## Known issues / blockers
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 58 tests passing)
+- Workspace crates: 12 (all build & test green, 67 tests passing)
 - Golden image tests: 8 tests passing
-- Format & library tests: 18 tests passing (including property tests & limit fixtures)
+- Platform tests: 9 tests passing (5 platform integration tests + 4 unit tests)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 
 ## Human decisions pending
