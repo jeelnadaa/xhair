@@ -31,7 +31,8 @@ schemars = { version = "0.8", features = ["uuid1", "chrono"] }
 thiserror = "2.0"
 anyhow = "1.0"
 tracing = "0.1"
-uuid = { version = "1.10", features = ["v7", "serde"] }
+uuid = { version = "1.10", features = ["v7", "serde", "js"] }
 tokio = { version = "1.40", features = ["rt", "sync", "macros"] }
 proptest = "1.5"
 chrono = { version = "0.4", features = ["serde"] }
+tiny-skia = "0.11"

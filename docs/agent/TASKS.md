@@ -20,12 +20,12 @@
 | **M1-004** | M1 Found. | Implement property descriptors macro and JSON export | done | §5.2 | Complete |
 | **M1-005** | M1 Found. | Settings model and error types catalog | done | §14, §15.1 | Complete |
 | **M1-006** | M1 Found. | Foundations property and unit test suites | done | §16 (M1) | Complete |
-| **M2-001** | M2 Render | Implement `xhair-render` tiny-skia shape rasterizers | todo | §7 | |
-| **M2-002** | M2 Render | Implement paints, gradients, and strokes | todo | §4.4, §4.5 | |
-| **M2-003** | M2 Render | Implement effects (blur, glow, shadow) | todo | §4.6 | |
-| **M2-004** | M2 Render | Compile renderer to WASM target | todo | §7.1 | |
-| **M2-005** | M2 Render | Golden image tests (native vs wasm parity) | todo | §7.1 | |
-| **M2-006** | M2 Render | Implement `xhair-cli render` command | todo | §16 (M2) | |
+| **M2-001** | M2 Render | Implement `xhair-render` tiny-skia shape rasterizers | done | §7 | Complete |
+| **M2-002** | M2 Render | Implement paints, gradients, and strokes | done | §4.4, §4.5 | Complete |
+| **M2-003** | M2 Render | Implement effects (blur, glow, shadow) | done | §4.6 | Complete |
+| **M2-004** | M2 Render | Compile renderer to WASM target | done | §7.1 | Complete |
+| **M2-005** | M2 Render | Golden image tests (native vs wasm parity) | done | §7.1 | Complete |
+| **M2-006** | M2 Render | Implement `xhair-cli render` command | done | §16 (M2) | Complete |
 | **M3-001** | M3 Library | Implement disk storage, atomic writes, index.json | todo | §10.1 | |
 | **M3-002** | M3 Library | Implement folders, tags, favorites, and slots | todo | §10.2, §10.3 | |
 | **M3-003** | M3 Library | Implement `.xhair` and `.xhairpack` serialization | todo | §11.1 | |

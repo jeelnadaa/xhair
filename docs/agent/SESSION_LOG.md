@@ -32,3 +32,23 @@
   - `cargo run --package xtask -- schema --check`: verified up to date.
 - **Next:** Milestone 2: `xhair-render` tiny-skia rasterizers, gradients/strokes/glow, and CLI render command.
 
+## 2026-10-15 — Session 3
+- **Goal:** Milestone 2 Renderer + CLI: tiny-skia shape rasterizers, paints, gradients, stroke styling, symmetry engine, visual effects (glow, shadow, blur), WASM target compatibility, golden tests, and `xhair-cli render` command.
+- **Planned Tasks:** M2-001, M2-002, M2-003, M2-004, M2-005, M2-006.
+- **Completed:**
+  - `xhair-render`: Complete deterministic rasterization pipeline using `tiny-skia` for all 12 shape kinds (Lines with taper and gap, Dot, Rect, Circle, Ring, Arc, Polygon, Triangle, Chevron, T-Shape, Plus, Pixels, Path).
+  - Paints & Strokes: Solid, linear gradients with arbitrary angle/stops, radial gradients, inner/center/outer stroke expansion, dash arrays, line caps, and line joins.
+  - Symmetry & Overrides: `None`, `MirrorH`, `MirrorV`, `MirrorHV`, and `Radial(n)` symmetry generation with per-arm overrides for color, length delta, thickness, nudge, and visibility.
+  - Visual Effects: Glow/bloom with multi-pass separable gaussian blur, drop shadow with direction offset, and layer gaussian softening.
+  - WASM Target (`M2-004`): Successfully configured and verified compilation for `wasm32-unknown-unknown` (enabled `uuid/js` feature).
+  - Golden Tests (`M2-005`): 8 golden image test suites verifying byte-for-byte deterministic rendering across shapes, sub-pixel center fractions, non-uniform stretch scaling, and effects.
+  - CLI Render Tool (`M2-006`): `xhair-cli render` command supporting `--input`, `--preset` (classic, dot, t_shape), `--output`, `--size`, and `--scale`.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 36 tests passing (100% green).
+  - `cargo check -p xhair-render --target wasm32-unknown-unknown`: green.
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 3: `xhair-library` and `xhair-format` (storage, folders, tags, slots, `.xhair`, `.xhairpack`, Brotli share codes, migrations, fuzz tests).
+
+

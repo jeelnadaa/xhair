@@ -118,6 +118,30 @@ impl Vec2 {
     pub const ONE: Self = Self::new(1.0, 1.0);
 }
 
+impl std::ops::Add for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl std::ops::Sub for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(self.x - rhs.x, self.y - rhs.y)
+    }
+}
+
+impl std::ops::Mul<f32> for Vec2 {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::new(self.x * rhs, self.y * rhs)
+    }
+}
+
 /// Color stored in sRGB 8-bit components with a float alpha (0.0 to 1.0).
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Rgba {

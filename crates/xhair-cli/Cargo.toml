@@ -12,9 +12,15 @@ name = "xhair-cli"
 path = "src/main.rs"
 
 [dependencies]
+xhair-model = { path = "../xhair-model" }
 xhair-commands = { path = "../xhair-commands" }
 xhair-render = { path = "../xhair-render" }
 xhair-format = { path = "../xhair-format" }
 xhair-mcp = { path = "../xhair-mcp" }
+serde_json.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+tempfile = "3.10"
+

@@ -11,3 +11,4 @@ description = "Deterministic CPU rasterizer and effects engine for xhair (native
 xhair-model = { path = "../xhair-model" }
 xhair-geometry = { path = "../xhair-geometry" }
 thiserror.workspace = true
+tiny-skia.workspace = true

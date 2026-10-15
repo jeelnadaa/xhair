@@ -2,14 +2,14 @@
 
 - **Updated:** 2026-10-15
 - **Session:** 1
-- **Phase / Milestone:** M1 Foundations — Done | Next: M2 Renderer + CLI
+- **Phase / Milestone:** M2 Renderer + CLI — Done | Next: M3 Library + Format
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
 - [x] Phase -1 Bootstrap (completed 2026-10-15)
 - [x] Phase 0 Design (approved by user 2026-10-15)
 - [x] M1 Foundations (completed 2026-10-15)
-- [ ] M2 Renderer + CLI
+- [x] M2 Renderer + CLI (completed 2026-10-15)
 - [ ] M3 Library + Format
 - [ ] M4 Overlay Daemon
 - [ ] M5 Editor UI
@@ -20,23 +20,25 @@
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M2 Renderer + CLI: Implement `xhair-render` tiny-skia rasterizers, paints/gradients/strokes, effects, and WASM/native golden tests.
+- M3 Library + Format: Implement disk storage, atomic writes, index.json, `.xhair` / `.xhairpack` serialization, and share codes.
 
 ## Next exact step
-- Implement shape rasterizers in `xhair-render` (`lines.rs`, `dot.rs`, `circle.rs`, `cross.rs`, `t_shape.rs`, `polygon.rs`, `pixels.rs`, `text.rs`).
+- Implement storage and index management in `xhair-library` and format serialization in `xhair-format`.
 
 ## WIP notes
-- Domain model implemented in `xhair-model` with validation, error catalog, settings, and templates.
-- Alignment and coordinate math with even/odd rules, non-uniform stretch, and proptests implemented in `xhair-geometry`.
-- Command bus with pure state transitions, atomic batches, coalescing nudges, undo/redo, and dry-run implemented in `xhair-commands`.
-- Property descriptors with tooltips and validation registry implemented with `cargo xtask schema` export (`ui/src/generated/properties.json` and `docs/PROPERTIES.md`).
+- `xhair-render`: Complete deterministic vector rasterizer for all shapes (Lines, Dot, Rect, Circle, Ring, Arc, Polygon, Triangle, Chevron, T-Shape, Plus, Pixels, Path).
+- Glow, bloom, drop shadow, and separable multi-pass gaussian blur compositing.
+- Native and `wasm32-unknown-unknown` compilation verified.
+- Deterministic golden image test suite (8 test suites) passing.
+- `xhair-cli render` command implemented with support for presets (classic, dot, t_shape), input files, scale factors, and arbitrary output dimensions.
 
 ## Known issues / blockers
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 25 tests passing)
-- Proptests: 3 suites in `xhair-geometry` (center coordinates, DPI scaling, coordinate mapping round trip)
+- Workspace crates: 12 (all build & test green, 36 tests passing)
+- Golden image tests: 8 tests passing
+- Typical crosshair render time: < 1 ms (< 1000 µs)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 
 ## Human decisions pending
