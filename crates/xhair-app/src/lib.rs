@@ -50,7 +50,19 @@ pub fn run() -> anyhow::Result<()> {
         if let Some(port) = server::start_ui_server() {
             let url = format!("http://127.0.0.1:{}", port);
             tracing::info!("XHAIR Editor UI serving at {}", url);
-            let _ = Command::new("cmd").args(["/c", "start", &url]).spawn();
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+                let _ = Command::new("cmd")
+                    .args(["/c", "start", &url])
+                    .creation_flags(CREATE_NO_WINDOW)
+                    .spawn();
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                let _ = Command::new("xdg-open").arg(&url).spawn();
+            }
         }
     }
 

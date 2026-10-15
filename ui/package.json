@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
-    "lint": "tsc --noEmit",
-    "build": "vite build"
+    "lint": "tsc --noEmit"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
