@@ -12,3 +12,7 @@ xhair-model = { path = "../xhair-model" }
 xhair-geometry = { path = "../xhair-geometry" }
 thiserror.workspace = true
 tiny-skia.workspace = true
+
+[[bench]]
+name = "render_bench"
+harness = false

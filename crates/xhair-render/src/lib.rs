@@ -17,6 +17,7 @@ pub mod symmetry;
 pub use bounds::{calculate_crosshair_bounds, calculate_layer_bounds, BoundingBox};
 pub use color::{to_skia_blend_mode, to_skia_color};
 pub use context::{DynamicState, RenderContext, RenderQuality, RenderStats};
+pub use effects::{apply_bloom, apply_glow, apply_shadow, gaussian_blur};
 pub use error::RenderError;
 pub use paint::create_skia_paint;
 pub use renderer::{
@@ -159,5 +160,125 @@ mod tests {
         assert_eq!(stats.rendered_layers, 1);
         // Spec §7.4: typical crosshair render < 1 ms (1000 µs)
         println!("Typical crosshair raster time: {} µs", stats.raster_time_us);
+    }
+
+    #[test]
+    fn test_global_bloom_effect() {
+        use xhair_model::effects::BloomEffect;
+
+        let mut xhair = Crosshair::new_classic("Bloom Test");
+        xhair.global_effects.bloom = Some(BloomEffect {
+            threshold: 0.5,
+            radius: 8.0,
+            intensity: 1.5,
+        });
+
+        let ctx = RenderContext::standard();
+        let png = render_png(&xhair, &ctx, 64, 64).expect("Bloom render failed");
+        assert!(!png.is_empty());
+    }
+
+    #[test]
+    fn test_animation_evaluation_and_rendering() {
+        use xhair_model::crosshair::AnimTrack;
+
+        let mut xhair = Crosshair::new_classic("Anim Test");
+        xhair
+            .animation
+            .push(AnimTrack::new_rotate("global.rotation", 360.0));
+
+        let ctx0 = RenderContext::standard().with_time(0.0);
+        let png0 = render_png(&xhair, &ctx0, 64, 64).unwrap();
+
+        let ctx1 = RenderContext::standard().with_time(0.125); // 45 degrees
+        let png1 = render_png(&xhair, &ctx1, 64, 64).unwrap();
+
+        // 45 degree rotation must differ from 0 degree
+        assert_ne!(png0, png1);
+    }
+
+    #[test]
+    fn test_static_only_lock_enforcement() {
+        use xhair_model::crosshair::AnimTrack;
+
+        let mut xhair = Crosshair::new_classic("Static Lock Test");
+        xhair
+            .animation
+            .push(AnimTrack::new_rotate("global.rotation", 360.0));
+
+        let ctx_static_base = RenderContext::standard().with_time(0.0);
+        let png_base = render_png(&xhair, &ctx_static_base, 64, 64).unwrap();
+
+        // Even though time = 0.5s (180 deg), static_only = true forces time = 0
+        let ctx_locked = RenderContext::standard()
+            .with_time(0.5)
+            .with_static_only(true);
+        let png_locked = render_png(&xhair, &ctx_locked, 64, 64).unwrap();
+
+        assert_eq!(png_base, png_locked);
+    }
+
+    #[test]
+    fn test_heavy_crosshair_performance_under_threshold() {
+        use xhair_model::effects::{BloomEffect, ShadowEffect};
+        use xhair_model::units::Vec2;
+
+        let mut xhair = Crosshair::new_classic("Heavy Crosshair Test");
+        // Add multiple detailed layers with shadows and glow
+        for i in 1..=4 {
+            let mut l = Layer::new(
+                format!("Ring {}", i),
+                LayerKind::Ring(RingProps {
+                    outer_radius: 6.0 * i as f32,
+                    thickness: 1.5,
+                    dash: Vec::new(),
+                }),
+            );
+            l.effects.glow = Some(GlowEffect {
+                color: Rgba::CYAN,
+                radius: 4.0,
+                intensity: 1.0,
+                spread: 0.0,
+                blend: xhair_model::units::BlendMode::Add,
+                quality: 2,
+            });
+            l.effects.shadow = Some(ShadowEffect {
+                color: Rgba::BLACK,
+                offset: Vec2::new(1.0, 1.0),
+                blur: 2.0,
+                opacity: 0.7,
+            });
+            xhair.layers.push(l);
+        }
+
+        xhair.global_effects.bloom = Some(BloomEffect {
+            threshold: 0.6,
+            radius: 6.0,
+            intensity: 1.2,
+        });
+
+        let ctx = RenderContext::standard();
+        let mut pixmap = tiny_skia::Pixmap::new(128, 128).unwrap();
+
+        // Warmup
+        let _ = render(&xhair, &ctx, &mut pixmap).unwrap();
+
+        // Timed run
+        let stats = render(&xhair, &ctx, &mut pixmap).unwrap();
+        assert_eq!(stats.rendered_layers, 5);
+
+        println!("Heavy crosshair raster time: {} µs", stats.raster_time_us);
+        // Spec §7.4: heavy crosshair with glow render budget < 8 ms (8000 µs in release)
+        let max_budget_us = if cfg!(debug_assertions) {
+            100_000
+        } else {
+            8000
+        };
+        assert!(
+            stats.raster_time_us < max_budget_us,
+            "Raster time {} µs exceeds budget {} µs",
+            stats.raster_time_us,
+            max_budget_us
+        );
     }
 }

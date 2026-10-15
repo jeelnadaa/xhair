@@ -49,6 +49,7 @@ pub fn render_preview(ctx: &ServerContext, args: Value) -> CallToolResult {
         time: 0.0,
         dynamics: None,
         quality: RenderQuality::Standard,
+        static_only: false,
     };
 
     let start = Instant::now();

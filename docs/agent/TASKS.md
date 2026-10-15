@@ -52,10 +52,10 @@
 | **M6-004** | M6 MCP | Implement MCP resources and prompt templates | done | §13.5, §13.6 | Complete (5 resources, 5 prompt templates) |
 | **M6-005** | M6 MCP | MCP live activity log and UI editing banner | done | §13.7 | Complete (McpModal drawer & pulsing TopBar badge) |
 | **M6-006** | M6 MCP | Parity CI test between UI, commands, and tools | done | §13.8 | Complete (parity.rs verified in CI) |
-| **M7-001** | M7 Polish | Global bloom and advanced glow compositing | todo | §4.6 | |
-| **M7-002** | M7 Polish | Animation tracks, keyframes, and timeline dock | todo | §4.7 | |
-| **M7-003** | M7 Polish | Static-only lock and reduced-motion enforcement | todo | §4.7 | |
-| **M7-004** | M7 Polish | Heavy crosshair performance optimization (<8ms) | todo | §7.4 | |
+| **M7-001** | M7 Polish | Global bloom and advanced glow compositing | done | §4.6 | Luminance threshold + 3-pass gaussian + additive composite |
+| **M7-002** | M7 Polish | Animation tracks, keyframes, and timeline dock | done | §4.7 | Procedural tracks, evaluation engine, UI TimelineDock |
+| **M7-003** | M7 Polish | Static-only lock and reduced-motion enforcement | done | §4.7 | Enforced in RenderContext, state store, and UI lock |
+| **M7-004** | M7 Polish | Heavy crosshair performance optimization (<8ms) | done | §7.4 | Bounded scratch buffers, SIMD release bench passes 5.4ms < 8ms |
 | **M8-001** | M8 Calib | 4-step Calibration Wizard dialog | todo | §6.7 | |
 | **M8-002** | M8 Calib | Screenshot Align tool (local file symmetry finder) | todo | §6.7 | |
 | **M8-003** | M8 Calib | Alignment issue report and automatic 1-click fixes | todo | §6.2 | |

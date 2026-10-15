@@ -61,6 +61,27 @@ export interface Crosshair {
   scale: number;
   opacity: number;
   layers: Layer[];
+  animation?: AnimTrack[];
+}
+
+export type AnimKindType = 'pulse' | 'breathe' | 'rotate' | 'blink' | 'rainbow_cycle' | 'keyframes';
+export type EasingMode = 'linear' | 'ease_in' | 'ease_out' | 'ease_in_out' | 'step';
+
+export interface Keyframe {
+  time: number;
+  value: number;
+}
+
+export interface AnimTrack {
+  id: string;
+  target_path: string;
+  kind: AnimKindType;
+  duration_seconds: number;
+  speed?: number;
+  min?: number;
+  max?: number;
+  frequency_hz?: number;
+  keyframes?: Keyframe[];
 }
 
 export interface PropertyDescriptor {

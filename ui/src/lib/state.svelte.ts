@@ -7,6 +7,7 @@ import type {
   NudgeTarget,
   NudgeFrame,
   AlignmentDiagnostic,
+  AnimTrack,
 } from './types';
 import propertiesData from '../generated/properties.json';
 
@@ -264,6 +265,14 @@ export class EditorState {
   // Command Palette & Modals
   commandPaletteOpen = $state<boolean>(false);
 
+  // Animation & Timeline (§4.7)
+  currentTime = $state<number>(0.0);
+  isPlaying = $state<boolean>(false);
+  timelineDuration = $state<number>(3.0);
+  loopAnimation = $state<boolean>(true);
+  staticOnlyLock = $state<boolean>(false);
+  timelineOpen = $state<boolean>(false);
+
   // Undo / Redo history
   undoStack = $state<string[]>([]);
   redoStack = $state<string[]>([]);
@@ -354,6 +363,66 @@ export class EditorState {
 
   clearMcpLog() {
     this.mcpActivityLog = [];
+  }
+
+  // Timeline and Animation methods (§4.7)
+  togglePlay() {
+    if (this.staticOnlyLock) {
+      this.isPlaying = false;
+      return;
+    }
+    this.isPlaying = !this.isPlaying;
+    if (this.isPlaying) {
+      let lastTimestamp = performance.now();
+      const tick = () => {
+        if (!this.isPlaying || this.staticOnlyLock) {
+          this.isPlaying = false;
+          return;
+        }
+        const now = performance.now();
+        const delta = (now - lastTimestamp) / 1000;
+        lastTimestamp = now;
+
+        this.currentTime += delta;
+        if (this.currentTime >= this.timelineDuration) {
+          if (this.loopAnimation) {
+            this.currentTime = 0;
+          } else {
+            this.currentTime = this.timelineDuration;
+            this.isPlaying = false;
+            return;
+          }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+  }
+
+  seek(time: number) {
+    this.currentTime = Math.max(0, Math.min(time, this.timelineDuration));
+  }
+
+  toggleStaticOnlyLock() {
+    this.staticOnlyLock = !this.staticOnlyLock;
+    if (this.staticOnlyLock) {
+      this.isPlaying = false;
+      this.currentTime = 0;
+    }
+  }
+
+  addTrack(track: AnimTrack) {
+    if (!this.crosshair.animation) {
+      this.crosshair.animation = [];
+    }
+    this.pushUndo();
+    this.crosshair.animation.push(track);
+  }
+
+  removeTrack(id: string) {
+    if (!this.crosshair.animation) return;
+    this.pushUndo();
+    this.crosshair.animation = this.crosshair.animation.filter((t) => t.id !== id);
   }
 
   // Crosshair Selection & CRUD

@@ -118,6 +118,71 @@ pub struct Keyframe {
     pub value: f32,
 }
 
+/// Easing interpolation modes for animation keyframes (§4.7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EasingMode {
+    /// Linear progression.
+    #[default]
+    Linear,
+    /// Acceleration from zero velocity.
+    EaseIn,
+    /// Deceleration to zero velocity.
+    EaseOut,
+    /// Acceleration then deceleration.
+    EaseInOut,
+    /// Discrete step transition at midpoint.
+    Step,
+}
+
+/// Procedural animation kind (§4.7).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum AnimKind {
+    /// Sinusoidal pulse between min and max value.
+    Pulse {
+        /// Lower bound value.
+        min: f32,
+        /// Upper bound value.
+        max: f32,
+        /// Frequency in Hertz.
+        frequency_hz: f32,
+    },
+    /// Smooth breathing oscillation.
+    Breathe {
+        /// Minimum value.
+        min: f32,
+        /// Maximum value.
+        max: f32,
+        /// Total cycle duration in seconds.
+        period_seconds: f32,
+    },
+    /// Continuous 360-degree rotation.
+    Rotate {
+        /// Rotation speed in degrees per second.
+        speed_deg_per_sec: f32,
+    },
+    /// Periodic blinking on/off toggle.
+    Blink {
+        /// Ratio of active phase (0.0 to 1.0).
+        on_ratio: f32,
+        /// Frequency in Hertz.
+        frequency_hz: f32,
+    },
+    /// Rainbow color cycle for hue shift.
+    RainbowCycle {
+        /// Speed in Hertz.
+        speed_hz: f32,
+    },
+    /// Explicit keyframe interpolation.
+    Keyframes {
+        /// Sequence of keyframe points.
+        keyframes: Vec<Keyframe>,
+        /// Interpolation easing curve.
+        easing: EasingMode,
+    },
+}
+
 /// Procedural animation track.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct AnimTrack {
@@ -126,7 +191,173 @@ pub struct AnimTrack {
     /// Cycle duration in seconds.
     pub duration_seconds: f32,
     /// Keyframe sequence.
+    #[serde(default)]
     pub keyframes: Vec<Keyframe>,
+    /// Procedural animation generator.
+    #[serde(default)]
+    pub kind: Option<AnimKind>,
+}
+
+impl AnimTrack {
+    /// Creates a keyframe animation track.
+    pub fn new_keyframes(
+        target_path: impl Into<String>,
+        duration_seconds: f32,
+        keyframes: Vec<Keyframe>,
+    ) -> Self {
+        Self {
+            target_path: target_path.into(),
+            duration_seconds,
+            keyframes,
+            kind: None,
+        }
+    }
+
+    /// Creates a procedural rotation track.
+    pub fn new_rotate(target_path: impl Into<String>, speed_deg_per_sec: f32) -> Self {
+        Self {
+            target_path: target_path.into(),
+            duration_seconds: if speed_deg_per_sec != 0.0 {
+                360.0 / speed_deg_per_sec.abs()
+            } else {
+                1.0
+            },
+            keyframes: Vec::new(),
+            kind: Some(AnimKind::Rotate { speed_deg_per_sec }),
+        }
+    }
+
+    /// Creates a pulse track.
+    pub fn new_pulse(
+        target_path: impl Into<String>,
+        min: f32,
+        max: f32,
+        frequency_hz: f32,
+    ) -> Self {
+        Self {
+            target_path: target_path.into(),
+            duration_seconds: if frequency_hz > 0.0 {
+                1.0 / frequency_hz
+            } else {
+                1.0
+            },
+            keyframes: Vec::new(),
+            kind: Some(AnimKind::Pulse {
+                min,
+                max,
+                frequency_hz,
+            }),
+        }
+    }
+
+    /// Evaluates the animation track at a specific timestamp in seconds.
+    pub fn evaluate(&self, time_seconds: f32) -> f32 {
+        if let Some(ref kind) = self.kind {
+            match kind {
+                AnimKind::Pulse {
+                    min,
+                    max,
+                    frequency_hz,
+                } => {
+                    let phase = 2.0 * std::f32::consts::PI * frequency_hz * time_seconds;
+                    let norm = 0.5 * (1.0 + phase.sin());
+                    min + (max - min) * norm
+                }
+                AnimKind::Breathe {
+                    min,
+                    max,
+                    period_seconds,
+                } => {
+                    let period = period_seconds.max(0.01);
+                    let phase = 2.0 * std::f32::consts::PI * (time_seconds % period) / period;
+                    let norm = 0.5 * (1.0 - phase.cos());
+                    min + (max - min) * norm
+                }
+                AnimKind::Rotate { speed_deg_per_sec } => {
+                    (time_seconds * speed_deg_per_sec) % 360.0
+                }
+                AnimKind::Blink {
+                    on_ratio,
+                    frequency_hz,
+                } => {
+                    let freq = frequency_hz.max(0.01);
+                    let phase = (time_seconds * freq).fract();
+                    if phase < on_ratio.clamp(0.01, 0.99) {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                }
+                AnimKind::RainbowCycle { speed_hz } => (time_seconds * speed_hz * 360.0) % 360.0,
+                AnimKind::Keyframes { keyframes, easing } => {
+                    interpolate_keyframes(keyframes, *easing, self.duration_seconds, time_seconds)
+                }
+            }
+        } else if !self.keyframes.is_empty() {
+            interpolate_keyframes(
+                &self.keyframes,
+                EasingMode::Linear,
+                self.duration_seconds,
+                time_seconds,
+            )
+        } else {
+            0.0
+        }
+    }
+}
+
+fn interpolate_keyframes(
+    keyframes: &[Keyframe],
+    easing: EasingMode,
+    duration_seconds: f32,
+    time_seconds: f32,
+) -> f32 {
+    if keyframes.is_empty() {
+        return 0.0;
+    }
+    if keyframes.len() == 1 {
+        return keyframes[0].value;
+    }
+
+    let dur = duration_seconds.max(0.001);
+    let norm_t = (time_seconds % dur) / dur;
+
+    // Find bounding keyframes
+    let mut prev = &keyframes[0];
+    let mut next = &keyframes[keyframes.len() - 1];
+
+    for i in 0..keyframes.len() - 1 {
+        if keyframes[i].time <= norm_t && keyframes[i + 1].time >= norm_t {
+            prev = &keyframes[i];
+            next = &keyframes[i + 1];
+            break;
+        }
+    }
+
+    let segment_dur = (next.time - prev.time).max(0.0001);
+    let mut p = ((norm_t - prev.time) / segment_dur).clamp(0.0, 1.0);
+
+    p = match easing {
+        EasingMode::Linear => p,
+        EasingMode::EaseIn => p * p,
+        EasingMode::EaseOut => p * (2.0 - p),
+        EasingMode::EaseInOut => {
+            if p < 0.5 {
+                2.0 * p * p
+            } else {
+                -1.0 + (4.0 - 2.0 * p) * p
+            }
+        }
+        EasingMode::Step => {
+            if p < 0.5 {
+                0.0
+            } else {
+                1.0
+            }
+        }
+    };
+
+    prev.value + (next.value - prev.value) * p
 }
 
 /// Embedded content-addressed binary asset (PNG or SVG).
@@ -317,6 +548,54 @@ impl Crosshair {
         }
 
         Ok(())
+    }
+
+    /// Evaluates all procedural animation tracks at a given timestamp (§4.7).
+    pub fn evaluate_animation(&self, time_seconds: f32) -> Crosshair {
+        if self.animation.is_empty() || time_seconds <= 0.0 {
+            return self.clone();
+        }
+
+        let mut ch = self.clone();
+        for track in &self.animation {
+            let val = track.evaluate(time_seconds);
+            match track.target_path.as_str() {
+                "global.rotation" => ch.global.rotation = crate::units::Degrees(val),
+                "global.scale" => ch.global.scale = val.max(0.01),
+                "global.opacity" => ch.global.opacity = crate::units::Alpha::from(val),
+                "global.offset.x" => ch.global.offset.x = val,
+                "global.offset.y" => ch.global.offset.y = val,
+                path if path.starts_with("layers[") => {
+                    if let Some(idx_end) = path.find(']') {
+                        if let Ok(idx) = path[7..idx_end].parse::<usize>() {
+                            if let Some(layer) = ch.layers.get_mut(idx) {
+                                let subpath = &path[idx_end + 1..];
+                                match subpath {
+                                    ".opacity" => layer.opacity = crate::units::Alpha::from(val),
+                                    ".transform.rotation" => {
+                                        layer.transform.rotation = crate::units::Degrees(val);
+                                    }
+                                    ".transform.scale" => {
+                                        layer.transform.scale =
+                                            crate::units::Vec2::new(val.max(0.01), val.max(0.01));
+                                    }
+                                    ".transform.offset.x" => {
+                                        layer.transform.offset.x = val;
+                                    }
+                                    ".transform.offset.y" => {
+                                        layer.transform.offset.y = val;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        ch
     }
 }
 

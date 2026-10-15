@@ -39,6 +39,8 @@ pub struct RenderContext {
     pub dynamics: Option<DynamicState>,
     /// Quality preset.
     pub quality: RenderQuality,
+    /// Global lock disabling animation and dynamic recoil (§4.7).
+    pub static_only: bool,
 }
 
 impl Default for RenderContext {
@@ -50,6 +52,7 @@ impl Default for RenderContext {
             time: 0.0,
             dynamics: None,
             quality: RenderQuality::Standard,
+            static_only: false,
         }
     }
 }
@@ -81,6 +84,12 @@ impl RenderContext {
     /// Sets animation timestamp.
     pub fn with_time(mut self, time: f32) -> Self {
         self.time = time;
+        self
+    }
+
+    /// Sets static-only lock flag.
+    pub fn with_static_only(mut self, static_only: bool) -> Self {
+        self.static_only = static_only;
         self
     }
 }

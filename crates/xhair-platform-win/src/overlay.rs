@@ -383,6 +383,7 @@ pub fn render_and_update(
         time: 0.0,
         dynamics: None,
         quality: RenderQuality::Standard,
+        static_only: false,
     };
 
     let bbox = calculate_crosshair_bounds(&active_xhair);

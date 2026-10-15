@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 7
-- **Phase / Milestone:** M6 MCP Server — Done | Next: M7 Effects & Polish
+- **Session:** 8
+- **Phase / Milestone:** M7 Effects & Polish — Done | Next: M8 Calibration
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
@@ -14,16 +14,16 @@
 - [x] M4 Overlay Daemon (completed 2026-10-15)
 - [x] M5 Editor UI (completed 2026-10-16)
 - [x] M6 MCP Server (completed 2026-10-16)
-- [ ] M7 Effects & Polish
+- [x] M7 Effects & Polish (completed 2026-10-16)
 - [ ] M8 Calibration
 - [ ] M9 Dynamics & Spray Lab
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M7 Effects & Polish: Global bloom, advanced glow compositing, animation tracks, timeline dock, and heavy crosshair performance optimization.
+- M8 Calibration: 4-step Calibration Wizard dialog, Screenshot Align tool, alignment issue reporting, 1-click automatic fixes, and multi-resolution verification.
 
 ## Next exact step
-- Implement Milestone 7: Global bloom rasterizer, keyframe animation engine, timeline dock, and static-only lock (§4.6, §4.7, §7.4).
+- Implement Milestone 8: Calibration Wizard dialog (`CalibrationWizard.svelte`), Screenshot Align tool (§6.7), alignment issue reporting and 1-click center fixes (§6.2).
 
 ## WIP notes
 - `ui`:
@@ -40,13 +40,15 @@
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 71 tests passing)
+- Workspace crates: 12 (all build & test green, 75 tests passing)
 - Golden image tests: 8 tests passing
+- Render & effect tests: 12 unit tests passing (bloom, animation evaluation, static lock, heavy budget)
+- Performance benchmarks (cargo bench): typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
 - Platform tests: 9 tests passing (5 platform integration tests + 4 unit tests)
 - MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, parity)
 - UI test suite: 11 tests passing in Vitest (100% green)
 - TypeScript lint: 0 errors (`tsc --noEmit`)
-- Vite production build: 93 kB JS, 18 kB CSS (built in ~370ms)
+- Vite production build: 102 kB JS, 22.5 kB CSS (built in ~350ms)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 
 ## Human decisions pending

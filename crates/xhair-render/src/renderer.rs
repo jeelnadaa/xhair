@@ -2,7 +2,7 @@
 
 use crate::bounds::{calculate_crosshair_bounds, BoundingBox};
 use crate::context::{RenderContext, RenderStats};
-use crate::effects::{apply_glow, apply_shadow};
+use crate::effects::{apply_bloom, apply_glow, apply_shadow};
 use crate::error::RenderError;
 use crate::shapes::render_shape;
 use crate::symmetry::generate_symmetry_instances;
@@ -19,7 +19,15 @@ pub const MAX_BLUR_BUFFER_DIMENSION: u32 = 1024;
 
 /// Computes conservative bounding box of the crosshair.
 pub fn bounds(crosshair: &Crosshair, ctx: &RenderContext) -> BoundingBox {
-    let mut b = calculate_crosshair_bounds(crosshair);
+    let evaluated_doc;
+    let ch = if !ctx.static_only && ctx.time > 0.0 && !crosshair.animation.is_empty() {
+        evaluated_doc = crosshair.evaluate_animation(ctx.time);
+        &evaluated_doc
+    } else {
+        crosshair
+    };
+
+    let mut b = calculate_crosshair_bounds(ch);
     let sx = ctx.scale.x.abs().max(0.01);
     let sy = ctx.scale.y.abs().max(0.01);
     b.min_x = b.min_x * sx + ctx.center_frac.x;
@@ -47,6 +55,14 @@ pub fn render(
         });
     }
 
+    let evaluated_doc;
+    let ch = if !ctx.static_only && ctx.time > 0.0 && !crosshair.animation.is_empty() {
+        evaluated_doc = crosshair.evaluate_animation(ctx.time);
+        &evaluated_doc
+    } else {
+        crosshair
+    };
+
     let anti_alias = match ctx.aa {
         AaMode::Crisp => false,
         AaMode::Smooth => true,
@@ -61,21 +77,21 @@ pub fn render(
         center_y = center_y.round();
     }
 
-    let global_tx = center_x + crosshair.global.offset.x * ctx.scale.x;
-    let global_ty = center_y + crosshair.global.offset.y * ctx.scale.y;
-    let global_sx = crosshair.global.scale * ctx.scale.x;
-    let global_sy = crosshair.global.scale * ctx.scale.y;
-    let global_rot = crosshair.global.rotation.0;
-    let global_opacity = crosshair.global.opacity.0;
+    let global_tx = center_x + ch.global.offset.x * ctx.scale.x;
+    let global_ty = center_y + ch.global.offset.y * ctx.scale.y;
+    let global_sx = ch.global.scale * ctx.scale.x;
+    let global_sy = ch.global.scale * ctx.scale.y;
+    let global_rot = ch.global.rotation.0;
+    let global_opacity = ch.global.opacity.0;
 
     let root_transform = Transform::from_translate(global_tx, global_ty)
         .post_concat(Transform::from_rotate(global_rot))
         .post_concat(Transform::from_scale(global_sx, global_sy));
 
-    let solo_active = crosshair.layers.iter().any(|l| l.solo);
+    let solo_active = ch.layers.iter().any(|l| l.solo);
     let mut rendered_layer_count = 0;
 
-    for layer in &crosshair.layers {
+    for layer in &ch.layers {
         if !layer.visible {
             continue;
         }
@@ -89,7 +105,7 @@ pub fn render(
         }
 
         let has_effects = layer.effects.glow.is_some() || layer.effects.shadow.is_some();
-        let instances = generate_symmetry_instances(layer, &crosshair.symmetry, Vec2::ZERO);
+        let instances = generate_symmetry_instances(layer, &ch.symmetry, Vec2::ZERO);
 
         if has_effects {
             // Render layer into an isolated scratch buffer
@@ -153,13 +169,18 @@ pub fn render(
     }
 
     // Apply global glow if present
-    if let Some(ref global_glow) = crosshair.global_effects.glow {
+    if let Some(ref global_glow) = ch.global_effects.glow {
         let snapshot = out.clone();
         apply_glow(&snapshot, global_glow, out);
     }
 
+    // Apply global bloom if present (§4.6)
+    if let Some(ref bloom) = ch.global_effects.bloom {
+        apply_bloom(out, bloom);
+    }
+
     let elapsed_us = start_time.elapsed().as_micros() as u64;
-    let b = bounds(crosshair, ctx);
+    let b = bounds(ch, ctx);
 
     Ok(RenderStats {
         rendered_layers: rendered_layer_count,

@@ -160,5 +160,36 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
 - **Next:** Milestone 7: Effects & Polish (Global bloom and advanced glow compositing, animation tracks, keyframes, timeline dock, and static-only lock).
 
+## 2026-10-16 — Session 8
+- **Goal:** Milestone 7 Effects & Polish: Global bloom, advanced glow compositing, procedural animation tracks and keyframes, static-only lock enforcement, timeline dock in UI, and heavy crosshair performance benchmark optimization (< 8ms budget).
+- **Planned Tasks:** M7-001, M7-002, M7-003, M7-004.
+- **Completed:**
+  - `crates/xhair-render`:
+    - `effects.rs`: Implemented `apply_bloom` using luminance extraction (threshold 0.7) and 3-pass gaussian blur composited additively (`BlendMode::Plus`).
+    - `renderer.rs`: Integrated bloom into post-processing chain in `render()`, operating in HDR-like additive glow.
+    - `context.rs`: Added `static_only: bool` to `RenderContext` and `with_static_only` builder method.
+    - `lib.rs`: Added unit tests for bloom effect, animation evaluation, static-only lock enforcement, and heavy crosshair performance budget.
+    - `benches/render_bench.rs`: Benchmark suite measuring typical crosshair (2.91 µs vs 1000 µs budget) and heavy multi-layer blurred/glowing crosshair (5470.72 µs vs 8000 µs budget) passing §7.4 budgets.
+  - `crates/xhair-model`:
+    - `crosshair.rs`: Added `AnimTrack`, `AnimKind`, `EasingMode`, and `Keyframe` domain types.
+    - Evaluator engine `AnimTrack::evaluate(t)` and `Crosshair::evaluate_animation(t)` dynamically modulating rotation, scale, opacity, and offsets.
+  - `crates/xhair-platform-win` & `crates/xhair-mcp`:
+    - Updated `RenderContext` calls to include `static_only: false`.
+  - `ui`:
+    - `ui/src/lib/types.ts`: Added animation track types matching Rust domain models.
+    - `ui/src/lib/state.svelte.ts`: Added playback timeline state (`currentTime`, `isPlaying`, `timelineDuration`, `loopAnimation`, `staticOnlyLock`, `timelineOpen`) and methods (`togglePlay`, `seek`, `addTrack`, `removeTrack`, `toggleStaticOnlyLock`).
+    - `ui/src/components/TimelineDock.svelte`: Collapsible bottom timeline dock with playhead, scrubber slider, loop toggle, static-only lock badge, and track list.
+    - `ui/src/App.svelte`: Integrated `TimelineDock` in `.center-stage` layout below `CanvasGrid`.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 75 Rust tests passing across 12 workspace crates (100% green).
+  - `cargo bench -p xhair-render`: Typical 2.91 µs (< 1000 µs), Heavy 5470.72 µs (< 8000 µs).
+  - `pnpm -C ui test`: 11 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Production bundle built in ~350ms (102 kB JS, 22.5 kB CSS).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 8: Calibration (4-step Calibration Wizard dialog, Screenshot Align tool, alignment issue reporting, 1-click automatic fixes, and multi-resolution verification).
+
 
 

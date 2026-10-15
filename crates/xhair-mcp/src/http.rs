@@ -148,10 +148,7 @@ fn handle_http_connection(
                 && !val_trim.contains("127.0.0.1")
                 && !val_trim.contains("localhost")
             {
-                return send_forbidden(
-                    &mut stream,
-                    "Invalid Origin (DNS-rebinding protection)",
-                );
+                return send_forbidden(&mut stream, "Invalid Origin (DNS-rebinding protection)");
             }
 
             // 2. Extract Bearer Token

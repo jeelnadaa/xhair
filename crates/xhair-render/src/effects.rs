@@ -1,7 +1,7 @@
 //! Visual effects engine: glow, bloom, drop shadow, and gaussian blur.
 
 use tiny_skia::{BlendMode, Pixmap, PixmapPaint, Transform};
-use xhair_model::effects::{GlowEffect, ShadowEffect};
+use xhair_model::effects::{BloomEffect, GlowEffect, ShadowEffect};
 
 /// Applies drop shadow underneath a layer pixmap.
 pub fn apply_shadow(src: &Pixmap, shadow: &ShadowEffect, dest: &mut Pixmap) {
@@ -254,4 +254,62 @@ fn box_blur_v(src: &[u8], dst: &mut [u8], w: usize, h: usize, r: usize) {
             sum_a = sum_a.saturating_sub(src[out_p_idx + 3] as u32);
         }
     }
+}
+
+/// Applies global bloom to a finished composite pixmap (§4.6).
+pub fn apply_bloom(pixmap: &mut Pixmap, bloom: &BloomEffect) {
+    let w = pixmap.width();
+    let h = pixmap.height();
+    if w == 0 || h == 0 || bloom.intensity <= 0.0 || bloom.radius <= 0.1 {
+        return;
+    }
+
+    let mut bloom_pixmap = match Pixmap::new(w, h) {
+        Some(p) => p,
+        None => return,
+    };
+
+    let src_data = pixmap.data();
+    let bloom_data = bloom_pixmap.data_mut();
+    let threshold_luma = bloom.threshold.clamp(0.0, 1.0);
+
+    for i in 0..(w * h) as usize {
+        let a = src_data[i * 4 + 3] as f32 / 255.0;
+        if a > 0.0 {
+            let r = src_data[i * 4] as f32 / 255.0;
+            let g = src_data[i * 4 + 1] as f32 / 255.0;
+            let b = src_data[i * 4 + 2] as f32 / 255.0;
+
+            // Perceptual relative luminance (ITU-R BT.709)
+            let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            if luma > threshold_luma {
+                let range = (1.0 - threshold_luma).max(0.001);
+                let over = (luma - threshold_luma) / range;
+                let factor = (over * bloom.intensity).min(2.0);
+
+                bloom_data[i * 4] = (r * factor * 255.0).min(255.0) as u8;
+                bloom_data[i * 4 + 1] = (g * factor * 255.0).min(255.0) as u8;
+                bloom_data[i * 4 + 2] = (b * factor * 255.0).min(255.0) as u8;
+                bloom_data[i * 4 + 3] = (a * factor * 255.0).min(255.0) as u8;
+            }
+        }
+    }
+
+    let radius = bloom.radius.min(64.0);
+    gaussian_blur(&mut bloom_pixmap, radius, 3);
+
+    let paint = PixmapPaint {
+        opacity: 1.0,
+        blend_mode: BlendMode::Plus,
+        quality: tiny_skia::FilterQuality::Bilinear,
+    };
+
+    pixmap.draw_pixmap(
+        0,
+        0,
+        bloom_pixmap.as_ref(),
+        &paint,
+        Transform::identity(),
+        None,
+    );
 }

@@ -2,6 +2,7 @@
   import TopBar from './components/TopBar.svelte';
   import LibrarySidebar from './components/LibrarySidebar.svelte';
   import CanvasGrid from './components/CanvasGrid.svelte';
+  import TimelineDock from './components/TimelineDock.svelte';
   import Inspector from './components/Inspector.svelte';
   import LayersPanel from './components/LayersPanel.svelte';
   import NudgePad from './components/NudgePad.svelte';
@@ -19,8 +20,11 @@
     <!-- Left: Library Sidebar (240px) -->
     <LibrarySidebar />
 
-    <!-- Center: Interactive Pixel Canvas Grid -->
-    <CanvasGrid />
+    <!-- Center: Interactive Pixel Canvas Grid & Animation Timeline -->
+    <main class="center-stage">
+      <CanvasGrid />
+      <TimelineDock />
+    </main>
 
     <!-- Right: Properties, Layers, Nudge Pad, Color (320px) -->
     <aside class="right-inspector">
@@ -52,6 +56,15 @@
     display: flex;
     flex: 1;
     min-height: 0;
+  }
+
+  .center-stage {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
   }
 
   .right-inspector {
