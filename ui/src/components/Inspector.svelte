@@ -30,6 +30,18 @@
     if (name === 'shape.inner_radius') return layer.shape.innerRadius ?? 4;
     if (name === 'shape.points') return layer.shape.points ?? 6;
     if (name === 'shape.angle') return layer.shape.angle ?? 90;
+    if (name === 'shape.width') return layer.shape.width ?? 12;
+    if (name === 'shape.height') return layer.shape.height ?? 8;
+    if (name === 'shape.corner_radius') return layer.shape.cornerRadius ?? 0;
+    if (name === 'shape.base') return layer.shape.base ?? 10;
+    if (name === 'shape.start_angle') return layer.shape.startAngle ?? 0;
+    if (name === 'shape.end_angle') return layer.shape.endAngle ?? 180;
+    if (name === 'shape.center_hole') return layer.shape.centerHole ?? 0;
+    if (name === 'effect.shadow_blur') return layer.shadowBlur ?? 0;
+    if (name === 'effect.shadow_offset_x') return layer.shadowOffsetX ?? 0;
+    if (name === 'effect.shadow_offset_y') return layer.shadowOffsetY ?? 0;
+    if (name === 'effect.blur_radius') return layer.blurRadius ?? 0;
+    if (name === 'effect.glow_radius') return layer.glowRadius ?? 0;
     if (name === 'layer.offset_x') return layer.offsetX ?? 0;
     if (name === 'layer.offset_y') return layer.offsetY ?? 0;
     if (name === 'layer.rotation') return layer.rotation ?? 0;
@@ -637,6 +649,464 @@
             ></textarea>
           </div>
         {/if}
+
+        <!-- Rect Parameters -->
+        {#if shape.type === 'Rect'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Width</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="60"
+                  step="1"
+                  value={shape.width ?? 12}
+                  oninput={(e) => handleNumberChange('shape.width', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="60"
+                step="1"
+                value={shape.width ?? 12}
+                oninput={(e) => handleSliderChange('shape.width', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.width ?? 12) - 1) / 59) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Height</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="60"
+                  step="1"
+                  value={shape.height ?? 8}
+                  oninput={(e) => handleNumberChange('shape.height', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="60"
+                step="1"
+                value={shape.height ?? 8}
+                oninput={(e) => handleSliderChange('shape.height', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.height ?? 8) - 1) / 59) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Corner Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="20"
+                  step="0.5"
+                  value={shape.cornerRadius ?? 0}
+                  oninput={(e) => handleNumberChange('shape.corner_radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="0"
+                max="20"
+                step="0.5"
+                value={shape.cornerRadius ?? 0}
+                oninput={(e) => handleSliderChange('shape.corner_radius', e)}
+              />
+              <div class="slider-fill-visual" style="width: {((shape.cornerRadius ?? 0) / 20) * 100}%;"></div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Arc Parameters -->
+        {#if shape.type === 'Arc'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="2"
+                  max="40"
+                  step="0.5"
+                  value={shape.radius ?? 10}
+                  oninput={(e) => handleNumberChange('shape.radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="2"
+                max="40"
+                step="0.5"
+                value={shape.radius ?? 10}
+                oninput={(e) => handleSliderChange('shape.radius', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.radius ?? 10) - 2) / 38) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Thickness</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={shape.thickness ?? 2}
+                  oninput={(e) => handleNumberChange('shape.thickness', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="10"
+                step="1"
+                value={shape.thickness ?? 2}
+                oninput={(e) => handleSliderChange('shape.thickness', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 9) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Start Angle</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="360"
+                  step="5"
+                  value={shape.startAngle ?? 0}
+                  oninput={(e) => handleNumberChange('shape.start_angle', e)}
+                />
+                <span class="unit-label">°</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">End Angle</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="360"
+                  step="5"
+                  value={shape.endAngle ?? 180}
+                  oninput={(e) => handleNumberChange('shape.end_angle', e)}
+                />
+                <span class="unit-label">°</span>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Triangle Parameters -->
+        {#if shape.type === 'Triangle'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Base</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="2"
+                  max="40"
+                  step="1"
+                  value={shape.base ?? 10}
+                  oninput={(e) => handleNumberChange('shape.base', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="2"
+                max="40"
+                step="1"
+                value={shape.base ?? 10}
+                oninput={(e) => handleSliderChange('shape.base', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.base ?? 10) - 2) / 38) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Height</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="2"
+                  max="40"
+                  step="1"
+                  value={shape.height ?? 12}
+                  oninput={(e) => handleNumberChange('shape.height', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="2"
+                max="40"
+                step="1"
+                value={shape.height ?? 12}
+                oninput={(e) => handleSliderChange('shape.height', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.height ?? 12) - 2) / 38) * 100}%;"></div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Plus Parameters -->
+        {#if shape.type === 'Plus'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Length</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="40"
+                  step="1"
+                  value={shape.length ?? 6}
+                  oninput={(e) => handleNumberChange('shape.length', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Thickness</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="12"
+                  step="1"
+                  value={shape.thickness ?? 2}
+                  oninput={(e) => handleNumberChange('shape.thickness', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Gap</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="30"
+                  step="0.5"
+                  value={shape.gap ?? 2}
+                  oninput={(e) => handleNumberChange('shape.gap', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Center Hole</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="20"
+                  step="0.5"
+                  value={shape.centerHole ?? 0}
+                  oninput={(e) => handleNumberChange('shape.center_hole', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Section: Visual Effects & Filters (§4.6) -->
+      <div class="prop-section">
+        <span class="section-title">Visual Effects & Filters</span>
+
+        <!-- Glow Effect -->
+        <div class="property-row">
+          <div class="row">
+            <span class="property-label">Glow Radius</span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                min="0"
+                max="20"
+                step="0.5"
+                value={layer.glowRadius ?? 0}
+                oninput={(e) => handleNumberChange('effect.glow_radius', e)}
+              />
+              <span class="unit-label">px</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="20"
+              step="0.5"
+              value={layer.glowRadius ?? 0}
+              oninput={(e) => handleSliderChange('effect.glow_radius', e)}
+            />
+            <div class="slider-fill-visual" style="width: {((layer.glowRadius ?? 0) / 20) * 100}%;"></div>
+          </div>
+        </div>
+
+        <!-- Drop Shadow -->
+        <div class="property-row">
+          <div class="row">
+            <span class="property-label">Drop Shadow Blur</span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                min="0"
+                max="20"
+                step="0.5"
+                value={layer.shadowBlur ?? 0}
+                oninput={(e) => handleNumberChange('effect.shadow_blur', e)}
+              />
+              <span class="unit-label">px</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="20"
+              step="0.5"
+              value={layer.shadowBlur ?? 0}
+              oninput={(e) => handleSliderChange('effect.shadow_blur', e)}
+            />
+            <div class="slider-fill-visual" style="width: {((layer.shadowBlur ?? 0) / 20) * 100}%;"></div>
+          </div>
+        </div>
+
+        <div class="property-row">
+          <div class="row">
+            <span class="property-label">Shadow Offset X / Y</span>
+            <div style="display: flex; gap: 6px;">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                style="width: 50px;"
+                min="-20"
+                max="20"
+                step="0.5"
+                value={layer.shadowOffsetX ?? 0}
+                oninput={(e) => handleNumberChange('effect.shadow_offset_x', e)}
+                placeholder="X"
+              />
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                style="width: 50px;"
+                min="-20"
+                max="20"
+                step="0.5"
+                value={layer.shadowOffsetY ?? 0}
+                oninput={(e) => handleNumberChange('effect.shadow_offset_y', e)}
+                placeholder="Y"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Softening Blur -->
+        <div class="property-row">
+          <div class="row">
+            <span class="property-label">Softening Blur</span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                min="0"
+                max="8"
+                step="0.25"
+                value={layer.blurRadius ?? 0}
+                oninput={(e) => handleNumberChange('effect.blur_radius', e)}
+              />
+              <span class="unit-label">px</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="8"
+              step="0.25"
+              value={layer.blurRadius ?? 0}
+              oninput={(e) => handleSliderChange('effect.blur_radius', e)}
+            />
+            <div class="slider-fill-visual" style="width: {((layer.blurRadius ?? 0) / 8) * 100}%;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Dynamic Binding Live Preview Scrubber (§12.5) -->

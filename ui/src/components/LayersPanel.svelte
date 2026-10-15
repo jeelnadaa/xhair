@@ -22,9 +22,13 @@
 
   const availableShapes: { type: import('../lib/types').ShapeType; label: string; icon: string; desc: string }[] = [
     { type: 'LineArms', label: 'Line Arms', icon: '┼', desc: 'Standard 4-arm competitive crosshair' },
+    { type: 'Plus', label: 'Plus Cross', icon: '➕', desc: '4-direction crosshair with center hole support' },
     { type: 'TShape', label: 'T-Shape Reticle', icon: '┬', desc: 'Tactical 3-arm reticle without top arm' },
     { type: 'Dot', label: 'Center Dot', icon: '•', desc: 'Precision center dot (square or circle)' },
+    { type: 'Rect', label: 'Rectangle / Box', icon: '▭', desc: 'Filled rectangle or frame box element' },
     { type: 'Circle', label: 'Circle / Ring', icon: '○', desc: 'Circumscribed target ring or outline' },
+    { type: 'Arc', label: 'Arc Segment', icon: '⌒', desc: 'Partial angular ring segment' },
+    { type: 'Triangle', label: 'Triangle', icon: '▲', desc: 'Isosceles or equilateral aiming triangle' },
     { type: 'Chevron', label: 'Chevron Arrow', icon: '^', desc: 'ACOG / Holo inverted V aiming arrow' },
     { type: 'Polygon', label: 'Polygon / Hexagon', icon: '⬡', desc: 'Regular geometric N-gon reticle' },
     { type: 'Star', label: 'Star Reticle', icon: '★', desc: 'Multi-point star crosshair element' },

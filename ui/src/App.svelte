@@ -13,6 +13,8 @@
   import SprayLab from './components/SprayLab.svelte';
   import DynamicOptInModal from './components/DynamicOptInModal.svelte';
   import CompliancePanel from './components/CompliancePanel.svelte';
+  import ImportExportModal from './components/ImportExportModal.svelte';
+  import ResolutionModal from './components/ResolutionModal.svelte';
 </script>
 
 <div class="app-layout">
@@ -48,6 +50,8 @@
   <SprayLab />
   <DynamicOptInModal />
   <CompliancePanel />
+  <ImportExportModal />
+  <ResolutionModal />
 </div>
 
 <style>

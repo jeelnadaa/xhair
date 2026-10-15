@@ -5,6 +5,7 @@ import type {
   ShapeData,
   PropertyDescriptor,
   ResolutionProfile,
+  PreviewBackground,
   ToolType,
   NudgeTarget,
   NudgeFrame,
@@ -307,6 +308,12 @@ export const PRESET_LIBRARY: Crosshair[] = [
   },
 ];
 
+let idCounter = 0;
+export function uniqueId(prefix: string): string {
+  idCounter += 1;
+  return `${prefix}-${Date.now()}-${idCounter}`;
+}
+
 export class EditorState {
   crosshair = $state<Crosshair>(JSON.parse(JSON.stringify(INITIAL_CROSSHAIR)));
   library = $state<Crosshair[]>(JSON.parse(JSON.stringify(PRESET_LIBRARY)));
@@ -323,6 +330,12 @@ export class EditorState {
   showGuides = $state<boolean>(true);
   showRings = $state<boolean>(true);
   showBounds = $state<boolean>(false);
+  previewBackground = $state<PreviewBackground>('dark');
+
+  // Modals & Panels
+  importExportModalOpen = $state<boolean>(false);
+  importExportTab = $state<'import' | 'export'>('import');
+  resolutionModalOpen = $state<boolean>(false);
 
   // Nudge Control
   nudgeStep = $state<number>(0.5);
@@ -463,7 +476,7 @@ export class EditorState {
     return issues;
   });
 
-  // Calculate visibility score against dark base background (#0B0D10)
+  // Calculate visibility score against active tactical background (§6.8)
   visibilityScore = $derived.by<number>(() => {
     if (!this.selectedLayer) return 7.5;
     const hex = this.selectedLayer.color.replace('#', '');
@@ -472,8 +485,19 @@ export class EditorState {
     const b = parseInt(hex.substring(4, 6), 16) || 0;
     // Relative luminance calculation
     const lum = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255);
-    const bgLum = 0.005; // #0B0D10
-    const ratio = (lum + 0.05) / (bgLum + 0.05);
+    let bgLum = 0.005; // 'dark' (#0E1318)
+    if (this.previewBackground === 'light') {
+      bgLum = 0.88; // #F1F5F9
+    } else if (this.previewBackground === 'foliage') {
+      bgLum = 0.04; // #1A3323
+    } else if (this.previewBackground === 'desert') {
+      bgLum = 0.07; // #3D3020
+    } else if (this.previewBackground === 'urban') {
+      bgLum = 0.03; // #222831
+    }
+    const maxLum = Math.max(lum, bgLum);
+    const minLum = Math.min(lum, bgLum);
+    const ratio = (maxLum + 0.05) / (minLum + 0.05);
     return Math.round(ratio * 10) / 10;
   });
 
@@ -596,7 +620,7 @@ export class EditorState {
 
   newCrosshair() {
     this.pushUndo();
-    const newId = `ch-${Date.now()}`;
+    const newId = uniqueId('ch');
     const created: Crosshair = {
       id: newId,
       name: `New Crosshair ${this.library.length + 1}`,
@@ -611,7 +635,7 @@ export class EditorState {
       opacity: 1.0,
       layers: [
         {
-          id: `layer-${Date.now()}`,
+          id: uniqueId('layer'),
           name: 'Arms ×4',
           visible: true,
           locked: false,
@@ -675,7 +699,7 @@ export class EditorState {
 
   addLayer(type: ShapeType, name?: string) {
     this.pushUndo();
-    const id = `layer-${Date.now()}`;
+    const id = uniqueId('layer');
     const layerColor = this.crosshair.layers[0]?.color || '#00FFFF';
 
     let shape: ShapeData;
@@ -726,8 +750,23 @@ export class EditorState {
         };
         defaultName ||= 'Custom Vector';
         break;
-      case 'Cross':
+      case 'Rect':
+        shape = { type: 'Rect', width: 12, height: 8, cornerRadius: 0 };
+        defaultName ||= 'Rectangle / Box';
+        break;
+      case 'Arc':
+        shape = { type: 'Arc', radius: 10, thickness: 2, startAngle: 0, endAngle: 180 };
+        defaultName ||= 'Arc Segment';
+        break;
+      case 'Triangle':
+        shape = { type: 'Triangle', base: 10, height: 12 };
+        defaultName ||= 'Triangle';
+        break;
       case 'Plus':
+        shape = { type: 'Plus', length: 6, thickness: 2, gap: 2, centerHole: 0 };
+        defaultName ||= 'Plus Cross';
+        break;
+      case 'Cross':
       case 'LineArms':
       default:
         shape = {
@@ -782,7 +821,7 @@ export class EditorState {
       this.pushUndo();
       const orig = this.crosshair.layers[idx];
       const cloned: Layer = JSON.parse(JSON.stringify(orig));
-      cloned.id = `layer-${Date.now()}`;
+      cloned.id = uniqueId('layer');
       cloned.name = `${orig.name} (Copy)`;
       this.crosshair.layers.splice(idx + 1, 0, cloned);
       this.selectedLayerId = cloned.id;
@@ -834,6 +873,30 @@ export class EditorState {
       this.selectedLayer.shape.points = Math.round(value);
     } else if (propName === 'shape.angle' && this.selectedLayer.shape.angle !== undefined) {
       this.selectedLayer.shape.angle = value;
+    } else if (propName === 'shape.width' && this.selectedLayer.shape.width !== undefined) {
+      this.selectedLayer.shape.width = value;
+    } else if (propName === 'shape.height' && this.selectedLayer.shape.height !== undefined) {
+      this.selectedLayer.shape.height = value;
+    } else if (propName === 'shape.corner_radius' && this.selectedLayer.shape.cornerRadius !== undefined) {
+      this.selectedLayer.shape.cornerRadius = value;
+    } else if (propName === 'shape.base' && this.selectedLayer.shape.base !== undefined) {
+      this.selectedLayer.shape.base = value;
+    } else if (propName === 'shape.start_angle' && this.selectedLayer.shape.startAngle !== undefined) {
+      this.selectedLayer.shape.startAngle = value;
+    } else if (propName === 'shape.end_angle' && this.selectedLayer.shape.endAngle !== undefined) {
+      this.selectedLayer.shape.endAngle = value;
+    } else if (propName === 'shape.center_hole' && this.selectedLayer.shape.centerHole !== undefined) {
+      this.selectedLayer.shape.centerHole = value;
+    } else if (propName === 'effect.shadow_blur') {
+      this.selectedLayer.shadowBlur = value;
+    } else if (propName === 'effect.shadow_offset_x') {
+      this.selectedLayer.shadowOffsetX = value;
+    } else if (propName === 'effect.shadow_offset_y') {
+      this.selectedLayer.shadowOffsetY = value;
+    } else if (propName === 'effect.blur_radius') {
+      this.selectedLayer.blurRadius = value;
+    } else if (propName === 'effect.glow_radius') {
+      this.selectedLayer.glowRadius = value;
     } else if (propName === 'layer.offset_x' || propName === 'transform.offset_x') {
       this.selectedLayer.offsetX = value;
     } else if (propName === 'layer.offset_y' || propName === 'transform.offset_y') {
@@ -872,6 +935,230 @@ export class EditorState {
     } else if (!this.selectedLayer.glowColor) {
       this.selectedLayer.glowColor = this.selectedLayer.color;
     }
+  }
+
+  setPreviewBackground(bg: PreviewBackground) {
+    this.previewBackground = bg;
+  }
+
+  setLayerShadow(color: string, blur: number, offsetX: number, offsetY: number) {
+    if (!this.selectedLayer) return;
+    this.pushUndo();
+    this.selectedLayer.shadowColor = color;
+    this.selectedLayer.shadowBlur = blur;
+    this.selectedLayer.shadowOffsetX = offsetX;
+    this.selectedLayer.shadowOffsetY = offsetY;
+  }
+
+  setLayerBlur(radius: number) {
+    if (!this.selectedLayer) return;
+    this.pushUndo();
+    this.selectedLayer.blurRadius = radius;
+  }
+
+  // Import / Export (§11, §17.4 Screen 16)
+  openImportExport(tab: 'import' | 'export' = 'import') {
+    this.importExportTab = tab;
+    this.importExportModalOpen = true;
+  }
+
+  closeImportExport() {
+    this.importExportModalOpen = false;
+  }
+
+  exportCrosshairJson(): string {
+    return JSON.stringify(this.crosshair, null, 2);
+  }
+
+  exportCrosshairCode(): string {
+    try {
+      const payload = JSON.stringify(this.crosshair);
+      return `XH1-${btoa(payload)}`;
+    } catch {
+      return `XH1-${encodeURIComponent(JSON.stringify(this.crosshair))}`;
+    }
+  }
+
+  importCrosshair(input: string): { success: boolean; message: string } {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return { success: false, message: 'Input is empty' };
+    }
+
+    this.pushUndo();
+
+    // 1. JSON format (.xhair)
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed.layers && Array.isArray(parsed.layers)) {
+          const imported: Crosshair = {
+            id: parsed.id || `ch-${Date.now()}`,
+            name: parsed.name || 'Imported Crosshair',
+            description: parsed.description || 'Imported from .xhair file',
+            author: parsed.author || 'Imported',
+            tags: parsed.tags || ['Imported'],
+            favorite: Boolean(parsed.favorite),
+            formatVersion: parsed.formatVersion || 1,
+            offsetX: parsed.offsetX ?? 0,
+            offsetY: parsed.offsetY ?? 0,
+            scale: parsed.scale ?? 1.0,
+            opacity: parsed.opacity ?? 1.0,
+            layers: parsed.layers,
+            animation: parsed.animation,
+          };
+          this.library.push(imported);
+          this.crosshair = JSON.parse(JSON.stringify(imported));
+          this.selectedLayerId = imported.layers[0]?.id || '';
+          return { success: true, message: `Successfully imported "${imported.name}" (.xhair format)` };
+        }
+      } catch (err: unknown) {
+        return { success: false, message: `Invalid JSON syntax: ${err instanceof Error ? err.message : String(err)}` };
+      }
+    }
+
+    // 2. Share Code (XH1-...)
+    if (trimmed.startsWith('XH1-')) {
+      const code = trimmed.slice(4);
+      try {
+        const decoded = atob(code);
+        const parsed = JSON.parse(decoded);
+        if (parsed.layers && Array.isArray(parsed.layers)) {
+          const imported: Crosshair = {
+            id: uniqueId('ch'),
+            name: parsed.name ? `${parsed.name} (Shared)` : 'Imported Share Code',
+            description: parsed.description || 'Imported via XH1 share code',
+            author: parsed.author || 'Shared',
+            tags: parsed.tags || ['ShareCode'],
+            favorite: false,
+            formatVersion: 1,
+            offsetX: parsed.offsetX ?? 0,
+            offsetY: parsed.offsetY ?? 0,
+            scale: parsed.scale ?? 1.0,
+            opacity: parsed.opacity ?? 1.0,
+            layers: parsed.layers,
+          };
+          this.library.push(imported);
+          this.crosshair = JSON.parse(JSON.stringify(imported));
+          this.selectedLayerId = imported.layers[0]?.id || '';
+          return { success: true, message: `Successfully imported "${imported.name}" from share code` };
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // 3. Valorant In-Game Crosshair Code (e.g. 0;P;c;5;h;0;0l;4;0v;2;0g;1;0a;1)
+    if (trimmed.startsWith('0;') || trimmed.includes(';0l;') || trimmed.includes(';0t;')) {
+      try {
+        const tokens = trimmed.split(';');
+        const map: Record<string, string> = {};
+        for (let i = 0; i < tokens.length; i += 2) {
+          if (i + 1 < tokens.length) {
+            map[tokens[i]] = tokens[i + 1];
+          }
+        }
+
+        const colorMap: Record<string, string> = {
+          '0': '#FFFFFF',
+          '1': '#00FF00',
+          '2': '#7FFF00',
+          '3': '#DFFF00',
+          '4': '#FFFF00',
+          '5': '#00FFFF',
+          '6': '#FF1493',
+          '7': '#FF0000',
+        };
+        const color = map['u'] ? `#${map['u'].replace('#', '')}` : (colorMap[map['c'] || '5'] || '#00FFFF');
+        const len = parseFloat(map['0l'] || '4') || 4;
+        const thick = parseFloat(map['0v'] || map['0t'] || '2') || 2;
+        const gap = parseFloat(map['0g'] || map['0o'] || '2') || 2;
+        const opacity = parseFloat(map['0a'] || '1') || 1;
+        const hasDot = map['d'] === '1';
+        const dotSize = parseFloat(map['z'] || '2') || 2;
+
+        const layers: Layer[] = [
+          {
+            id: uniqueId('val-arms'),
+            name: 'Inner Lines',
+            visible: true,
+            locked: false,
+            shape: { type: 'LineArms', length: len, thickness: thick, gap, armCount: 4 },
+            color,
+            opacity,
+            offsetX: 0,
+            offsetY: 0,
+            rotation: 0,
+          },
+        ];
+
+        if (hasDot) {
+          layers.push({
+            id: uniqueId('val-dot'),
+            name: 'Center Dot',
+            visible: true,
+            locked: false,
+            shape: { type: 'Dot', diameter: dotSize, isSquare: true },
+            color,
+            opacity: 1.0,
+            offsetX: 0,
+            offsetY: 0,
+            rotation: 0,
+          });
+        }
+
+        const imported: Crosshair = {
+          id: uniqueId('ch-val'),
+          name: 'Valorant Profile',
+          description: `Imported from Valorant code: ${trimmed.slice(0, 24)}...`,
+          author: 'Valorant',
+          tags: ['Valorant', 'Import'],
+          favorite: false,
+          formatVersion: 1,
+          offsetX: 0,
+          offsetY: 0,
+          scale: 1.0,
+          opacity: 1.0,
+          layers,
+        };
+        this.library.push(imported);
+        this.crosshair = JSON.parse(JSON.stringify(imported));
+        this.selectedLayerId = imported.layers[0]?.id || '';
+        return { success: true, message: 'Successfully parsed and imported Valorant crosshair code' };
+      } catch (err: unknown) {
+        return { success: false, message: `Failed to parse Valorant crosshair code: ${err instanceof Error ? err.message : String(err)}` };
+      }
+    }
+
+    return { success: false, message: 'Unrecognized format. Expected .xhair JSON, XH1- share code, or Valorant code' };
+  }
+
+  // Resolution Management (§6.3, §17.4 Screen 14)
+  openResolutionModal() {
+    this.resolutionModalOpen = true;
+  }
+
+  closeResolutionModal() {
+    this.resolutionModalOpen = false;
+  }
+
+  selectResolutionProfile(profile: ResolutionProfile) {
+    this.activeProfile = profile;
+  }
+
+  addCustomResolutionProfile(name: string, width: number, height: number, isStretched: boolean) {
+    const id = uniqueId(`custom-${width}x${height}`);
+    const newProfile: ResolutionProfile = {
+      id,
+      name: `${name} (${width}×${height}${isStretched ? ' Stretched' : ''})`,
+      width: Math.max(320, Math.round(width)),
+      height: Math.max(240, Math.round(height)),
+      isStretched,
+      isNative: false,
+      dpiScale: 1.0,
+    };
+    RESOLUTION_PROFILES.push(newProfile);
+    this.activeProfile = newProfile;
   }
 
   // Calibration Methods (§6.7, M8)

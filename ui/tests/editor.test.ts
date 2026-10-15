@@ -236,4 +236,121 @@ describe('Editor State & Logic', () => {
     state.removeDynamicBinding('test-scale-spread');
     expect(state.dynamicBindings.length).toBe(initialBindings);
   });
+
+  it('adds and configures all shape primitives (Rect, Arc, Triangle, Plus)', () => {
+    // 1. Rect
+    state.addLayer('Rect');
+    expect(state.selectedLayer.shape.type).toBe('Rect');
+    state.updateProperty('shape.width', 24);
+    state.updateProperty('shape.height', 16);
+    state.updateProperty('shape.corner_radius', 4);
+    expect(state.selectedLayer.shape.width).toBe(24);
+    expect(state.selectedLayer.shape.height).toBe(16);
+    expect(state.selectedLayer.shape.cornerRadius).toBe(4);
+
+    // 2. Arc
+    state.addLayer('Arc');
+    expect(state.selectedLayer.shape.type).toBe('Arc');
+    state.updateProperty('shape.radius', 14);
+    state.updateProperty('shape.thickness', 3);
+    state.updateProperty('shape.start_angle', 45);
+    state.updateProperty('shape.end_angle', 225);
+    expect(state.selectedLayer.shape.radius).toBe(14);
+    expect(state.selectedLayer.shape.thickness).toBe(3);
+    expect(state.selectedLayer.shape.startAngle).toBe(45);
+    expect(state.selectedLayer.shape.endAngle).toBe(225);
+
+    // 3. Triangle
+    state.addLayer('Triangle');
+    expect(state.selectedLayer.shape.type).toBe('Triangle');
+    state.updateProperty('shape.base', 18);
+    state.updateProperty('shape.height', 20);
+    expect(state.selectedLayer.shape.base).toBe(18);
+    expect(state.selectedLayer.shape.height).toBe(20);
+
+    // 4. Plus
+    state.addLayer('Plus');
+    expect(state.selectedLayer.shape.type).toBe('Plus');
+    state.updateProperty('shape.length', 8);
+    state.updateProperty('shape.thickness', 2);
+    state.updateProperty('shape.gap', 3);
+    state.updateProperty('shape.center_hole', 4);
+    expect(state.selectedLayer.shape.length).toBe(8);
+    expect(state.selectedLayer.shape.thickness).toBe(2);
+    expect(state.selectedLayer.shape.gap).toBe(3);
+    expect(state.selectedLayer.shape.centerHole).toBe(4);
+  });
+
+  it('configures visual effects: glow, drop shadow, and blur (§4.6)', () => {
+    state.setLayerGlow(6, '#36F2CB');
+    expect(state.selectedLayer.glowRadius).toBe(6);
+    expect(state.selectedLayer.glowColor).toBe('#36F2CB');
+
+    state.setLayerShadow('#000000', 4, 1, 2);
+    expect(state.selectedLayer.shadowColor).toBe('#000000');
+    expect(state.selectedLayer.shadowBlur).toBe(4);
+    expect(state.selectedLayer.shadowOffsetX).toBe(1);
+    expect(state.selectedLayer.shadowOffsetY).toBe(2);
+
+    state.setLayerBlur(1.5);
+    expect(state.selectedLayer.blurRadius).toBe(1.5);
+  });
+
+  it('handles universal import and export (§11, §17.4 Screen 16)', () => {
+    // 1. Export JSON and Share Code
+    const jsonStr = state.exportCrosshairJson();
+    expect(jsonStr).toContain('"name": "Cyan Gap"');
+    const shareCode = state.exportCrosshairCode();
+    expect(shareCode.startsWith('XH1-')).toBe(true);
+
+    // 2. Import .xhair JSON
+    const importRes1 = state.importCrosshair(jsonStr);
+    expect(importRes1.success).toBe(true);
+    expect(state.crosshair.name).toBe('Cyan Gap');
+
+    // 3. Import XH1 Share Code
+    const importRes2 = state.importCrosshair(shareCode);
+    expect(importRes2.success).toBe(true);
+
+    // 4. Import Valorant in-game code
+    const valCode = '0;P;c;5;h;0;0l;4;0v;2;0g;1;0a;1;d;1;z;2';
+    const importRes3 = state.importCrosshair(valCode);
+    expect(importRes3.success).toBe(true);
+    expect(state.crosshair.name).toBe('Valorant Profile');
+    expect(state.crosshair.layers.length).toBe(2);
+    expect(state.crosshair.layers[0].shape.type).toBe('LineArms');
+    expect(state.crosshair.layers[1].shape.type).toBe('Dot');
+
+    // 5. Error handling
+    const errRes = state.importCrosshair('invalid gibberish');
+    expect(errRes.success).toBe(false);
+  });
+
+  it('adds custom resolution profiles and manages stretch parity (§6.3)', () => {
+    const initialCount = RESOLUTION_PROFILES.length;
+    state.addCustomResolutionProfile('CS2 Stretch', 1440, 1080, true);
+    expect(RESOLUTION_PROFILES.length).toBe(initialCount + 1);
+    expect(state.activeProfile.width).toBe(1440);
+    expect(state.activeProfile.height).toBe(1080);
+    expect(state.activeProfile.isStretched).toBe(true);
+  });
+
+  it('calculates contrast against all 5 tactical backgrounds (§6.8)', () => {
+    state.setPreviewBackground('dark');
+    const scoreDark = state.visibilityScore;
+    expect(scoreDark).toBeGreaterThan(1);
+
+    state.setPreviewBackground('light');
+    const scoreLight = state.visibilityScore;
+    expect(scoreLight).toBeGreaterThan(1);
+
+    state.setPreviewBackground('foliage');
+    expect(state.visibilityScore).toBeGreaterThan(1);
+
+    state.setPreviewBackground('desert');
+    expect(state.visibilityScore).toBeGreaterThan(1);
+
+    state.setPreviewBackground('urban');
+    expect(state.visibilityScore).toBeGreaterThan(1);
+  });
 });

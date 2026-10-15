@@ -44,6 +44,20 @@
     </Tooltip>
 
     <Tooltip
+      title="Import / Export"
+      description="Import or share crosshair codes (.xhair, XH1 share code, Valorant code)"
+      shortcut="Ctrl+I"
+    >
+      <button
+        class="btn btn-icon"
+        onclick={() => editorState.openImportExport()}
+        aria-label="Import or Export Crosshair"
+      >
+        ⇄
+      </button>
+    </Tooltip>
+
+    <Tooltip
       title="Command Palette"
       description="Open searchable spotlight command palette"
       shortcut="Ctrl+K"
@@ -100,11 +114,11 @@
 
     <Tooltip
       title="Resolution Profile"
-      description="Target game render resolution and stretch mode"
-      details="Click to cycle active profile"
+      description="Target game render resolution, stretch mode & parity diagnostic (§6.3)"
+      details="Click to manage & add custom resolutions"
     >
-      <button class="pill" onclick={cycleProfile}>
-        {editorState.activeProfile.name}
+      <button class="pill" onclick={() => editorState.openResolutionModal()}>
+        📺 {editorState.activeProfile.name}
       </button>
     </Tooltip>
 

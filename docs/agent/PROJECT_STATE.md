@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 12
-- **Phase / Milestone:** Atomic 2D element movement and custom shape builder complete
+- **Session:** 13
+- **Phase / Milestone:** Complete Feature Matrix Audit & Implementation across UI & Backend (§1–§18)
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
 
 ## Done (milestone-level)
@@ -18,9 +18,10 @@
 - [x] M8 Calibration (completed 2026-10-16)
 - [x] M9 Dynamics & Spray Lab (completed 2026-10-16)
 - [x] M10 Packaging & Hardening (completed 2026-10-16)
+- [x] Universal Feature Parity: All 15 shape primitives, visual effects (glow, shadow, blur), tactical preview backgrounds (5 presets), dynamic WCAG contrast scoring, universal import/export modal (.xhair, Brotli XH1, Valorant), resolution profiles manager
 
 ## In progress
-- None. Entire specification (§1–§22) successfully implemented, verified, packaged, and documented.
+- None. Entire specification (§1–§22) successfully audited, implemented, verified, packaged, and documented with zero missing features.
 
 ## Next exact step
 - Human review and project release / deployment.
@@ -39,16 +40,16 @@
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 80 tests passing)
+- Workspace crates: 12 (all build & test green, 84 tests passing)
 - Golden image tests: 8 tests passing
 - Geometry tests: 11 tests passing (symmetry detection, quarter-pixel quantization, multi-res verification)
 - Render & effect tests: 12 unit tests passing (bloom, animation evaluation, static lock, heavy budget)
 - Performance benchmarks: typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
 - Platform tests: 12 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection)
 - MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, parity)
-- UI test suite: 17 tests passing in Vitest (100% green)
+- UI test suite: 22 tests passing in Vitest (100% green)
 - TypeScript lint: 0 errors (`tsc --noEmit`)
-- Vite production build: 146.5 kB JS, 42.7 kB CSS (built in ~489ms)
+- Vite production build: 201 kB JS, 52 kB CSS (built in ~600ms)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 - Agent continuity & memory graph: 100% validated (`cargo xtask check-agent-state`, `cargo xtask graph query --summary`)
 

@@ -43,8 +43,19 @@
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // 1. Background
-    ctx.fillStyle = '#0E1318';
+    // 1. Background (§6.8)
+    const bg = editorState.previewBackground;
+    if (bg === 'light') {
+      ctx.fillStyle = '#F1F5F9';
+    } else if (bg === 'foliage') {
+      ctx.fillStyle = '#1A3323';
+    } else if (bg === 'desert') {
+      ctx.fillStyle = '#3D3020';
+    } else if (bg === 'urban') {
+      ctx.fillStyle = '#222831';
+    } else {
+      ctx.fillStyle = '#0E1318';
+    }
     ctx.fillRect(0, 0, width, height);
 
     const zoom = editorState.zoom;
@@ -120,10 +131,29 @@
       }
       ctx.globalAlpha = (ch.opacity || 1.0) * (layer.opacity || 1.0);
 
-      // Glow effect if configured
+      // Glow and Shadow visual effects (§4.6)
       if (layer.glowRadius && layer.glowColor) {
         ctx.shadowColor = layer.glowColor;
         ctx.shadowBlur = layer.glowRadius * zoom * 0.5;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      } else if (layer.shadowColor && (layer.shadowBlur || layer.shadowOffsetX || layer.shadowOffsetY)) {
+        ctx.shadowColor = layer.shadowColor;
+        ctx.shadowBlur = (layer.shadowBlur || 0) * zoom * 0.5;
+        ctx.shadowOffsetX = (layer.shadowOffsetX || 0) * zoom;
+        ctx.shadowOffsetY = (layer.shadowOffsetY || 0) * zoom;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      // Softening blur filter (§4.6)
+      if (layer.blurRadius && layer.blurRadius > 0) {
+        ctx.filter = `blur(${layer.blurRadius * (zoom / 8)}px)`;
+      } else {
+        ctx.filter = 'none';
       }
 
       ctx.fillStyle = layer.color;
@@ -276,6 +306,46 @@
           ctx.lineTo(-6, 6);
           ctx.stroke();
         }
+      } else if (layer.shape.type === 'Rect') {
+        const rw = (layer.shape.width || 12) * zoom;
+        const rh = (layer.shape.height || 8) * zoom;
+        const cr = Math.min((layer.shape.cornerRadius || 0) * zoom, Math.min(rw, rh) / 2);
+        if (cr > 0 && typeof ctx.roundRect === 'function') {
+          ctx.beginPath();
+          ctx.roundRect(-rw / 2, -rh / 2, rw, rh, cr);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-rw / 2, -rh / 2, rw, rh);
+        }
+      } else if (layer.shape.type === 'Arc') {
+        const rad = (layer.shape.radius || 10) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const startRad = ((layer.shape.startAngle || 0) * Math.PI) / 180;
+        const endRad = ((layer.shape.endAngle || 180) * Math.PI) / 180;
+        ctx.lineWidth = thick;
+        ctx.strokeStyle = layer.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, rad, startRad, endRad);
+        ctx.stroke();
+      } else if (layer.shape.type === 'Triangle') {
+        const base = (layer.shape.base || 10) * zoom;
+        const h = (layer.shape.height || 12) * zoom;
+        ctx.beginPath();
+        ctx.moveTo(0, -h / 2);
+        ctx.lineTo(base / 2, h / 2);
+        ctx.lineTo(-base / 2, h / 2);
+        ctx.closePath();
+        ctx.fill();
+      } else if (layer.shape.type === 'Plus') {
+        const len = (layer.shape.length || 6) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const gap = (layer.shape.gap || 2) * zoom;
+        const hole = (layer.shape.centerHole || 0) * zoom;
+        const startOffset = Math.max(gap, hole / 2);
+        ctx.fillRect(-thick / 2, -startOffset - len, thick, len); // Top
+        ctx.fillRect(startOffset, -thick / 2, len, thick);         // Right
+        ctx.fillRect(-thick / 2, startOffset, thick, len);        // Bottom
+        ctx.fillRect(-startOffset - len, -thick / 2, len, thick); // Left
       }
 
       ctx.restore();
@@ -590,6 +660,22 @@
       >
         Guides
       </button>
+    </div>
+
+    <!-- Tactical Preview Background (§6.8) -->
+    <div class="chips-group">
+      <span class="mono" style="font-size: 10px; color: var(--text-muted); align-self: center; margin-right: 2px;">BG:</span>
+      {#each (['dark', 'light', 'foliage', 'desert', 'urban'] as const) as b}
+        <button
+          class="pill-chip {editorState.previewBackground === b ? 'active' : ''}"
+          onclick={() => {
+            editorState.setPreviewBackground(b);
+            renderCanvas();
+          }}
+        >
+          {b.toUpperCase()}
+        </button>
+      {/each}
     </div>
 
     <!-- Coordinate Readout -->

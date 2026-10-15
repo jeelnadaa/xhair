@@ -5,6 +5,8 @@ export type ShapeType =
   | 'Circle'
   | 'Ring'
   | 'Arc'
+  | 'Rect'
+  | 'Triangle'
   | 'Polygon'
   | 'Star'
   | 'Chevron'
@@ -16,20 +18,31 @@ export type BlendMode = 'Normal' | 'Screen' | 'Multiply' | 'Additive';
 
 export type SymmetryType = 'None' | 'MirrorH' | 'MirrorV' | 'MirrorHV' | 'Radial';
 
+export type PreviewBackground = 'dark' | 'light' | 'foliage' | 'desert' | 'urban';
+
 export interface ShapeData {
   type: ShapeType;
-  // Line arms / TShape
+  // Line arms / TShape / Plus
   length?: number;
   thickness?: number;
   gap?: number;
   armCount?: number;
   armOffsets?: Array<{ x: number; y: number }>;
+  centerHole?: number;
   // Dot
   diameter?: number;
   isSquare?: boolean;
-  // Ring / Circle
+  // Ring / Circle / Arc
   radius?: number;
-  // Cross / Plus / T-Shape / Chevron / Polygon / Star
+  startAngle?: number;
+  endAngle?: number;
+  // Rect
+  width?: number;
+  height?: number;
+  cornerRadius?: number;
+  // Triangle
+  base?: number;
+  // Chevron / Polygon / Star
   innerOffset?: number;
   armThickness?: number;
   angle?: number;
@@ -52,6 +65,11 @@ export interface Layer {
   rotation: number;
   glowRadius?: number;
   glowColor?: string;
+  shadowColor?: string;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowBlur?: number;
+  blurRadius?: number;
 }
 
 export interface Crosshair {

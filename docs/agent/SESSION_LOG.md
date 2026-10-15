@@ -343,3 +343,30 @@
   - CI Fixes:
     - Updated `ui/pnpm-lock.yaml` to sync with `@types/node` and `vitest@5.0.5`, fixing `ERR_PNPM_OUTDATED_LOCKFILE`.
     - Updated `.github/workflows/release.yml` with `token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}`.
+
+## 2026-10-16 — Session 13
+- **Goal:** Comprehensive specification audit (§1–§18) and complete feature matrix implementation across UI and Backend with zero missing features.
+- **Audit & Implementation:**
+  - Full spec audit of `docs/spec/CROSSHAIR_OVERLAY_SPEC.md` against `crates/` backend and `ui/` frontend.
+  - Backend audit confirmed complete implementation of:
+    - All 15 shape kinds in `xhair-model` & `xhair-render`.
+    - Command bus, undo/redo, coalescing, diffs in `xhair-commands`.
+    - Geometry, alignment diagnostics, DPI scaling, and calibration in `xhair-geometry`.
+    - Import/export formats (`.xhair`, `.xhairpack`, Brotli `XH1-...` share codes, and Valorant parser in `xhair-format`).
+    - MCP tools suite with full command parity in `xhair-mcp`.
+  - Frontend gaps addressed and implemented in `ui/`:
+    - **Shape Primitives (§4.1–4.5):** Added full support for `Rect`, `Arc`, `Triangle`, and `Plus` across `types.ts`, `state.svelte.ts`, `CanvasGrid.svelte` rasterization, and `Inspector.svelte` parameter controls.
+    - **Visual Effects & Filters (§4.6):** Implemented Glow radius/color, Drop Shadow (color, blur, offset X, offset Y), and Softening Blur in both `Inspector.svelte` and HTML5 Canvas 2D rasterizer in `CanvasGrid.svelte`.
+    - **Tactical Backgrounds & Dynamic WCAG Scoring (§6.8):** Added 5 tactical preview backgrounds (`dark`, `light`, `foliage`, `desert`, `urban`) with bottom bar pill chip selector in `CanvasGrid.svelte` and updated `visibilityScore` to calculate real-time relative luminance contrast against the selected background.
+    - **Universal Import / Export Modal (§11, §17.4 Screen 16):** Created `ImportExportModal.svelte` supporting 1-click import and export of `.xhair` JSON files, `XH1-...` share codes, and in-game Valorant semicolon crosshair strings.
+    - **Resolution Profiles & Alignment Modal (§6.3, §17.4 Screen 14):** Created `ResolutionModal.svelte` allowing users to manage resolutions, add custom `W×H` profiles (stretched vs native), and inspect live aspect ratios and parity diagnostic reports.
+    - **Collision-Proof ID Generator:** Implemented monotonic `uniqueId()` generator to prevent millisecond timestamp collisions during rapid synchronous batch mutations.
+- **Tests & Quality:**
+  - `pnpm -C ui test`: 22 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Production bundle built cleanly with Vite.
+  - `cargo test --workspace`: 84 Rust tests passing across 12 workspace crates (100% green).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+
