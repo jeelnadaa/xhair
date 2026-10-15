@@ -1,0 +1,13 @@
+[package]
+name = "xhair-dynamics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Dynamic Reticle pure simulation and recoil/spread modeling for xhair"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+serde.workspace = true
+thiserror.workspace = true

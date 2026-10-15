@@ -1,0 +1,6 @@
+# Clippy configuration for xhair
+avoid-breaking-exported-api = false
+too-many-arguments-threshold = 8
+cognitive-complexity-threshold = 25
+type-complexity-threshold = 250
+single-char-binding-names-threshold = 4

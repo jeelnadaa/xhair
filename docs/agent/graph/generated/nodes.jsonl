@@ -1,0 +1,12 @@
+{"id":"crate:xhair-model","type":"Crate","name":"xhair-model","path":"crates/xhair-model","summary":"Domain models, validation, serialization, and migrations"}
+{"id":"crate:xhair-commands","type":"Crate","name":"xhair-commands","path":"crates/xhair-commands","summary":"Command bus, undo/redo, registry, property descriptors"}
+{"id":"crate:xhair-render","type":"Crate","name":"xhair-render","path":"crates/xhair-render","summary":"tiny-skia vector rasterizer, effects, blur, symmetry (native + wasm)"}
+{"id":"crate:xhair-geometry","type":"Crate","name":"xhair-geometry","path":"crates/xhair-geometry","summary":"Resolution, DPI, sub-pixel centering, snapping, and stretch math"}
+{"id":"crate:xhair-format","type":"Crate","name":"xhair-format","path":"crates/xhair-format","summary":".xhair, .xhairpack, share codes, Valorant code import"}
+{"id":"crate:xhair-library","type":"Crate","name":"xhair-library","path":"crates/xhair-library","summary":"Disk storage, folders, tags, slots, atomic persistence, fs watcher"}
+{"id":"crate:xhair-platform-win","type":"Crate","name":"xhair-platform-win","path":"crates/xhair-platform-win","summary":"Win32 layered window, monitors, hotkeys, foreground tracking, raw input"}
+{"id":"crate:xhair-dynamics","type":"Crate","name":"xhair-dynamics","path":"crates/xhair-dynamics","summary":"Dynamic Reticle pure simulation and recoil/spread curves"}
+{"id":"crate:xhair-mcp","type":"Crate","name":"xhair-mcp","path":"crates/xhair-mcp","summary":"Model Context Protocol (MCP) server generated from command registry"}
+{"id":"crate:xhair-app","type":"Crate","name":"xhair-app","path":"crates/xhair-app","summary":"Tauri shell, system tray, runtime modes, app wiring"}
+{"id":"crate:xhair-cli","type":"Crate","name":"xhair-cli","path":"crates/xhair-cli","summary":"CLI front-end for headless rendering, validation, and MCP stdio"}
+{"id":"crate:xtask","type":"Crate","name":"xtask","path":"xtask","summary":"Developer tooling for graph queries, continuity checks, and packaging"}

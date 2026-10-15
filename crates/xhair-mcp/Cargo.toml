@@ -1,0 +1,18 @@
+[package]
+name = "xhair-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Model Context Protocol (MCP) server generated from command registry for xhair"
+
+[dependencies]
+xhair-commands = { path = "../xhair-commands" }
+xhair-library = { path = "../xhair-library" }
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

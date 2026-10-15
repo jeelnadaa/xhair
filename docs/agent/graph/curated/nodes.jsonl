@@ -1,0 +1,8 @@
+{"id":"req:P1","type":"Requirement","name":"Overlay only","summary":"Never inject, hook, read memory, or capture screen of the game","tags":["safety","compliance"]}
+{"id":"req:P2","type":"Requirement","name":"Low RAM & CPU","summary":"Idle overlay target <= 20 MB; zero CPU render loop when static","tags":["performance"]}
+{"id":"req:P3","type":"Requirement","name":"One source of truth","summary":"One core library owns all state/logic via command bus; UI/MCP are thin clients","tags":["architecture"]}
+{"id":"req:P4","type":"Requirement","name":"Human/agent parity","summary":"All UI capabilities exist as commands and MCP tools","tags":["mcp","testing"]}
+{"id":"req:P5","type":"Requirement","name":"Schema-driven","summary":"Single declaration of properties generates UI controls, tooltips, validation, and MCP schemas","tags":["architecture"]}
+{"id":"req:P6","type":"Requirement","name":"Pixel accuracy","summary":"Provably correct screen center across all resolutions, DPIs, and stretch modes","tags":["geometry"]}
+{"id":"req:P7","type":"Requirement","name":"Clean documented code","summary":"Strict type safety, safe Win32 wrappers, no unwrap in production, comprehensive docs","tags":["quality"]}
+{"id":"adr:0001","type":"Decision","name":"Repository source of truth","summary":"Git repo files are canonical project memory; external MCP DBs are read-only mirrors","path":"docs/agent/DECISIONS/0001-repository-source-of-truth.md","tags":["memory","continuity"]}

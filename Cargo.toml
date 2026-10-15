@@ -1,0 +1,35 @@
+[workspace]
+members = [
+    "crates/xhair-model",
+    "crates/xhair-commands",
+    "crates/xhair-render",
+    "crates/xhair-geometry",
+    "crates/xhair-format",
+    "crates/xhair-library",
+    "crates/xhair-platform-win",
+    "crates/xhair-dynamics",
+    "crates/xhair-mcp",
+    "crates/xhair-app",
+    "crates/xhair-cli",
+    "xtask",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["jeelnadaa <jeelnadaa@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/jeelnadaa/xhair"
+readme = "README.md"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+schemars = { version = "0.8", features = ["uuid1"] }
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+uuid = { version = "1.10", features = ["v7", "serde"] }
+tokio = { version = "1.40", features = ["rt", "sync", "macros"] }

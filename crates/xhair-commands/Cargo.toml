@@ -1,0 +1,15 @@
+[package]
+name = "xhair-commands"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Command bus, undo/redo, and property descriptor registry for xhair"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "xhair-library"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Disk storage, folders, tags, slots, atomic writes, and filesystem watcher for xhair"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+xhair-format = { path = "../xhair-format" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,14 @@
+[package]
+name = "xhair-platform-win"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Windows Win32 layered overlay window, monitor enumeration, and hotkeys for xhair"
+
+[dependencies]
+xhair-geometry = { path = "../xhair-geometry" }
+xhair-render = { path = "../xhair-render" }
+thiserror.workspace = true
+tracing.workspace = true

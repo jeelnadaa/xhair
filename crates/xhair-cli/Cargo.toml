@@ -1,0 +1,20 @@
+[package]
+name = "xhair-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Command-line interface for offline rendering, format conversion, and MCP stdio proxy"
+
+[[bin]]
+name = "xhair-cli"
+path = "src/main.rs"
+
+[dependencies]
+xhair-commands = { path = "../xhair-commands" }
+xhair-render = { path = "../xhair-render" }
+xhair-format = { path = "../xhair-format" }
+xhair-mcp = { path = "../xhair-mcp" }
+anyhow.workspace = true
+tracing.workspace = true

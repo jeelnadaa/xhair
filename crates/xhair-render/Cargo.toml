@@ -1,0 +1,13 @@
+[package]
+name = "xhair-render"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Deterministic CPU rasterizer and effects engine for xhair (native + wasm32)"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+xhair-geometry = { path = "../xhair-geometry" }
+thiserror.workspace = true

@@ -1,0 +1,14 @@
+[package]
+name = "xhair-format"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "File format encoders, decoders, Brotli share codes, and migrations for xhair"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "xhair-geometry"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Resolution, DPI, edge-vs-center, snapping, and stretch math for xhair"
+
+[dependencies]
+xhair-model = { path = "../xhair-model" }
+serde.workspace = true
+schemars.workspace = true
