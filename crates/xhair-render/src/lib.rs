@@ -39,6 +39,7 @@ mod tests {
     use xhair_model::units::Rgba;
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_buffer_limits() {
         assert!(MAX_BLUR_BUFFER_DIMENSION <= MAX_OVERLAY_DIMENSION);
     }

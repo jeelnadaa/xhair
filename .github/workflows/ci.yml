@@ -45,6 +45,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm -C ui install --frozen-lockfile
       - name: Test
         run: pnpm -C ui test
       - name: Lint

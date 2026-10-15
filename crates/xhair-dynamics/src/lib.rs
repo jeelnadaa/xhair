@@ -138,8 +138,10 @@ mod tests {
             mode: BindingMode::Add,
         };
 
-        let mut drivers = DynamicDrivers::default();
-        drivers.spread = 1.0;
+        let mut drivers = DynamicDrivers {
+            spread: 1.0,
+            ..Default::default()
+        };
         assert_eq!(binding.evaluate(&drivers), 2.0);
 
         drivers.spread = 10.0;
@@ -178,8 +180,10 @@ mod tests {
             mode: BindingMode::Add,
         };
 
-        let mut drivers = DynamicDrivers::default();
-        drivers.spread = 10.0; // out_val = 5.0
+        let drivers = DynamicDrivers {
+            spread: 10.0, // out_val = 5.0
+            ..Default::default()
+        };
 
         binding::apply_bindings(&mut xhair, &[binding], &drivers);
 

@@ -43,5 +43,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - name: Install UI dependencies and build
+        run: |
+          pnpm -C ui install --frozen-lockfile
+          pnpm -C ui build
       - name: Build Package
         run: cargo run --package xtask -- package --version ${{ needs.release-please.outputs.version }}

@@ -277,7 +277,7 @@ fn test_resources_and_prompts() {
     let prompt_get_resp = handle_request(&ctx, prompt_get_req).expect("Prompt get response");
     assert!(prompt_get_resp.error.is_none());
     let messages = &prompt_get_resp.result.unwrap()["messages"];
-    assert!(messages.as_array().unwrap().len() >= 1);
+    assert!(!messages.as_array().unwrap().is_empty());
 }
 
 #[test]

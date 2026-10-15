@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn test_current_exe_path() {
         let path = get_current_exe_path().unwrap();
-        assert!(path.exists() || path.extension().map_or(false, |e| e == "exe"));
+        assert!(path.exists() || path.extension().is_some_and(|e| e == "exe"));
     }
 
     #[test]
