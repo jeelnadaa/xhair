@@ -78,3 +78,18 @@ fn test_overlay_config_defaults() {
         vec!["VALORANT-Win64-Shipping.exe"]
     );
 }
+
+#[test]
+fn test_spawn_and_render_overlay() {
+    let xhair = xhair_model::crosshair::Crosshair::new_classic("Test Overlay");
+    let profile = xhair_geometry::ResolutionProfile::default_1080p();
+    let config = OverlayConfig {
+        visibility_mode: VisibilityMode::AlwaysShow,
+        follow_game_window: false,
+        ..Default::default()
+    };
+    let handle =
+        xhair_platform_win::spawn_overlay(xhair, profile, config).expect("Failed to spawn overlay");
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    handle.stop();
+}

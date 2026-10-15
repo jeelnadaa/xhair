@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 13
-- **Phase / Milestone:** Complete Feature Matrix Audit & Implementation across UI & Backend (§1–§18)
+- **Session:** 14
+- **Phase / Milestone:** Native Desktop Shell (tao+wry), Profile Saving & Overlay Centering Verification
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
 
 ## Done (milestone-level)

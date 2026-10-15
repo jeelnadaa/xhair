@@ -370,3 +370,27 @@
   - `cargo fmt --check`: 0 diffs.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
 
+## 2026-10-16 — Session 14
+- **Goal:** Resolve profile saving, overlay centering/visibility, and host UI in native desktop application window.
+- **Implemented:**
+  - **Native Desktop App Window (§3.1, §1.4):** Embedded `tao` (0.36) and `wry` (0.56) native webview into `crates/xhair-app`. Replaced external web browser launch with a dedicated, native desktop application window titled "XHAIR" hosting the embedded UI, running directly on the main UI thread with native min/max/close controls and zero browser dependencies.
+  - **Save Profile & LocalStorage Persistence (§10):**
+    - Implemented `saveCurrentProfile()` and `renameCrosshair()` in `ui/src/lib/state.svelte.ts`.
+    - Automatically persists active crosshair profile to library and `localStorage` (`xhair_library`, `xhair_active_crosshair`).
+    - Added a prominent "💾 Save Profile" button in `TopBar.svelte` with dynamic feedback pill ("✓ Saved") and keyboard shortcut (`Ctrl+S` / `Cmd+S`).
+    - Added inline profile renaming directly from the TopBar title.
+  - **Overlay Visibility & True Center Alignment (§6.4, §8.1):**
+    - Corrected screen center calculation in `crates/xhair-geometry/src/mapping.rs`: reticle center is accurately centered at `out_x + out_w / 2.0` across all display modes (Native, Stretched, Letterbox, Pillarbox).
+    - Fixed overlay window position and visibility in `crates/xhair-platform-win/src/overlay.rs`:
+      - Defaulted `follow_game_window: false` for standalone launch so it centers directly on the primary display.
+      - Added strict `is_game_foreground(&config.target_game_images)` check so non-game windows (e.g. terminals or explorer) never shift overlay coordinates.
+      - Added a periodic Win32 timer (`WM_TIMER`, 200ms) to ensure overlay stays topmost (`HWND_TOPMOST | SWP_SHOWWINDOW`) and continuously reacts to foreground window changes.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 85 Rust tests passing across 12 crates (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings across entire workspace.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: 100% validated.
+  - `cargo run --package xtask -- graph --summary`: 100% validated.
+

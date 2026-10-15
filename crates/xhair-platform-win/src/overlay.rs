@@ -18,11 +18,11 @@ use windows::Win32::UI::HiDpi::{
     SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, PostMessageW,
-    PostQuitMessage, RegisterClassW, SetWindowDisplayAffinity, SetWindowPos, ShowWindow,
-    TranslateMessage, UpdateLayeredWindow, HWND_TOPMOST, MSG, SWP_NOACTIVATE, SW_HIDE,
-    SW_SHOWNOACTIVATE, ULW_ALPHA, WNDCLASSW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-    WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetMessageW, KillTimer,
+    PostMessageW, PostQuitMessage, RegisterClassW, SetTimer, SetWindowDisplayAffinity,
+    SetWindowPos, ShowWindow, TranslateMessage, UpdateLayeredWindow, HWND_TOPMOST, MSG,
+    SWP_NOACTIVATE, SWP_SHOWWINDOW, SW_HIDE, SW_SHOWNOACTIVATE, ULW_ALPHA, WM_TIMER, WNDCLASSW,
+    WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
 };
 use xhair_geometry::{GeometryMapping, ResolutionProfile};
 use xhair_model::crosshair::Crosshair;
@@ -248,6 +248,11 @@ fn run_overlay_thread(
     // Initial render and display
     render_and_update(hwnd, &crosshair, &profile, &config);
 
+    // Set a periodic 200ms timer to check foreground focus and refresh overlay positioning (§8.1)
+    unsafe {
+        let _ = SetTimer(hwnd, 1, 200, None);
+    }
+
     // Win32 Message Loop
     let mut msg = MSG::default();
     loop {
@@ -256,7 +261,7 @@ fn run_overlay_thread(
             break;
         }
 
-        if msg.message == WM_APP_OVERLAY_UPDATE {
+        if msg.message == WM_APP_OVERLAY_UPDATE || msg.message == WM_TIMER {
             while let Ok(cmd) = cmd_rx.try_recv() {
                 match cmd {
                     OverlayCommand::SetCrosshair(new_xhair) => {
@@ -296,6 +301,7 @@ fn run_overlay_thread(
                     }
                     OverlayCommand::Quit => {
                         unsafe {
+                            let _ = KillTimer(hwnd, 1);
                             let _ = DestroyWindow(hwnd);
                             PostQuitMessage(0);
                         }
@@ -335,7 +341,7 @@ pub fn render_and_update(
     }
 
     // Determine target render geometry and center point
-    let fg_info = if config.follow_game_window {
+    let fg_info = if config.follow_game_window && is_game_foreground(&config.target_game_images) {
         get_foreground_window_info().ok().flatten()
     } else {
         None
@@ -493,7 +499,7 @@ pub fn render_and_update(
             win_y,
             win_w as i32,
             win_h as i32,
-            SWP_NOACTIVATE,
+            SWP_NOACTIVATE | SWP_SHOWWINDOW,
         );
         let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
     }

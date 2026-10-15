@@ -314,9 +314,45 @@ export function uniqueId(prefix: string): string {
   return `${prefix}-${Date.now()}-${idCounter}`;
 }
 
+function loadSavedLibrary(): Crosshair[] {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('xhair_library');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load library from localStorage:', e);
+    }
+  }
+  return JSON.parse(JSON.stringify(PRESET_LIBRARY));
+}
+
+function loadSavedCrosshair(defaultLib: Crosshair[]): Crosshair {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('xhair_active_crosshair');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.id) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load active crosshair from localStorage:', e);
+    }
+  }
+  return defaultLib[0] ? JSON.parse(JSON.stringify(defaultLib[0])) : JSON.parse(JSON.stringify(INITIAL_CROSSHAIR));
+}
+
 export class EditorState {
-  crosshair = $state<Crosshair>(JSON.parse(JSON.stringify(INITIAL_CROSSHAIR)));
-  library = $state<Crosshair[]>(JSON.parse(JSON.stringify(PRESET_LIBRARY)));
+  crosshair = $state<Crosshair>(JSON.parse(JSON.stringify(loadSavedCrosshair(loadSavedLibrary()))));
+  library = $state<Crosshair[]>(JSON.parse(JSON.stringify(loadSavedLibrary())));
+  saveStatus = $state<'idle' | 'saving' | 'saved'>('idle');
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
   selectedLayerId = $state<string>('layer-arms-1');
   selectedArmIndex = $state<number>(0);
   activeTool = $state<ToolType>('select');
@@ -609,12 +645,55 @@ export class EditorState {
   }
 
   // Crosshair Selection & CRUD
+  saveCurrentProfile() {
+    this.saveStatus = 'saving';
+    const snapshot: Crosshair = JSON.parse(JSON.stringify(this.crosshair));
+    const idx = this.library.findIndex((item) => item.id === snapshot.id);
+    if (idx >= 0) {
+      this.library[idx] = snapshot;
+    } else {
+      this.library.push(snapshot);
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('xhair_library', JSON.stringify(this.library));
+        localStorage.setItem('xhair_active_crosshair', JSON.stringify(snapshot));
+      } catch (e) {
+        console.error('Failed to persist to localStorage:', e);
+      }
+    }
+
+    this.saveStatus = 'saved';
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    this.saveTimeout = setTimeout(() => {
+      this.saveStatus = 'idle';
+    }, 2500);
+  }
+
+  renameCrosshair(newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    this.pushUndo();
+    this.crosshair.name = trimmed;
+    this.saveCurrentProfile();
+  }
+
   selectCrosshair(id: string) {
     const item = this.library.find((c) => c.id === id);
     if (item) {
       this.pushUndo();
       this.crosshair = JSON.parse(JSON.stringify(item));
       this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
   }
 
@@ -651,6 +730,7 @@ export class EditorState {
     this.library.push(created);
     this.crosshair = JSON.parse(JSON.stringify(created));
     this.selectedLayerId = created.layers[0].id;
+    this.saveCurrentProfile();
   }
 
   // Nudge in 8 directions with atomic element precision (§9.4)

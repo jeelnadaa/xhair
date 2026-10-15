@@ -17,7 +17,33 @@
   <div class="brand-group">
     <strong class="brand">XHAIR</strong>
     <span class="sep">/</span>
-    <span class="doc-title">{editorState.crosshair.name}</span>
+    <input
+      type="text"
+      class="doc-title-input"
+      bind:value={editorState.crosshair.name}
+      onchange={() => editorState.saveCurrentProfile()}
+      aria-label="Crosshair Profile Name"
+      title="Click to edit profile name"
+    />
+    <Tooltip
+      title="Save Profile"
+      description="Save current crosshair changes to library and local storage"
+      shortcut="Ctrl+S"
+    >
+      <button
+        class="btn btn-save {editorState.saveStatus === 'saved' ? 'saved' : ''}"
+        onclick={() => editorState.saveCurrentProfile()}
+        aria-label="Save Profile"
+      >
+        {#if editorState.saveStatus === 'saved'}
+          <span class="save-status-icon">✓</span> Saved
+        {:else if editorState.saveStatus === 'saving'}
+          <span class="save-status-icon">⌛</span> Saving…
+        {:else}
+          <span class="save-status-icon">💾</span> Save Profile
+        {/if}
+      </button>
+    </Tooltip>
   </div>
 
   <div class="actions-group">
@@ -209,9 +235,56 @@
     color: var(--text-muted);
   }
 
-  .doc-title {
-    font-weight: 600;
+  .doc-title-input {
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 3px 6px;
+    border-radius: var(--radius-xs);
+    width: 140px;
+    transition: all 0.15s ease;
+  }
+
+  .doc-title-input:hover {
+    border-color: var(--border);
+    background: var(--surface2);
+  }
+
+  .doc-title-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .btn-save {
+    background: var(--accent);
+    color: #0B0D10;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-save:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+
+  .btn-save.saved {
+    background: #10B981;
+    color: #FFFFFF;
+  }
+
+  .save-status-icon {
+    font-size: 13px;
   }
 
   .actions-group {

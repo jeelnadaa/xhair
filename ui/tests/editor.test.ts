@@ -353,4 +353,24 @@ describe('Editor State & Logic', () => {
     state.setPreviewBackground('urban');
     expect(state.visibilityScore).toBeGreaterThan(1);
   });
+
+  it('saves current profile and updates library and localStorage (§10)', () => {
+    state.crosshair.name = 'Custom Saved Crosshair';
+    state.crosshair.layers[0].color = '#FF0055';
+    expect(state.saveStatus).toBe('idle');
+
+    state.saveCurrentProfile();
+    expect(state.saveStatus).toBe('saved');
+
+    const inLib = state.library.find((c) => c.id === state.crosshair.id);
+    expect(inLib).toBeDefined();
+    expect(inLib?.name).toBe('Custom Saved Crosshair');
+    expect(inLib?.layers[0].color).toBe('#FF0055');
+
+    // Rename crosshair
+    state.renameCrosshair('Renamed Sniper Crosshair');
+    expect(state.crosshair.name).toBe('Renamed Sniper Crosshair');
+    const renamedInLib = state.library.find((c) => c.id === state.crosshair.id);
+    expect(renamedInLib?.name).toBe('Renamed Sniper Crosshair');
+  });
 });

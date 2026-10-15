@@ -14,8 +14,17 @@
   import DynamicOptInModal from './components/DynamicOptInModal.svelte';
   import CompliancePanel from './components/CompliancePanel.svelte';
   import ImportExportModal from './components/ImportExportModal.svelte';
-  import ResolutionModal from './components/ResolutionModal.svelte';
+  import { editorState } from './lib/state.svelte';
+
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      editorState.saveCurrentProfile();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="app-layout">
   <!-- Top Document Bar -->

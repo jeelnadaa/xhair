@@ -48,13 +48,13 @@ impl GeometryMapping {
         let out_center_x = if let Some(override_center) = profile.center_override {
             out_x + override_center.x as f64
         } else {
-            out_x + (gw / 2.0) * sx + cal_x * sx
+            out_x + (out_w / 2.0) + cal_x * sx
         };
 
         let out_center_y = if let Some(override_center) = profile.center_override {
             out_y + override_center.y as f64
         } else {
-            out_y + (gh / 2.0) * sy + cal_y * sy
+            out_y + (out_h / 2.0) + cal_y * sy
         };
 
         Self {

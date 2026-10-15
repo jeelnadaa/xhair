@@ -5,7 +5,6 @@
 
 pub mod server;
 
-use std::process::Command;
 use xhair_geometry::ResolutionProfile;
 use xhair_model::crosshair::Crosshair;
 use xhair_platform_win::{spawn_overlay, OverlayConfig, VisibilityMode};
@@ -38,6 +37,7 @@ pub fn run() -> anyhow::Result<()> {
     // 3. Configure overlay: default to visible on screen (§8.1)
     let config = OverlayConfig {
         visibility_mode: VisibilityMode::AlwaysShow,
+        follow_game_window: false,
         ..Default::default()
     };
 
@@ -45,24 +45,35 @@ pub fn run() -> anyhow::Result<()> {
     let overlay_handle = spawn_overlay(crosshair, profile, config)
         .map_err(|e| anyhow::anyhow!("Failed to spawn overlay: {}", e))?;
 
-    // 5. If not launched minimized, start the local UI server and launch default browser
+    // 5. If not launched minimized, start the local UI server and launch native desktop window
     if !is_minimized {
         if let Some(port) = server::start_ui_server() {
             let url = format!("http://127.0.0.1:{}", port);
             tracing::info!("XHAIR Editor UI serving at {}", url);
-            #[cfg(target_os = "windows")]
-            {
-                use std::os::windows::process::CommandExt;
-                const CREATE_NO_WINDOW: u32 = 0x08000000;
-                let _ = Command::new("cmd")
-                    .args(["/c", "start", &url])
-                    .creation_flags(CREATE_NO_WINDOW)
-                    .spawn();
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                let _ = Command::new("xdg-open").arg(&url).spawn();
-            }
+
+            let event_loop = tao::event_loop::EventLoop::new();
+            let window = tao::window::WindowBuilder::new()
+                .with_title(APP_TITLE)
+                .with_inner_size(tao::dpi::LogicalSize::new(1366.0, 820.0))
+                .with_min_inner_size(tao::dpi::LogicalSize::new(1024.0, 640.0))
+                .build(&event_loop)
+                .map_err(|e| anyhow::anyhow!("Failed to create window: {}", e))?;
+
+            let _webview = wry::WebViewBuilder::new()
+                .with_url(&url)
+                .build(&window)
+                .map_err(|e| anyhow::anyhow!("Failed to create webview: {}", e))?;
+
+            event_loop.run(move |event, _, control_flow| {
+                *control_flow = tao::event_loop::ControlFlow::Wait;
+                if let tao::event::Event::WindowEvent {
+                    event: tao::event::WindowEvent::CloseRequested,
+                    ..
+                } = event
+                {
+                    *control_flow = tao::event_loop::ControlFlow::Exit;
+                }
+            });
         }
     }
 
