@@ -46,12 +46,12 @@
 | **M5-006** | M5 UI | Color picker, gradient editor, and presets | done | §9.5 | Complete |
 | **M5-007** | M5 UI | Command palette and shortcut registry | done | §9.8 | Complete |
 | **M5-008** | M5 UI | Playwright and Vitest UI test suite | done | §15.3 | Complete |
-| **M6-001** | M6 MCP | MCP server generated from command registry | todo | §13.1 | |
-| **M6-002** | M6 MCP | stdio and loopback HTTP transports with auth token | todo | §13.2, §13.7 | |
-| **M6-003** | M6 MCP | Proxy-to-running-app IPC mechanism | todo | §1.4, §13.2 | |
-| **M6-004** | M6 MCP | Implement MCP resources and prompt templates | todo | §13.5, §13.6 | |
-| **M6-005** | M6 MCP | MCP live activity log and UI editing banner | todo | §13.7 | |
-| **M6-006** | M6 MCP | Parity CI test between UI, commands, and tools | todo | §13.8 | |
+| **M6-001** | M6 MCP | MCP server generated from command registry | done | §13.1 | Complete (31 tools registered & dispatched) |
+| **M6-002** | M6 MCP | stdio and loopback HTTP transports with auth token | done | §13.2, §13.7 | Complete (Bearer auth + DNS rebinding guard) |
+| **M6-003** | M6 MCP | Proxy-to-running-app IPC mechanism | done | §1.4, §13.2 | Complete (endpoint discovery & forwarding) |
+| **M6-004** | M6 MCP | Implement MCP resources and prompt templates | done | §13.5, §13.6 | Complete (5 resources, 5 prompt templates) |
+| **M6-005** | M6 MCP | MCP live activity log and UI editing banner | done | §13.7 | Complete (McpModal drawer & pulsing TopBar badge) |
+| **M6-006** | M6 MCP | Parity CI test between UI, commands, and tools | done | §13.8 | Complete (parity.rs verified in CI) |
 | **M7-001** | M7 Polish | Global bloom and advanced glow compositing | todo | §4.6 | |
 | **M7-002** | M7 Polish | Animation tracks, keyframes, and timeline dock | todo | §4.7 | |
 | **M7-003** | M7 Polish | Static-only lock and reduced-motion enforcement | todo | §4.7 | |

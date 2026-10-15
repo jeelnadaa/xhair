@@ -1,0 +1,226 @@
+[
+  {
+    "id": "layer.add",
+    "name": "Add Layer",
+    "command": "layer.add",
+    "mcp_tool": "layer.add",
+    "description": "Adds a new shape or vector layer to the active crosshair"
+  },
+  {
+    "id": "layer.update",
+    "name": "Update Layer",
+    "command": "layer.update",
+    "mcp_tool": "layer.update",
+    "description": "Modifies properties, transform, paint, or effects of a layer"
+  },
+  {
+    "id": "layer.remove",
+    "name": "Remove Layer",
+    "command": "layer.remove",
+    "mcp_tool": "layer.remove",
+    "description": "Deletes a layer from the active crosshair"
+  },
+  {
+    "id": "layer.reorder",
+    "name": "Reorder Layer",
+    "command": "layer.reorder",
+    "mcp_tool": "layer.reorder",
+    "description": "Changes the stack position of a layer"
+  },
+  {
+    "id": "layer.duplicate",
+    "name": "Duplicate Layer",
+    "command": "layer.duplicate",
+    "mcp_tool": "layer.duplicate",
+    "description": "Creates an exact clone of the target layer"
+  },
+  {
+    "id": "global.set",
+    "name": "Set Global Transform",
+    "command": "global.set",
+    "mcp_tool": "global.set",
+    "description": "Updates master scale, opacity, and rotation of the crosshair"
+  },
+  {
+    "id": "symmetry.set",
+    "name": "Set Symmetry",
+    "command": "symmetry.set",
+    "mcp_tool": "symmetry.set",
+    "description": "Configures crosshair rotational and reflectional symmetry"
+  },
+  {
+    "id": "effects.set",
+    "name": "Set Effects",
+    "command": "effects.set",
+    "mcp_tool": "effects.set",
+    "description": "Applies composite effects (glow, shadow, bloom, blur)"
+  },
+  {
+    "id": "nudge",
+    "name": "Nudge Selection",
+    "command": "nudge",
+    "mcp_tool": "nudge",
+    "description": "Fine nudges crosshair, layer, or arm in game pixels"
+  },
+  {
+    "id": "edit.batch",
+    "name": "Batch Edit",
+    "command": "edit.batch",
+    "mcp_tool": "edit.batch",
+    "description": "Executes multiple command mutations atomically in one undo step"
+  },
+  {
+    "id": "edit.undo",
+    "name": "Undo",
+    "command": "undo",
+    "mcp_tool": "undo",
+    "description": "Undoes the last applied mutation on the active crosshair"
+  },
+  {
+    "id": "edit.redo",
+    "name": "Redo",
+    "command": "redo",
+    "mcp_tool": "redo",
+    "description": "Redoes the previously undone mutation"
+  },
+  {
+    "id": "library.list",
+    "name": "List Crosshairs",
+    "command": "library.list",
+    "mcp_tool": "library.list",
+    "description": "Queries all crosshair definitions stored in the local catalog"
+  },
+  {
+    "id": "crosshair.create",
+    "name": "Create Crosshair",
+    "command": "crosshair.create",
+    "mcp_tool": "crosshair.create",
+    "description": "Initializes a new crosshair from a template"
+  },
+  {
+    "id": "crosshair.duplicate",
+    "name": "Duplicate Crosshair",
+    "command": "crosshair.duplicate",
+    "mcp_tool": "crosshair.duplicate",
+    "description": "Clones an entire crosshair in the library catalog"
+  },
+  {
+    "id": "crosshair.delete",
+    "name": "Delete Crosshair",
+    "command": "crosshair.delete",
+    "mcp_tool": "crosshair.delete",
+    "description": "Moves a crosshair to the 30-day trash lifecycle"
+  },
+  {
+    "id": "crosshair.rename",
+    "name": "Rename Crosshair",
+    "command": "crosshair.rename",
+    "mcp_tool": "crosshair.rename",
+    "description": "Updates the display name of a crosshair document"
+  },
+  {
+    "id": "crosshair.set_metadata",
+    "name": "Set Crosshair Metadata",
+    "command": "crosshair.set_metadata",
+    "mcp_tool": "crosshair.set_metadata",
+    "description": "Updates author, tags, description, and favorite status"
+  },
+  {
+    "id": "overlay.set_enabled",
+    "name": "Toggle Overlay Visibility",
+    "command": "overlay.set_enabled",
+    "mcp_tool": "overlay.set_enabled",
+    "description": "Shows or hides the Win32 click-through overlay window"
+  },
+  {
+    "id": "overlay.activate",
+    "name": "Activate Overlay Crosshair",
+    "command": "overlay.activate",
+    "mcp_tool": "overlay.activate",
+    "description": "Sets the live crosshair rendered on the overlay window"
+  },
+  {
+    "id": "overlay.next",
+    "name": "Next Crosshair",
+    "command": "overlay.next",
+    "mcp_tool": "overlay.next",
+    "description": "Cycles overlay to the next crosshair in the library"
+  },
+  {
+    "id": "overlay.previous",
+    "name": "Previous Crosshair",
+    "command": "overlay.previous",
+    "mcp_tool": "overlay.previous",
+    "description": "Cycles overlay to the previous crosshair in the library"
+  },
+  {
+    "id": "calibration.show",
+    "name": "Show Calibration Grid",
+    "command": "calibration.show",
+    "mcp_tool": "calibration.show",
+    "description": "Displays the subpixel calibration crosshair pattern"
+  },
+  {
+    "id": "export.code",
+    "name": "Export Share Code",
+    "command": "export.code",
+    "mcp_tool": "export.code",
+    "description": "Exports crosshair as compressed Brotli share code"
+  },
+  {
+    "id": "import.code",
+    "name": "Import Share Code",
+    "command": "import.code",
+    "mcp_tool": "import.code",
+    "description": "Parses and validates a compressed Brotli share code"
+  },
+  {
+    "id": "import.valorant_code",
+    "name": "Import Valorant Code",
+    "command": "import.valorant_code",
+    "mcp_tool": "import.valorant_code",
+    "description": "Parses an in-game Valorant crosshair string into native layers"
+  },
+  {
+    "id": "render.preview",
+    "name": "Render Preview",
+    "command": "render.preview",
+    "mcp_tool": "render.preview",
+    "description": "Renders the crosshair into a pixel-accurate PNG preview"
+  },
+  {
+    "id": "analyze.alignment",
+    "name": "Analyze Alignment",
+    "command": "analyze.alignment",
+    "mcp_tool": "analyze.alignment",
+    "description": "Computes centering and pixel boundary parity report"
+  },
+  {
+    "id": "analyze.visibility",
+    "name": "Analyze Visibility",
+    "command": "analyze.visibility",
+    "mcp_tool": "analyze.visibility",
+    "description": "Calculates WCAG contrast against game backdrop samples"
+  },
+  {
+    "id": "validate",
+    "name": "Validate Document",
+    "command": "validate",
+    "mcp_tool": "validate",
+    "description": "Validates crosshair structure against schema limits"
+  },
+  {
+    "id": "meta.capabilities",
+    "name": "Get Capabilities",
+    "command": "meta.capabilities",
+    "mcp_tool": "meta.capabilities",
+    "description": "Returns available subsystems, tools, and runtime mode"
+  },
+  {
+    "id": "meta.shortcuts",
+    "name": "Get Shortcuts",
+    "command": "meta.shortcuts",
+    "mcp_tool": "meta.shortcuts",
+    "description": "Lists all registered hotkeys and command palette entries"
+  }
+]

@@ -247,6 +247,18 @@ export class EditorState {
   activeProfile = $state<ResolutionProfile>(RESOLUTION_PROFILES[0]);
   overlayEnabled = $state<boolean>(true);
   mcpEnabled = $state<boolean>(true);
+  isAgentEditing = $state<boolean>(false);
+  mcpPanelOpen = $state<boolean>(false);
+  mcpActivityLog = $state<Array<{ id: string; timestamp: string; tool: string; summary: string; status: string }>>([
+    {
+      id: 'log-init',
+      timestamp: new Date().toLocaleTimeString(),
+      tool: 'initialize',
+      summary: 'MCP server handshake connected',
+      status: 'success',
+    },
+  ]);
+  private agentEditingTimer: ReturnType<typeof setTimeout> | null = null;
   dynamicReticleEnabled = $state<boolean>(false);
 
   // Command Palette & Modals
@@ -318,6 +330,30 @@ export class EditorState {
     const next = this.redoStack.pop()!;
     this.undoStack.push(JSON.stringify(this.crosshair));
     this.crosshair = JSON.parse(next);
+  }
+
+  notifyAgentActivity(tool: string, summary: string, status: string = 'success') {
+    this.isAgentEditing = true;
+    this.mcpActivityLog.unshift({
+      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toLocaleTimeString(),
+      tool,
+      summary,
+      status,
+    });
+    if (this.mcpActivityLog.length > 100) {
+      this.mcpActivityLog.pop();
+    }
+    if (this.agentEditingTimer) {
+      clearTimeout(this.agentEditingTimer);
+    }
+    this.agentEditingTimer = setTimeout(() => {
+      this.isAgentEditing = false;
+    }, 3000);
+  }
+
+  clearMcpLog() {
+    this.mcpActivityLog = [];
   }
 
   // Crosshair Selection & CRUD

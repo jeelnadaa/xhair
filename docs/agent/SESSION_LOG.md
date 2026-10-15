@@ -122,4 +122,43 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
 - **Next:** Milestone 6: MCP Server (`xhair-mcp` stdio & loopback HTTP transports, proxy-to-running-app IPC, MCP resources and prompts, parity test suite).
 
+## 2026-10-16 — Session 7
+- **Goal:** Milestone 6 MCP Server: `xhair-mcp` crate with JSON-RPC 2.0 tools generated from domain commands, stdio and loopback Streamable HTTP transports with Bearer auth and DNS-rebinding guards, proxy-to-running-app IPC mechanism, resources (`xhair://...`), prompt templates, live activity log drawer (`McpModal.svelte`), "Agent is editing" indicator, and strict parity CI test suite.
+- **Planned Tasks:** M6-001, M6-002, M6-003, M6-004, M6-005, M6-006.
+- **Completed:**
+  - `crates/xhair-mcp`:
+    - `protocol.rs`: Full JSON-RPC 2.0 request, response, error, tool, resource, and prompt type declarations with `RequestId` and constructor helpers.
+    - `context.rs`: `ServerContext` owning `CommandBus`, `LibraryEngine`, active crosshair ID, overlay flags, activity log, and `resolve_crosshair_id` helper.
+    - `tools/`: 31 MCP tools implemented and dispatched across:
+      - Library: `library.list`, `library.search`, `crosshair.get`, `crosshair.create`, `crosshair.duplicate`, `crosshair.delete`, `crosshair.rename`, `crosshair.set_metadata`.
+      - Edit: `edit.batch`, `layer.add`, `layer.update`, `layer.remove`, `layer.duplicate`, `layer.reorder`, `global.set`, `symmetry.set`, `effects.set`, `nudge`, `undo`, `redo`.
+      - Preview & Analysis: `render.preview` (base64 PNG data URI), `analyze.alignment`, `analyze.visibility`, `validate`.
+      - Overlay: `overlay.get_state`, `overlay.set_enabled`, `overlay.activate`, `overlay.next`, `overlay.previous`, `display.list`, `calibration.show`, `calibration.hide`, `calibration.set_offset`.
+      - Format: `export.code`, `import.code`, `import.valorant_code`.
+      - Meta & Dynamics: `meta.capabilities`, `meta.schema`, `meta.shortcuts`, `gun.list`, `dynamics.set_enabled` (requires explicit `confirm_risk: true`).
+    - `resources.rs`: MCP resources (`xhair://library`, `xhair://crosshair/{id}`, `xhair://schema/crosshair`, `xhair://settings`, `xhair://resolution-profiles`).
+    - `prompts.rs`: 5 MCP prompt templates (`design_crosshair_from_description`, `tune_for_visibility`, `convert_game_code`, `build_calibration_plan`, `make_symmetric_variants`).
+    - `stdio.rs`: stdio JSON-RPC transport loop with stdin reader and stdout writer.
+    - `http.rs`: Loopback HTTP server (`127.0.0.1` only) with Bearer token authentication, Origin/Host validation for DNS rebinding protection, and JSON-RPC handling.
+    - `proxy.rs`: Proxy-to-running-app IPC mechanism detecting active endpoints (`xhair-endpoint.json`) and forwarding commands over local HTTP.
+    - `tests/mcp_tests.rs`: Integration tests for initialization handshake, library CRUD, editing, nudging, undo/redo, preview PNG rendering, alignment analysis, visibility contrast, Brotli share codes, Valorant import, resources, prompts, HTTP transport, and Bearer token security.
+    - `tests/parity.rs`: Parity CI test verifying that every UI action in `ui/src/generated/actions.json` maps to a command and an MCP tool, enforcing Principle P4 (Human/Agent Parity).
+  - `ui`:
+    - `ui/src/lib/actions.ts`: UI actions manifest mapping UI actions to command bus operations and MCP tools.
+    - `ui/src/generated/actions.json`: Canonical JSON export of actions manifest for parity tests.
+    - `ui/src/components/McpModal.svelte`: Modal drawer for MCP live activity log, transport statistics, and security status.
+    - `ui/src/components/TopBar.svelte`: Pulsing "Agent is editing" indicator and interactive MCP pill opening activity log.
+    - `ui/src/lib/state.svelte.ts`: `isAgentEditing`, `mcpActivityLog`, `mcpPanelOpen`, `notifyAgentActivity`, and `clearMcpLog`.
+  - `docs/MCP.md`: Complete MCP reference documentation for tools, transports, resources, prompts, and security.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 71 Rust tests passing across 12 workspace crates (100% green).
+  - `pnpm -C ui test`: 11 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Production bundle built in ~370ms (93 kB JS, 18 kB CSS).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 7: Effects & Polish (Global bloom and advanced glow compositing, animation tracks, keyframes, timeline dock, and static-only lock).
+
+
 

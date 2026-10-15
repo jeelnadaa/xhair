@@ -7,6 +7,7 @@
   import NudgePad from './components/NudgePad.svelte';
   import ColorPicker from './components/ColorPicker.svelte';
   import CommandPalette from './components/CommandPalette.svelte';
+  import McpModal from './components/McpModal.svelte';
 </script>
 
 <div class="app-layout">
@@ -32,8 +33,9 @@
     </aside>
   </div>
 
-  <!-- Command Palette Modal -->
+  <!-- Modals & Drawers -->
   <CommandPalette />
+  <McpModal />
 </div>
 
 <style>

@@ -8,7 +8,11 @@ license.workspace = true
 description = "Model Context Protocol (MCP) server generated from command registry for xhair"
 
 [dependencies]
+xhair-model = { path = "../xhair-model" }
 xhair-commands = { path = "../xhair-commands" }
+xhair-geometry = { path = "../xhair-geometry" }
+xhair-render = { path = "../xhair-render" }
+xhair-format = { path = "../xhair-format" }
 xhair-library = { path = "../xhair-library" }
 serde.workspace = true
 serde_json.workspace = true
@@ -16,3 +20,10 @@ schemars.workspace = true
 tokio.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+chrono.workspace = true
+base64.workspace = true
+uuid.workspace = true
+tiny-skia.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

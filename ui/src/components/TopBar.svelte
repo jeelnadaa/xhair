@@ -75,15 +75,27 @@
       </button>
     </Tooltip>
 
+    {#if editorState.isAgentEditing}
+      <Tooltip
+        title="Agent In Progress"
+        description="Autonomous coding agent is executing tool commands"
+      >
+        <div class="pill agent-editing">
+          <span class="dot-indicator pulsing"></span>
+          Agent is editing
+        </div>
+      </Tooltip>
+    {/if}
+
     <Tooltip
       title="MCP Server"
-      description="AI agent pair programming loopback bridge"
+      description="AI agent loopback bridge. Click to view live activity log."
       details="Status: Running on 127.0.0.1"
     >
-      <div class="pill active">
+      <button class="pill active" onclick={() => (editorState.mcpPanelOpen = true)}>
         <span class="dot-indicator"></span>
         MCP ON
-      </div>
+      </button>
     </Tooltip>
 
     <Tooltip
@@ -164,5 +176,21 @@
     border-radius: 50%;
     background: currentColor;
     display: inline-block;
+  }
+
+  .pill.agent-editing {
+    background: rgba(255, 79, 216, 0.15);
+    color: #FF4FD8;
+    border-color: #FF4FD8;
+    font-weight: 600;
+  }
+
+  .pulsing {
+    animation: pulse 1.2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.85); }
   }
 </style>
