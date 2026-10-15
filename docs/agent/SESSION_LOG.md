@@ -340,3 +340,6 @@
   - `cargo test --workspace`: All tests passing.
   - `cargo clippy --workspace -- -D warnings`: 0 warnings.
   - `cargo fmt --check`: Clean, 0 diffs.
+  - CI Fixes:
+    - Updated `ui/pnpm-lock.yaml` to sync with `@types/node` and `vitest@5.0.5`, fixing `ERR_PNPM_OUTDATED_LOCKFILE`.
+    - Updated `.github/workflows/release.yml` with `token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}`.
