@@ -1,0 +1,93 @@
+{
+  "format_version": 1,
+  "id": "018d0000-0000-7000-8000-000000000001",
+  "name": "V1 Classic Test",
+  "description": "Valid version 1 fixture",
+  "author": "XHAIR Test",
+  "tags": [
+    "test",
+    "classic"
+  ],
+  "favorite": false,
+  "created_at": "2026-10-15T00:00:00Z",
+  "updated_at": "2026-10-15T00:00:00Z",
+  "global": {
+    "offset": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "scale": 1.0,
+    "rotation": 0.0,
+    "opacity": 1.0,
+    "blend": "normal"
+  },
+  "symmetry": {
+    "type": "none"
+  },
+  "layers": [
+    {
+      "id": "018d0000-0000-7000-8000-000000000002",
+      "name": "Arms",
+      "visible": true,
+      "locked": false,
+      "solo": false,
+      "kind": {
+        "kind": "line",
+        "arm_count": 4,
+        "length": 6.0,
+        "thickness": 2.0,
+        "gap": 4.0,
+        "taper": 0.0,
+        "start_angle": 0.0,
+        "cap": "square",
+        "join": "miter"
+      },
+      "transform": {
+        "offset": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "rotation": 0.0,
+        "scale": {
+          "x": 1.0,
+          "y": 1.0
+        },
+        "anchor": "center"
+      },
+      "fill": {
+        "type": "solid",
+        "color": {
+          "r": 0,
+          "g": 255,
+          "b": 128,
+          "a": 255
+        }
+      },
+      "stroke": null,
+      "opacity": 1.0,
+      "blend": "normal",
+      "effects": {
+        "glow": null,
+        "shadow": null,
+        "blur_radius": 0.0
+      },
+      "symmetry": {
+        "type": "inherit"
+      },
+      "arm_overrides": [],
+      "bindings": []
+    }
+  ],
+  "global_effects": {
+    "glow": null,
+    "shadow": null,
+    "blur_radius": 0.0
+  },
+  "animation": [],
+  "dynamics": null,
+  "render_hints": {
+    "aa_mode": "smooth",
+    "snap_to_pixel": false
+  },
+  "assets": {}
+}

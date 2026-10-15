@@ -26,12 +26,12 @@
 | **M2-004** | M2 Render | Compile renderer to WASM target | done | §7.1 | Complete |
 | **M2-005** | M2 Render | Golden image tests (native vs wasm parity) | done | §7.1 | Complete |
 | **M2-006** | M2 Render | Implement `xhair-cli render` command | done | §16 (M2) | Complete |
-| **M3-001** | M3 Library | Implement disk storage, atomic writes, index.json | todo | §10.1 | |
-| **M3-002** | M3 Library | Implement folders, tags, favorites, and slots | todo | §10.2, §10.3 | |
-| **M3-003** | M3 Library | Implement `.xhair` and `.xhairpack` serialization | todo | §11.1 | |
-| **M3-004** | M3 Library | Implement Brotli share codes and CRC32 checks | todo | §11.1 | |
-| **M3-005** | M3 Library | Implement Valorant code import parser | todo | §11.2 | |
-| **M3-006** | M3 Library | Round-trip tests and cargo-fuzz fuzzers | todo | §11.2 | |
+| **M3-001** | M3 Library | Implement disk storage, atomic writes, index.json | done | §10.1 | Complete |
+| **M3-002** | M3 Library | Implement folders, tags, favorites, and slots | done | §10.2, §10.3 | Complete |
+| **M3-003** | M3 Library | Implement `.xhair` and `.xhairpack` serialization | done | §11.1 | Complete |
+| **M3-004** | M3 Library | Implement Brotli share codes and CRC32 checks | done | §11.1 | Complete |
+| **M3-005** | M3 Library | Implement Valorant code import parser | done | §11.2 | Complete |
+| **M3-006** | M3 Library | Round-trip tests and cargo-fuzz fuzzers | done | §11.2 | Complete |
 | **M4-001** | M4 Overlay | Win32 transparent click-through layered window | todo | §8.1 | |
 | **M4-002** | M4 Overlay | DPI awareness and multi-monitor handling | todo | §6.5 | |
 | **M4-003** | M4 Overlay | Foreground game process detection and follow rect | todo | §8.1, §8.2 | |

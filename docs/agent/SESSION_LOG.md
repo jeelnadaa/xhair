@@ -49,6 +49,29 @@
   - `cargo clippy --workspace -- -D warnings`: 0 warnings.
   - `cargo fmt --check`: 0 diffs.
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
-- **Next:** Milestone 3: `xhair-library` and `xhair-format` (storage, folders, tags, slots, `.xhair`, `.xhairpack`, Brotli share codes, migrations, fuzz tests).
+## 2026-10-15 — Session 4
+- **Goal:** Milestone 3 Library + Format: disk storage, atomic writes, index catalog, folders, slots, `.xhair`, `.xhairpack`, Brotli share codes, Valorant import, limits fixtures, and LRU thumbnail cache.
+- **Planned Tasks:** M3-001, M3-002, M3-003, M3-004, M3-005, M3-006.
+- **Completed:**
+  - `xhair-format`:
+    - `canonical.rs`: Deterministic canonical JSON serialization with float normalization (max 4 decimal places) and key ordering.
+    - `share_code.rs`: Brotli + base64url + CRC32 share code encoder and decoder with 8 KB limit and corruption detection.
+    - `bundle.rs`: `.xhairpack` ZIP archive export and import with `PackManifest`.
+    - `migrations.rs`: Schema version migration engine with future version rejection.
+    - `valorant.rs`: In-game Valorant crosshair profile code parser mapping to domain layers with unmappable warnings.
+    - Untrusted input validation & fixtures: `tests/fixtures/formats/` testing format versioning, asset size limits (<=4 MB), path point bounds (<=10,000), group nesting depth (<=8), cycle detection, and layer/name bounds.
+  - `xhair-library`:
+    - `atomic.rs`: Crash-safe atomic file writes with fsync, temporary file rename on same volume, and `.bak` preservation.
+    - `index.rs`: `LibraryIndex`, `Folder`, `CrosshairSummary`, `TrashEntry`, and 20 quick-select slots.
+    - `engine.rs`: Complete `LibraryEngine` with disk CRUD, lazy on-demand loading, folder hierarchy, tagging, favorites, 1..=20 quick-select slots, 30-day trash lifecycle with purge, search, and bulk operations.
+    - `thumbnail_cache.rs`: In-memory bounded LRU thumbnail cache (8 MB budget) with capacity-based eviction.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 58 tests passing across 12 workspace crates (100% green).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+  - `cargo run --package xtask -- schema --check`: verified up to date.
+  - `pnpm -C ui test; pnpm -C ui lint`: green.
+- **Next:** Milestone 4: `xhair-platform-win` overlay daemon (Win32 transparent click-through layered window, DPI awareness, multi-monitor handling, foreground game tracking, global hotkeys, tray icon, and calibration test pattern).
 
 

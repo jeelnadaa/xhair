@@ -1,17 +1,16 @@
-//! Disk persistence, slots, tagging, and folder tree management for xhair.
+//! Disk persistence, slots, tagging, and folder tree management for xhair (§10).
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-/// Maximum allowed quick-access hotkey slots.
-pub const MAX_SLOTS: usize = 20;
+pub mod atomic;
+pub mod engine;
+pub mod error;
+pub mod index;
+pub mod thumbnail_cache;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_max_slots() {
-        assert_eq!(MAX_SLOTS, 20);
-    }
-}
+pub use atomic::atomic_write_file;
+pub use engine::{LibraryEngine, SortBy};
+pub use error::LibraryError;
+pub use index::{CrosshairSummary, Folder, LibraryIndex, TrashEntry, MAX_SLOTS};
+pub use thumbnail_cache::{ThumbnailCache, DEFAULT_THUMBNAIL_CACHE_BYTES};

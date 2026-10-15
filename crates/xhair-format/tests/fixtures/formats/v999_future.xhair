@@ -1,0 +1,32 @@
+{
+  "format_version": 999,
+  "id": "018d0000-0000-7000-8000-000000000099",
+  "name": "Future Crosshair",
+  "description": "Unsupported version fixture",
+  "author": "Time Traveler",
+  "tags": [],
+  "favorite": false,
+  "created_at": "2026-10-15T00:00:00Z",
+  "updated_at": "2026-10-15T00:00:00Z",
+  "global": {
+    "offset": {"x": 0.0, "y": 0.0},
+    "scale": 1.0,
+    "rotation": 0.0,
+    "opacity": 1.0,
+    "blend": "normal"
+  },
+  "symmetry": {"type": "none"},
+  "layers": [],
+  "global_effects": {
+    "glow": null,
+    "shadow": null,
+    "blur_radius": 0.0
+  },
+  "animation": [],
+  "dynamics": null,
+  "render_hints": {
+    "aa_mode": "smooth",
+    "snap_to_pixel": false
+  },
+  "assets": {}
+}

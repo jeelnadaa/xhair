@@ -25,6 +25,12 @@ pub const MAX_LAYERS: usize = 256;
 /// Maximum group nesting depth.
 pub const MAX_NESTING_DEPTH: usize = 8;
 
+/// Maximum allowable total assets size in bytes (4 MB).
+pub const MAX_ASSETS_BYTES: usize = 4 * 1024 * 1024;
+
+/// Maximum allowable path command points.
+pub const MAX_PATH_POINTS: usize = 10_000;
+
 /// Anti-aliasing rasterization mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Default)]
 #[serde(rename_all = "snake_case")]
@@ -252,6 +258,14 @@ impl Crosshair {
             )));
         }
 
+        let total_assets: usize = self.assets.values().map(|a| a.data_base64.len()).sum();
+        if total_assets > MAX_ASSETS_BYTES {
+            return Err(XhairError::Validation(format!(
+                "Total embedded assets size ({} bytes) exceeds maximum allowable limit of {} bytes (4 MB)",
+                total_assets, MAX_ASSETS_BYTES
+            )));
+        }
+
         if let Symmetry::Radial { arms } = self.symmetry {
             if !(2..=32).contains(&arms) {
                 return Err(XhairError::Validation(
@@ -261,6 +275,7 @@ impl Crosshair {
         }
 
         // Validate individual layer properties
+        let mut group_map = HashMap::new();
         for layer in &self.layers {
             match &layer.kind {
                 LayerKind::Polygon(poly) if !(3..=64).contains(&poly.sides) => {
@@ -273,10 +288,58 @@ impl Crosshair {
                         "Pixel layer dimension cannot exceed 256x256".to_string(),
                     ));
                 }
+                LayerKind::Path(path) => {
+                    let point_count = path.data.split_whitespace().count();
+                    if point_count > MAX_PATH_POINTS {
+                        return Err(XhairError::Validation(format!(
+                            "Path points count ({}) exceeds maximum limit of {}",
+                            point_count, MAX_PATH_POINTS
+                        )));
+                    }
+                }
+                LayerKind::Group(group) => {
+                    group_map.insert(layer.id, &group.children);
+                }
                 _ => {}
+            }
+        }
+
+        // Check group nesting depth
+        for &group_id in group_map.keys() {
+            let mut visited = Vec::new();
+            let depth = compute_group_depth(group_id, &group_map, &mut visited)?;
+            if depth > MAX_NESTING_DEPTH {
+                return Err(XhairError::Validation(format!(
+                    "Group nesting depth ({}) exceeds maximum limit of {}",
+                    depth, MAX_NESTING_DEPTH
+                )));
             }
         }
 
         Ok(())
     }
+}
+
+fn compute_group_depth(
+    id: crate::units::LayerId,
+    map: &HashMap<crate::units::LayerId, &Vec<crate::units::LayerId>>,
+    visited: &mut Vec<crate::units::LayerId>,
+) -> Result<usize, XhairError> {
+    if visited.contains(&id) {
+        return Err(XhairError::Validation(
+            "Cycle detected in layer group hierarchy".to_string(),
+        ));
+    }
+    visited.push(id);
+    let mut max_child_depth = 0;
+    if let Some(children) = map.get(&id) {
+        for &child in *children {
+            let d = compute_group_depth(child, map, visited)?;
+            if d > max_child_depth {
+                max_child_depth = d;
+            }
+        }
+    }
+    visited.pop();
+    Ok(1 + max_child_depth)
 }
