@@ -1,4 +1,4 @@
-//! Pixel grid alignment checks and automatic 1-click correction suggestions.
+//! Pixel grid alignment checks and automatic 1-click correction suggestions (§6.2).
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -27,9 +27,9 @@ pub enum SuggestedFix {
         /// Suggested offset delta.
         delta: f32,
     },
-    /// Adjust thickness by 1.0 game pixel.
+    /// Adjust thickness or dimension by 1.0 game pixel.
     AdjustThickness {
-        /// Suggested new thickness.
+        /// Suggested new thickness or size.
         new_thickness: f32,
     },
 }
@@ -109,9 +109,101 @@ pub fn alignment_report(crosshair: &Crosshair, width: u32, height: u32) -> Vec<A
                     });
                 }
             }
+            LayerKind::Rect(rect) => {
+                let h_aligned = is_symmetric_stroke_aligned(width, rect.width);
+                let v_aligned = is_symmetric_stroke_aligned(height, rect.height);
+
+                if !h_aligned || !v_aligned {
+                    let axis = if !h_aligned && !v_aligned {
+                        AlignmentAxis::Both
+                    } else if !h_aligned {
+                        AlignmentAxis::Horizontal
+                    } else {
+                        AlignmentAxis::Vertical
+                    };
+
+                    let new_dim = if !h_aligned {
+                        (rect.width + 1.0).max(1.0)
+                    } else {
+                        (rect.height + 1.0).max(1.0)
+                    };
+
+                    issues.push(AlignmentIssue {
+                        layer_id: layer.id,
+                        layer_name: layer.name.clone(),
+                        axis,
+                        edge_position: (width as f64 / 2.0) - (rect.width as f64 / 2.0),
+                        suggested_fix: SuggestedFix::AdjustThickness {
+                            new_thickness: new_dim,
+                        },
+                    });
+                }
+            }
+            LayerKind::Circle(circle) => {
+                let h_aligned = is_symmetric_stroke_aligned(width, circle.diameter);
+                let v_aligned = is_symmetric_stroke_aligned(height, circle.diameter);
+
+                if !h_aligned || !v_aligned {
+                    issues.push(AlignmentIssue {
+                        layer_id: layer.id,
+                        layer_name: layer.name.clone(),
+                        axis: AlignmentAxis::Both,
+                        edge_position: (width as f64 / 2.0) - (circle.diameter as f64 / 2.0),
+                        suggested_fix: SuggestedFix::AdjustThickness {
+                            new_thickness: (circle.diameter + 1.0).max(1.0),
+                        },
+                    });
+                }
+            }
             _ => {}
         }
     }
 
     issues
+}
+
+/// Applies an alignment suggestion to the target layer in the crosshair (1-click automatic fix).
+pub fn apply_suggested_fix(crosshair: &mut Crosshair, issue: &AlignmentIssue) -> bool {
+    let layer = match crosshair.layers.iter_mut().find(|l| l.id == issue.layer_id) {
+        Some(l) => l,
+        None => return false,
+    };
+
+    match &issue.suggested_fix {
+        SuggestedFix::AdjustThickness { new_thickness } => match &mut layer.kind {
+            LayerKind::Line(l) => {
+                l.thickness = *new_thickness;
+                true
+            }
+            LayerKind::Dot(d) => {
+                d.diameter = *new_thickness;
+                true
+            }
+            LayerKind::Circle(c) => {
+                c.diameter = *new_thickness;
+                true
+            }
+            LayerKind::Rect(r) => {
+                if issue.axis == AlignmentAxis::Horizontal || issue.axis == AlignmentAxis::Both {
+                    r.width = *new_thickness;
+                }
+                if issue.axis == AlignmentAxis::Vertical || issue.axis == AlignmentAxis::Both {
+                    r.height = *new_thickness;
+                }
+                true
+            }
+            _ => false,
+        },
+        SuggestedFix::OffsetHalfPixel { delta } => {
+            match issue.axis {
+                AlignmentAxis::Horizontal => layer.transform.offset.x += delta,
+                AlignmentAxis::Vertical => layer.transform.offset.y += delta,
+                AlignmentAxis::Both => {
+                    layer.transform.offset.x += delta;
+                    layer.transform.offset.y += delta;
+                }
+            }
+            true
+        }
+    }
 }

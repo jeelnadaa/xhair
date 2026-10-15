@@ -7,6 +7,7 @@ import type {
   NudgeTarget,
   NudgeFrame,
   AlignmentDiagnostic,
+  AlignmentIssue,
   AnimTrack,
 } from './types';
 import propertiesData from '../generated/properties.json';
@@ -265,6 +266,15 @@ export class EditorState {
   // Command Palette & Modals
   commandPaletteOpen = $state<boolean>(false);
 
+  // Calibration Wizard & Screenshot Align (§6.7, M8)
+  calibrationOpen = $state<boolean>(false);
+  calibrationStep = $state<number>(1);
+  calibrationPatternActive = $state<boolean>(false);
+  calibrationOffset = $state<{ x: number; y: number }>({ x: 0, y: 0 });
+  screenshotAlignMode = $state<boolean>(false);
+  screenshotDetectedOffset = $state<{ x: number; y: number } | null>(null);
+  screenshotConfidence = $state<number>(0);
+
   // Animation & Timeline (§4.7)
   currentTime = $state<number>(0.0);
   isPlaying = $state<boolean>(false);
@@ -302,6 +312,51 @@ export class EditorState {
       message: msg,
       hasSubpixelOffset: subpixel,
     };
+  });
+
+  // Derived alignment issues for all layers (§6.2)
+  alignmentIssues = $derived.by<AlignmentIssue[]>(() => {
+    const issues: AlignmentIssue[] = [];
+    const w = this.activeProfile.width;
+    const h = this.activeProfile.height;
+
+    for (const layer of this.crosshair.layers) {
+      if (!layer.visible) continue;
+      if (layer.shape.type === 'LineArms' && layer.shape.thickness !== undefined) {
+        const t = Math.round(layer.shape.thickness);
+        const hAligned = (w + t) % 2 === 0;
+        const vAligned = (h + t) % 2 === 0;
+        if (!hAligned || !vAligned) {
+          issues.push({
+            layer_id: layer.id,
+            layer_name: layer.name,
+            axis: !hAligned && !vAligned ? 'both' : !hAligned ? 'horizontal' : 'vertical',
+            edge_position: w / 2 - t / 2,
+            suggested_fix: {
+              type: 'adjust_thickness',
+              new_thickness: Math.max(1, t + 1),
+            },
+          });
+        }
+      } else if (layer.shape.type === 'Dot' && layer.shape.diameter !== undefined) {
+        const d = Math.round(layer.shape.diameter);
+        const hAligned = (w + d) % 2 === 0;
+        const vAligned = (h + d) % 2 === 0;
+        if (!hAligned || !vAligned) {
+          issues.push({
+            layer_id: layer.id,
+            layer_name: layer.name,
+            axis: 'both',
+            edge_position: w / 2 - d / 2,
+            suggested_fix: {
+              type: 'adjust_thickness',
+              new_thickness: Math.max(1, d + 1),
+            },
+          });
+        }
+      }
+    }
+    return issues;
   });
 
   // Calculate visibility score against dark base background (#0B0D10)
@@ -595,6 +650,78 @@ export class EditorState {
     if (!this.selectedLayer) return;
     this.pushUndo();
     this.selectedLayer.color = color;
+  }
+
+  // Calibration Methods (§6.7, M8)
+  openCalibration() {
+    this.calibrationOpen = true;
+    this.calibrationStep = 1;
+    this.calibrationOffset = { ...(this.activeProfile.calibrationOffset || { x: 0, y: 0 }) };
+  }
+
+  closeCalibration() {
+    this.calibrationOpen = false;
+    this.calibrationPatternActive = false;
+  }
+
+  setCalibrationStep(step: number) {
+    this.calibrationStep = Math.min(4, Math.max(1, step));
+    if (this.calibrationStep >= 2) {
+      this.calibrationPatternActive = true;
+    }
+  }
+
+  toggleCalibrationPattern() {
+    this.calibrationPatternActive = !this.calibrationPatternActive;
+  }
+
+  nudgeCalibration(dx: number, dy: number) {
+    this.calibrationOffset.x = Math.round((this.calibrationOffset.x + dx) * 4) / 4;
+    this.calibrationOffset.y = Math.round((this.calibrationOffset.y + dy) * 4) / 4;
+  }
+
+  saveCalibrationOffset() {
+    this.activeProfile.calibrationOffset = { ...this.calibrationOffset };
+  }
+
+  resetCalibrationOffset() {
+    this.calibrationOffset = { x: 0, y: 0 };
+    if (this.activeProfile.calibrationOffset) {
+      this.activeProfile.calibrationOffset = { x: 0, y: 0 };
+    }
+  }
+
+  setScreenshotAlignResult(offset: { x: number; y: number }, confidence: number) {
+    this.screenshotDetectedOffset = offset;
+    this.screenshotConfidence = confidence;
+  }
+
+  applyScreenshotAlignOffset() {
+    if (this.screenshotDetectedOffset) {
+      this.calibrationOffset = { ...this.screenshotDetectedOffset };
+      this.saveCalibrationOffset();
+    }
+  }
+
+  apply1ClickAlignmentFix(issue: AlignmentIssue) {
+    const layer = this.crosshair.layers.find((l) => l.id === issue.layer_id);
+    if (!layer) return;
+    this.pushUndo();
+
+    if (issue.suggested_fix.type === 'adjust_thickness' && issue.suggested_fix.new_thickness !== undefined) {
+      if (layer.shape.type === 'LineArms') {
+        layer.shape.thickness = issue.suggested_fix.new_thickness;
+      } else if (layer.shape.type === 'Dot') {
+        layer.shape.diameter = issue.suggested_fix.new_thickness;
+      }
+    } else if (issue.suggested_fix.type === 'offset_half_pixel' && issue.suggested_fix.delta !== undefined) {
+      if (issue.axis === 'horizontal' || issue.axis === 'both') {
+        layer.offsetX += issue.suggested_fix.delta;
+      }
+      if (issue.axis === 'vertical' || issue.axis === 'both') {
+        layer.offsetY += issue.suggested_fix.delta;
+      }
+    }
   }
 }
 

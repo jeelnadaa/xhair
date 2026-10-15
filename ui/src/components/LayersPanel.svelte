@@ -30,7 +30,7 @@
 
   <div class="layers-list">
     {#each editorState.crosshair.layers as layer, index (layer.id)}
-      {@const aligned = isLayerAligned(layer.id)}
+      {@const issue = editorState.alignmentIssues.find((i) => i.layer_id === layer.id)}
       <div
         class="layer-row {layer.id === editorState.selectedLayerId ? 'active' : ''}"
         onclick={() => (editorState.selectedLayerId = layer.id)}
@@ -75,10 +75,25 @@
         </div>
 
         <div class="layer-actions">
-          <!-- Alignment Badge -->
-          <span class="badge {aligned ? '' : 'badge-warning'}">
-            {aligned ? 'ALIGNED' : 'OFF-GRID'}
-          </span>
+          <!-- Alignment Badge / 1-Click Fix -->
+          {#if issue}
+            <Tooltip
+              title="Off-Grid Edge Detected"
+              description="Click to automatically apply 1-click fix to {issue.suggested_fix.new_thickness}px"
+            >
+              <button
+                class="badge badge-warning"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.apply1ClickAlignmentFix(issue);
+                }}
+              >
+                ⚠ FIX ({issue.suggested_fix.new_thickness}px)
+              </button>
+            </Tooltip>
+          {:else}
+            <span class="badge">ALIGNED</span>
+          {/if}
 
           <!-- Duplicate -->
           <Tooltip title="Duplicate Layer" description="Clone this layer" shortcut="Ctrl+D">

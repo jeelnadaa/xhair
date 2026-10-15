@@ -9,6 +9,7 @@
   import ColorPicker from './components/ColorPicker.svelte';
   import CommandPalette from './components/CommandPalette.svelte';
   import McpModal from './components/McpModal.svelte';
+  import CalibrationWizard from './components/CalibrationWizard.svelte';
 </script>
 
 <div class="app-layout">
@@ -40,6 +41,7 @@
   <!-- Modals & Drawers -->
   <CommandPalette />
   <McpModal />
+  <CalibrationWizard />
 </div>
 
 <style>

@@ -105,6 +105,7 @@ export interface ResolutionProfile {
   isStretched: boolean;
   isNative: boolean;
   dpiScale: number;
+  calibrationOffset?: { x: number; y: number };
 }
 
 export type ToolType = 'select' | 'direct' | 'lines' | 'dot' | 'rect' | 'circle' | 'pen' | 'brush';
@@ -112,10 +113,30 @@ export type ToolType = 'select' | 'direct' | 'lines' | 'dot' | 'rect' | 'circle'
 export type NudgeTarget = 'arm' | 'layer' | 'all';
 export type NudgeFrame = 'screen' | 'local';
 
+export interface AlignmentIssue {
+  layer_id: string;
+  layer_name: string;
+  axis: 'horizontal' | 'vertical' | 'both';
+  edge_position: number;
+  suggested_fix: {
+    type: 'offset_half_pixel' | 'adjust_thickness';
+    delta?: number;
+    new_thickness?: number;
+  };
+}
+
 export interface AlignmentDiagnostic {
   isEvenWidth: boolean;
   isEvenHeight: boolean;
   centerEdgeOrMiddle: 'pixel-edge' | 'pixel-middle';
   message: string;
   hasSubpixelOffset: boolean;
+  issues?: AlignmentIssue[];
+}
+
+export interface ScreenshotAlignResult {
+  detected_center: [number, number];
+  theoretical_center: [number, number];
+  suggested_offset: [number, number];
+  confidence: number;
 }

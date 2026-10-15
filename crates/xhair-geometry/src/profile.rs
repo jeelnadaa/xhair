@@ -175,4 +175,20 @@ impl ResolutionProfile {
             follow_game_window: true,
         }
     }
+
+    /// Creates a standard 1440p QHD native profile.
+    pub fn default_1440p() -> Self {
+        Self {
+            id: ProfileId::new_v7(),
+            name: "1440p Native".to_string(),
+            game_resolution: Resolution::QHD_1440P,
+            output: MonitorBinding::Primary,
+            display_mode: DisplayMode::Native,
+            stretch: StretchConfig::default(),
+            center_override: None,
+            calibration_offset: Vec2::ZERO,
+            dpi_mode: DpiMode::Auto,
+            follow_game_window: true,
+        }
+    }
 }

@@ -191,5 +191,35 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
 - **Next:** Milestone 8: Calibration (4-step Calibration Wizard dialog, Screenshot Align tool, alignment issue reporting, 1-click automatic fixes, and multi-resolution verification).
 
+## 2026-10-16 — Session 9
+- **Goal:** Milestone 8 Calibration: 4-step Calibration Wizard dialog (`CalibrationWizard.svelte`), Screenshot Align tool (§6.7, offline bilateral symmetry optimizer), alignment issue reporting and 1-click automatic fixes (§6.2), and multi-resolution verification.
+- **Planned Tasks:** M8-001, M8-002, M8-003, M8-004.
+- **Completed:**
+  - `crates/xhair-geometry`:
+    - `screenshot_align.rs`: Implemented offline bilateral symmetry center finder with sub-pixel 0.25 px quantization, contrast/energy weighting, and confidence heuristics. 100% offline, zero screen capture (Invariant P1).
+    - `alignment.rs`: Enhanced `alignment_report` to check `Line`, `Dot`, `Rect`, and `Circle` shapes against profile resolutions; implemented `apply_suggested_fix` for 1-click automatic fixes.
+    - `profile.rs`: Added `default_1440p()` preset.
+    - `lib.rs`: Added unit tests for rect/circle alignment diagnostics, 1-click fix execution, multi-resolution verification (1080p, 1440p, 4:3 stretched 1280x1024, odd 1921x1081), and synthetic dot symmetry detection.
+  - `ui`:
+    - `ui/src/lib/types.ts`: Added `AlignmentIssue`, updated `AlignmentDiagnostic`, and defined `ScreenshotAlignResult`.
+    - `ui/src/lib/state.svelte.ts`: Added calibration state (`calibrationOpen`, `calibrationStep`, `calibrationPatternActive`, `calibrationOffset`, `screenshotAlignMode`, `screenshotDetectedOffset`, `screenshotConfidence`), derived `alignmentIssues`, and methods (`openCalibration`, `closeCalibration`, `setCalibrationStep`, `toggleCalibrationPattern`, `nudgeCalibration`, `saveCalibrationOffset`, `resetCalibrationOffset`, `apply1ClickAlignmentFix`, `applyScreenshotAlignOffset`).
+    - `ui/src/components/CalibrationWizard.svelte`: Interactive 4-step wizard modal dialog with test pattern SVG (neon cyan lines, magenta center marker, distance ticks), 8-way nudge pad, result card, and offline Screenshot Align dropzone with symmetry center detection on HTML5 canvas.
+    - `ui/src/components/TopBar.svelte`: Added "🎯 Calibration" status pill button.
+    - `ui/src/components/LayersPanel.svelte`: Updated layer alignment badge to display clickable "⚠ FIX" button when off-grid.
+    - `ui/src/App.svelte`: Mounted `CalibrationWizard.svelte` modal.
+    - `ui/src/lib/shortcuts.ts`: Added `F8` shortcut for toggling calibration test pattern.
+    - `ui/src/lib/actions.ts` & `ui/src/generated/actions.json`: Added `calibration.show`, `calibration.hide`, and `calibration.set_offset`.
+    - `ui/tests/editor.test.ts`: Added 2 unit tests for calibration wizard flow and 1-click alignment fix.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 76 Rust tests passing across 12 workspace crates (100% green).
+  - `cargo test --test parity`: UI actions, commands, and MCP tools parity verified.
+  - `pnpm -C ui test`: 13 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Production bundle built in ~540ms (120 kB JS, 30.5 kB CSS).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 9: Dynamics & Spray Lab (Spray Lab standalone simulation window, dynamic reticle state machine and recoil simulation, gun profile editor, and compliance panel).
+
 
 

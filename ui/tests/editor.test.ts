@@ -133,4 +133,47 @@ describe('Editor State & Logic', () => {
       expect(item.action).toBeTruthy();
     }
   });
+
+  it('handles 4-step calibration wizard flow and offset saving (§6.7)', () => {
+    expect(state.calibrationOpen).toBe(false);
+    state.openCalibration();
+    expect(state.calibrationOpen).toBe(true);
+    expect(state.calibrationStep).toBe(1);
+
+    // Step 2 turns on test pattern
+    state.setCalibrationStep(2);
+    expect(state.calibrationStep).toBe(2);
+    expect(state.calibrationPatternActive).toBe(true);
+
+    // Fine nudge by quarter pixels
+    state.nudgeCalibration(0.25, -0.5);
+    expect(state.calibrationOffset.x).toBe(0.25);
+    expect(state.calibrationOffset.y).toBe(-0.5);
+
+    // Save offset
+    state.saveCalibrationOffset();
+    expect(state.activeProfile.calibrationOffset?.x).toBe(0.25);
+    expect(state.activeProfile.calibrationOffset?.y).toBe(-0.5);
+
+    state.closeCalibration();
+    expect(state.calibrationOpen).toBe(false);
+  });
+
+  it('detects alignment issues and applies 1-click automatic fix (§6.2)', () => {
+    state.activeProfile = RESOLUTION_PROFILES[0]; // 1920x1080
+    // Set layer thickness to 1.0 (1920+1 is odd -> off-grid)
+    const layer = state.crosshair.layers[0];
+    layer.shape.type = 'LineArms';
+    layer.shape.thickness = 1.0;
+
+    const issues = state.alignmentIssues;
+    expect(issues.length).toBeGreaterThan(0);
+    const targetIssue = issues.find((i) => i.layer_id === layer.id);
+    expect(targetIssue).toBeDefined();
+
+    if (targetIssue) {
+      state.apply1ClickAlignmentFix(targetIssue);
+      expect(layer.shape.thickness).toBe(2.0); // Fixed!
+    }
+  });
 });

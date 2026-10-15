@@ -7,11 +7,13 @@ pub mod alignment;
 pub mod coords;
 pub mod mapping;
 pub mod profile;
+pub mod screenshot_align;
 
 pub use alignment::*;
 pub use coords::*;
 pub use mapping::*;
 pub use profile::*;
+pub use screenshot_align::*;
 
 /// Quick helper returning the screen midpoint in continuous edge coordinates.
 pub fn screen_center(width: u32, height: u32) -> (f64, f64) {
@@ -79,6 +81,98 @@ mod tests {
         let issues = alignment_report(&xhair, 1920, 1080);
         // Diameter 2 on 1920x1080 is aligned!
         assert!(issues.is_empty());
+    }
+
+    #[test]
+    fn test_rect_and_circle_alignment_diagnostics() {
+        use xhair_model::shapes::{CircleProps, RectProps};
+
+        let mut xhair = Crosshair::new_blank("Test Rect & Circle");
+        // Rect 7x8 on 1920x1080: 1920+7 is odd (misaligned horizontally), 1080+8 is even (aligned vertically)
+        xhair.layers.push(Layer::new(
+            "Rect",
+            LayerKind::Rect(RectProps {
+                width: 7.0,
+                height: 8.0,
+                ..Default::default()
+            }),
+        ));
+        // Circle 5.0 on 1920x1080: 1920+5 is odd (misaligned)
+        xhair.layers.push(Layer::new(
+            "Circle",
+            LayerKind::Circle(CircleProps { diameter: 5.0 }),
+        ));
+
+        let issues = alignment_report(&xhair, 1920, 1080);
+        assert_eq!(issues.len(), 2);
+        assert_eq!(issues[0].layer_name, "Rect");
+        assert_eq!(issues[0].axis, AlignmentAxis::Horizontal);
+        assert_eq!(issues[1].layer_name, "Circle");
+        assert_eq!(issues[1].axis, AlignmentAxis::Both);
+    }
+
+    #[test]
+    fn test_apply_suggested_fix() {
+        let mut xhair = Crosshair::new_blank("Fix Test");
+        xhair.layers.push(Layer::new(
+            "1px Line",
+            LayerKind::Line(LineProps {
+                thickness: 1.0,
+                ..Default::default()
+            }),
+        ));
+        let issues = alignment_report(&xhair, 1920, 1080);
+        assert_eq!(issues.len(), 1);
+
+        // Apply 1-click fix
+        let applied = apply_suggested_fix(&mut xhair, &issues[0]);
+        assert!(applied);
+
+        // Verify issue is now resolved
+        let remaining_issues = alignment_report(&xhair, 1920, 1080);
+        assert!(remaining_issues.is_empty());
+    }
+
+    #[test]
+    fn test_multi_resolution_verification() {
+        use xhair_model::units::Vec2;
+
+        // Native 1080p
+        let p_1080p = ResolutionProfile::default_1080p();
+        let map_1080p = GeometryMapping::compute(&p_1080p, (0.0, 0.0), (1920.0, 1080.0));
+        assert_eq!(map_1080p.sx, 1.0);
+        assert_eq!(map_1080p.sy, 1.0);
+        assert_eq!(
+            (map_1080p.out_center_x, map_1080p.out_center_y),
+            (960.0, 540.0)
+        );
+
+        // Native 1440p
+        let p_1440p = ResolutionProfile::default_1440p();
+        let map_1440p = GeometryMapping::compute(&p_1440p, (0.0, 0.0), (2560.0, 1440.0));
+        assert_eq!(map_1440p.sx, 1.0);
+        assert_eq!(map_1440p.sy, 1.0);
+        assert_eq!(
+            (map_1440p.out_center_x, map_1440p.out_center_y),
+            (1280.0, 720.0)
+        );
+
+        // Stretched 4:3 1280x1024 on 1080p output (1920x1080)
+        let mut p_stretched = ResolutionProfile::default_1080p();
+        p_stretched.game_resolution = Resolution::STRETCHED_4_3;
+        p_stretched.display_mode = DisplayMode::Stretched;
+        let map_stretched = GeometryMapping::compute(&p_stretched, (0.0, 0.0), (1920.0, 1080.0));
+        assert!((map_stretched.sx - 1.5).abs() < 1e-4);
+        assert!((map_stretched.sy - (1080.0 / 1024.0)).abs() < 1e-4);
+
+        // Calibration offset application
+        let mut p_calib = ResolutionProfile::default_1080p();
+        p_calib.calibration_offset = Vec2::new(0.5, -0.25);
+        let map_calib = GeometryMapping::compute(&p_calib, (0.0, 0.0), (1920.0, 1080.0));
+        assert_eq!(
+            (map_calib.out_center_x, map_calib.out_center_y),
+            (960.5, 539.75)
+        );
     }
 
     proptest! {

@@ -56,10 +56,10 @@
 | **M7-002** | M7 Polish | Animation tracks, keyframes, and timeline dock | done | §4.7 | Procedural tracks, evaluation engine, UI TimelineDock |
 | **M7-003** | M7 Polish | Static-only lock and reduced-motion enforcement | done | §4.7 | Enforced in RenderContext, state store, and UI lock |
 | **M7-004** | M7 Polish | Heavy crosshair performance optimization (<8ms) | done | §7.4 | Bounded scratch buffers, SIMD release bench passes 5.4ms < 8ms |
-| **M8-001** | M8 Calib | 4-step Calibration Wizard dialog | todo | §6.7 | |
-| **M8-002** | M8 Calib | Screenshot Align tool (local file symmetry finder) | todo | §6.7 | |
-| **M8-003** | M8 Calib | Alignment issue report and automatic 1-click fixes | todo | §6.2 | |
-| **M8-004** | M8 Calib | Verification on native and stretched resolutions | todo | §16 (M8) | |
+| **M8-001** | M8 Calib | 4-step Calibration Wizard dialog | done | §6.7 | CalibrationWizard.svelte modal, test pattern & profile binding |
+| **M8-002** | M8 Calib | Screenshot Align tool (local file symmetry finder) | done | §6.7 | Offline bilateral symmetry optimizer in xhair-geometry & UI dropzone |
+| **M8-003** | M8 Calib | Alignment issue report and automatic 1-click fixes | done | §6.2 | alignment_report for Line/Dot/Rect/Circle & apply_suggested_fix |
+| **M8-004** | M8 Calib | Verification on native and stretched resolutions | done | §16 (M8) | Multi-resolution tests pass for 1080p, 1440p, 4:3 stretched, and odd res |
 | **M9-001** | M9 Dynamic | Spray Lab standalone simulation window | todo | §12.6 | |
 | **M9-002** | M9 Dynamic | Dynamic reticle state machine and input simulation | todo | §12.1, §12.3 | |
 | **M9-003** | M9 Dynamic | Gun profile editor with custom spread curves | todo | §12.4 | |

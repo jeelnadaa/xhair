@@ -109,6 +109,16 @@
     </Tooltip>
 
     <Tooltip
+      title="Calibration Wizard"
+      description="Calibrate screen center and verify pixel alignment (§6.7)"
+      details="Click to open 4-step wizard & screenshot align"
+    >
+      <button class="pill" onclick={() => editorState.openCalibration()}>
+        🎯 Calibration
+      </button>
+    </Tooltip>
+
+    <Tooltip
       title="Visibility Score"
       description="WCAG-style contrast ratio against background"
       details="Score: {editorState.visibilityScore}:1 (High contrast)"

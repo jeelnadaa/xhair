@@ -225,6 +225,14 @@ export const SHORTCUTS_REGISTRY: CommandShortcut[] = [
     description: 'Launch the interactive 4-step pixel calibration wizard',
     action: 'openCalibration',
   },
+  {
+    id: 'calibration.toggle_pattern',
+    name: 'Toggle Calibration Pattern',
+    category: 'Overlay',
+    shortcut: 'F8',
+    description: 'Toggle calibration test pattern flicker comparison (§6.7)',
+    action: 'toggleCalibrationPattern',
+  },
 ];
 
 export function getShortcutForAction(action: string): string | undefined {

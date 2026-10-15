@@ -222,5 +222,26 @@
     "command": "meta.shortcuts",
     "mcp_tool": "meta.shortcuts",
     "description": "Lists all registered hotkeys and command palette entries"
+  },
+  {
+    "id": "calibration.show",
+    "name": "Show Calibration Pattern",
+    "command": "calibration.show",
+    "mcp_tool": "calibration.show",
+    "description": "Shows the full-screen calibration alignment pattern overlay"
+  },
+  {
+    "id": "calibration.hide",
+    "name": "Hide Calibration Pattern",
+    "command": "calibration.hide",
+    "mcp_tool": "calibration.hide",
+    "description": "Hides the calibration alignment pattern overlay"
+  },
+  {
+    "id": "calibration.set_offset",
+    "name": "Set Calibration Offset",
+    "command": "calibration.set_offset",
+    "mcp_tool": "calibration.set_offset",
+    "description": "Sets the physical pixel calibration offset in game pixels"
   }
 ]
