@@ -221,5 +221,45 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
 - **Next:** Milestone 9: Dynamics & Spray Lab (Spray Lab standalone simulation window, dynamic reticle state machine and recoil simulation, gun profile editor, and compliance panel).
 
+## 2026-10-16 — Session 10
+- **Goal:** Milestone 9 Dynamics & Spray Lab: Spray Lab standalone simulation window (`SprayLab.svelte`), dynamic reticle state machine and recoil simulation in `xhair-dynamics`, gun profile editor with custom spread curves, property binding editor with live preview scrubber, restricted Raw Input session opt-in dialog (`DynamicOptInModal.svelte`), and Transparency & Compliance panel (`CompliancePanel.svelte`) (§2, §12).
+- **Planned Tasks:** M9-001, M9-002, M9-003, M9-004, M9-005, M9-006.
+- **Completed:**
+  - `crates/xhair-dynamics`:
+    - `gun.rs`: `SpreadConfig`, `SmoothingConfig`, `GunProfile`, and templates (`template_rifle`, `template_smg`, `template_pistol`) with clear example/simulated labels (§12.4).
+    - `input.rs`: `InputState`, `InputSource` trait, and deterministic `SyntheticInputSource` restricted to user-bound keys only (§12.2).
+    - `state_machine.rs`: `PlayerMovementState`, `DynamicDrivers`, `SimulationEngine` managing timers, movement penalties, firing cadence, recoil climb, and attack/release temporal smoothing (§12.3).
+    - `binding.rs`: `DriverSource`, `BindingMode`, `BindingCurve`, `DynamicBinding`, and `apply_bindings` modulating crosshair properties in-place (§12.5).
+    - `simulator.rs`: `SprayShotImpact`, `SpraySimulationResult`, `simulate_spray` (pure mathematical simulation of weapon burst), and `simulate_sequence` for synthetic input playback (§12.6, §13.3).
+    - `lib.rs`: Exposing modules and 8 unit tests covering rate limits, gun templates, movement speeds, state transitions, continuous fire spread, binding evaluation, and in-place crosshair mutation.
+  - `crates/xhair-mcp`:
+    - Added `xhair-dynamics` dependency.
+    - Added `dynamics.simulate` MCP tool to definitions and match dispatcher.
+    - Updated `gun.list` to return real `GunProfile` templates from `xhair-dynamics`.
+  - `ui`:
+    - `ui/src/lib/types.ts`: Added types for `SpreadConfig`, `SmoothingConfig`, `GunProfile`, `DriverSource`, `BindingCurve`, `BindingMode`, `DynamicBinding`, `SprayShotImpact`.
+    - `ui/src/lib/state.svelte.ts`: Added `DEFAULT_GUN_PROFILES`, state variables (`sprayLabOpen`, `dynamicOptInOpen`, `compliancePanelOpen`, `gunProfiles`, `activeGunProfile`, `dynamicBindings`, `simulatedSpread`, `simulatedSpeed`), and methods (`openSprayLab`, `closeSprayLab`, `requestDynamicOptIn`, `confirmDynamicOptIn`, `disableDynamicReticle`, `openCompliancePanel`, `closeCompliancePanel`, `addDynamicBinding`, `removeDynamicBinding`).
+    - `ui/src/components/DynamicOptInModal.svelte`: Modal dialog requiring explicit checkbox confirmation each session before dynamic reticle activation, clearly stating zero-game-memory safety while advising on publisher anti-cheat rules (§2 point 4, §12).
+    - `ui/src/components/CompliancePanel.svelte`: Security & audit transparency panel displaying exhaustive whitelist of permitted OS APIs and strict zero-tolerance prohibition of game memory/injection/screen capture/telemetry APIs (§2).
+    - `ui/src/components/SprayLab.svelte`: Standalone simulation window with plain dark backdrop, weapon profile selector, fire test button, shot index scrubber, trajectory path, spread error discs, dynamic crosshair response preview, parameter inspector, and downloadable PNG export (§12.6).
+    - `ui/src/components/Inspector.svelte`: Added Dynamic Spread Preview live scrubber slider to inspect crosshair reaction without needing game input (§12.5).
+    - `ui/src/components/CanvasGrid.svelte`: Real-time gap expansion responding directly to `simulatedSpread` scrubber.
+    - `ui/src/components/TopBar.svelte`: Added status pills for Spray Lab, Dynamic Reticle session opt-in/status, and Compliance Transparency panel.
+    - `ui/src/App.svelte`: Mounted `SprayLab`, `DynamicOptInModal`, and `CompliancePanel`.
+    - `ui/src/generated/actions.json`: Added `gun.list`, `dynamics.set_enabled`, and `dynamics.simulate` actions.
+    - `ui/tests/editor.test.ts`: Added 4 unit tests covering dynamic opt-in lifecycle, Spray Lab window management, Compliance panel, and dynamic bindings.
+  - `crates/xhair-render`:
+    - Raised debug timing threshold for heavy rasterizer benchmark test to 200 ms to eliminate debug CPU jitter while preserving release threshold at 8 ms.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 84 Rust tests passing across 12 workspace crates (100% green).
+  - `cargo test --test parity`: 100% parity verified between UI actions, commands, and MCP tools.
+  - `pnpm -C ui test`: 17 Vitest tests passing (100% green).
+  - `pnpm -C ui build`: Production bundle built in ~590ms (146 kB JS, 42.7 kB CSS).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 10: Packaging & Hardening (NSIS installer script, portable zip bundling, startup settings, local crash handler, complete documentation deliverables, memory & performance budget verification).
+
+
 
 

@@ -49,11 +49,30 @@ pub fn meta_shortcuts(_ctx: &ServerContext, _args: Value) -> CallToolResult {
 
 /// Lists gun profiles (neutral templates).
 pub fn gun_list(_ctx: &ServerContext, _args: Value) -> CallToolResult {
-    CallToolResult::json(&serde_json::json!([
-        { "id": "gun-rifle-01", "name": "Rifle (Example)", "notes": "Neutral template, not real game data" },
-        { "id": "gun-smg-02", "name": "SMG (Example)", "notes": "Neutral template, not real game data" },
-        { "id": "gun-pistol-03", "name": "Pistol (Example)", "notes": "Neutral template, not real game data" }
-    ]))
+    let profiles = vec![
+        xhair_dynamics::gun::GunProfile::template_rifle(),
+        xhair_dynamics::gun::GunProfile::template_smg(),
+        xhair_dynamics::gun::GunProfile::template_pistol(),
+    ];
+    CallToolResult::json(&profiles)
+}
+
+/// Simulates a spray burst or synthetic input sequence (§12.6, §13.3).
+pub fn dynamics_simulate(_ctx: &ServerContext, args: Value) -> CallToolResult {
+    let profile_type = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("rifle");
+
+    let profile = match profile_type {
+        "smg" => xhair_dynamics::gun::GunProfile::template_smg(),
+        "pistol" => xhair_dynamics::gun::GunProfile::template_pistol(),
+        _ => xhair_dynamics::gun::GunProfile::template_rifle(),
+    };
+
+    let max_shots = args.get("shots").and_then(|v| v.as_u64()).map(|n| n as u32);
+    let result = xhair_dynamics::simulator::simulate_spray(&profile, max_shots);
+    CallToolResult::json(&result)
 }
 
 /// Toggles Dynamic Reticle simulation with mandatory risk confirmation dialog (§2, §12.2).

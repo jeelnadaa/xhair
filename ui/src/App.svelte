@@ -10,6 +10,9 @@
   import CommandPalette from './components/CommandPalette.svelte';
   import McpModal from './components/McpModal.svelte';
   import CalibrationWizard from './components/CalibrationWizard.svelte';
+  import SprayLab from './components/SprayLab.svelte';
+  import DynamicOptInModal from './components/DynamicOptInModal.svelte';
+  import CompliancePanel from './components/CompliancePanel.svelte';
 </script>
 
 <div class="app-layout">
@@ -42,6 +45,9 @@
   <CommandPalette />
   <McpModal />
   <CalibrationWizard />
+  <SprayLab />
+  <DynamicOptInModal />
+  <CompliancePanel />
 </div>
 
 <style>

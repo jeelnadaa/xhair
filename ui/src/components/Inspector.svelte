@@ -135,6 +135,48 @@
           </div>
         {/if}
       {/each}
+
+      <!-- Dynamic Binding Live Preview Scrubber (§12.5) -->
+      <div class="dynamic-scrubber-section">
+        <div class="dynamic-header">
+          <span class="dyn-badge">DYNAMIC SPREAD PREVIEW</span>
+          <Tooltip
+            title="Live Spread Scrubber"
+            description="Drag to preview how crosshair layers react to simulated weapon spread without needing game input (§12.5)"
+          >
+            <span class="info-icon" style="cursor: help; font-size: 11px;">ℹ️</span>
+          </Tooltip>
+        </div>
+
+        <div class="property-row">
+          <div class="row">
+            <span class="property-label">Simulated Spread</span>
+            <div class="val-group">
+              <span class="mono" style="font-size: 11px; color: var(--accent); font-weight: 700;">
+                {editorState.simulatedSpread.toFixed(1)} px
+              </span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="15"
+              step="0.1"
+              bind:value={editorState.simulatedSpread}
+              aria-label="Simulated spread scrubber"
+            />
+            <div class="slider-fill-visual" style="width: {(editorState.simulatedSpread / 15) * 100}%;"></div>
+          </div>
+        </div>
+
+        <div class="binding-chip">
+          <span class="binding-path">layers[0].gap</span>
+          <span class="binding-op">+=</span>
+          <span class="binding-driver">spread × 0.8</span>
+        </div>
+      </div>
     </div>
   {:else}
     <div style="color: var(--text-muted); font-size: 12px; padding: 12px 0;">
@@ -225,5 +267,51 @@
     background: var(--accent);
     border-radius: 2px;
     pointer-events: none;
+  }
+
+  .dynamic-scrubber-section {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .dynamic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dyn-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .binding-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(54, 242, 203, 0.06);
+    border: 1px solid rgba(54, 242, 203, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  .binding-path {
+    color: var(--text);
+  }
+
+  .binding-op {
+    color: var(--accent);
+  }
+
+  .binding-driver {
+    color: var(--text-muted);
   }
 </style>

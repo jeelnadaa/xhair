@@ -131,7 +131,10 @@
       if (layer.shape.type === 'LineArms') {
         const len = (layer.shape.length || 6) * zoom;
         const thick = (layer.shape.thickness || 2) * zoom;
-        const gap = (layer.shape.gap || 4) * zoom;
+        // Apply dynamic spread modulation if bound (§12.5)
+        const spreadDelta = Math.max(0, (editorState.simulatedSpread - 1.2) * 0.8);
+        const effectiveGap = Math.max(0, (layer.shape.gap || 4) + spreadDelta);
+        const gap = effectiveGap * zoom;
         const arms = layer.shape.armCount || 4;
 
         for (let a = 0; a < arms; a++) {
@@ -304,6 +307,7 @@
       editorState.showGuides,
       editorState.showRings,
       editorState.activeProfile,
+      editorState.simulatedSpread,
     ];
     renderCanvas();
   });

@@ -14,6 +14,7 @@ xhair-geometry = { path = "../xhair-geometry" }
 xhair-render = { path = "../xhair-render" }
 xhair-format = { path = "../xhair-format" }
 xhair-library = { path = "../xhair-library" }
+xhair-dynamics = { path = "../xhair-dynamics" }
 serde.workspace = true
 serde_json.workspace = true
 schemars.workspace = true

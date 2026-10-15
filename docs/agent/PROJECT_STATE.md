@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 9
-- **Phase / Milestone:** M8 Calibration — Done | Next: M9 Dynamics & Spray Lab
+- **Session:** 10
+- **Phase / Milestone:** M9 Dynamics & Spray Lab — Done | Next: M10 Packaging & Hardening
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
@@ -16,14 +16,14 @@
 - [x] M6 MCP Server (completed 2026-10-16)
 - [x] M7 Effects & Polish (completed 2026-10-16)
 - [x] M8 Calibration (completed 2026-10-16)
-- [ ] M9 Dynamics & Spray Lab
+- [x] M9 Dynamics & Spray Lab (completed 2026-10-16)
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M9 Dynamics & Spray Lab: Spray Lab standalone simulation window (§12.6), dynamic reticle state machine and recoil simulation, gun profile editor, and compliance disclaimer.
+- M10 Packaging & Hardening: NSIS installer script, portable zip bundling, startup settings, local crash handler, documentation deliverables, and release packaging (§21, §14, §15).
 
 ## Next exact step
-- Implement Milestone 9: Spray Lab standalone simulation window (`SprayLab.svelte`), dynamic reticle state machine in `xhair-dynamics`, gun profile editor, and Transparency & Compliance panel (§2, §12).
+- Implement Milestone 10: NSIS installer script, portable zip packaging, Windows startup settings, local crash reporting (no telemetry), and package verification.
 
 ## WIP notes
 - `ui`:

@@ -140,3 +140,51 @@ export interface ScreenshotAlignResult {
   suggested_offset: [number, number];
   confidence: number;
 }
+
+export interface SpreadConfig {
+  base: number;
+  per_shot: number;
+  max: number;
+  recovery_per_sec: number;
+  move_penalty: number;
+  shift_move_penalty: number;
+  crouch_bonus: number;
+  air_penalty: number;
+}
+
+export interface SmoothingConfig {
+  attack_ms: number;
+  release_ms: number;
+}
+
+export interface GunProfile {
+  id: string;
+  name: string;
+  notes: string;
+  fire_rate_hz: number;
+  magazine: number;
+  spread: SpreadConfig;
+  smoothing: SmoothingConfig;
+  pattern: Array<{ x: number; y: number }>;
+}
+
+export type DriverSource = 'spread' | 'movement_speed' | 'firing_heat' | 'recoil_x' | 'recoil_y';
+export type BindingCurve = 'linear' | 'ease_in' | 'ease_out' | 'ease_in_out';
+export type BindingMode = 'add' | 'set' | 'multiply';
+
+export interface DynamicBinding {
+  id: string;
+  property_path: string;
+  driver: DriverSource;
+  in_range: [number, number];
+  out_range: [number, number];
+  curve: BindingCurve;
+  mode: BindingMode;
+}
+
+export interface SprayShotImpact {
+  shot_index: number;
+  position: { x: number; y: number };
+  timestamp_seconds: number;
+  spread_radius: number;
+}

@@ -9,10 +9,92 @@ import type {
   AlignmentDiagnostic,
   AlignmentIssue,
   AnimTrack,
+  GunProfile,
+  DynamicBinding,
 } from './types';
 import propertiesData from '../generated/properties.json';
 
 export const DESCRIPTORS: PropertyDescriptor[] = propertiesData.descriptors as PropertyDescriptor[];
+
+export const DEFAULT_GUN_PROFILES: GunProfile[] = [
+  {
+    id: 'gun-rifle-01',
+    name: 'Rifle (Template)',
+    notes: 'Example placeholder curve - not real game data (§12.4)',
+    fire_rate_hz: 11.0,
+    magazine: 30,
+    spread: {
+      base: 1.2,
+      per_shot: 0.9,
+      max: 14.0,
+      recovery_per_sec: 18.0,
+      move_penalty: 5.0,
+      shift_move_penalty: 2.0,
+      crouch_bonus: 0.5,
+      air_penalty: 9.0,
+    },
+    smoothing: {
+      attack_ms: 20.0,
+      release_ms: 120.0,
+    },
+    pattern: Array.from({ length: 30 }, (_, i) => {
+      const kick_y = Math.min(i * 2.5, 28.0);
+      const kick_x = i < 8 ? 0.0 : i < 18 ? (i - 8) * 1.4 : 14.0 - (i - 18) * 2.2;
+      return { x: kick_x, y: kick_y };
+    }),
+  },
+  {
+    id: 'gun-smg-02',
+    name: 'SMG (Template)',
+    notes: 'Example placeholder curve - not real game data (§12.4)',
+    fire_rate_hz: 15.0,
+    magazine: 30,
+    spread: {
+      base: 1.8,
+      per_shot: 0.6,
+      max: 18.0,
+      recovery_per_sec: 22.0,
+      move_penalty: 3.5,
+      shift_move_penalty: 1.2,
+      crouch_bonus: 0.3,
+      air_penalty: 7.0,
+    },
+    smoothing: {
+      attack_ms: 10.0,
+      release_ms: 100.0,
+    },
+    pattern: Array.from({ length: 30 }, (_, i) => {
+      const kick_y = Math.min(i * 1.8, 20.0);
+      const kick_x = Math.sin(i * 1.2) * 8.0;
+      return { x: kick_x, y: kick_y };
+    }),
+  },
+  {
+    id: 'gun-pistol-03',
+    name: 'Pistol (Template)',
+    notes: 'Example placeholder curve - not real game data (§12.4)',
+    fire_rate_hz: 6.0,
+    magazine: 12,
+    spread: {
+      base: 0.8,
+      per_shot: 1.4,
+      max: 10.0,
+      recovery_per_sec: 25.0,
+      move_penalty: 2.0,
+      shift_move_penalty: 0.8,
+      crouch_bonus: 0.2,
+      air_penalty: 6.0,
+    },
+    smoothing: {
+      attack_ms: 15.0,
+      release_ms: 80.0,
+    },
+    pattern: Array.from({ length: 12 }, (_, i) => ({
+      x: 0,
+      y: Math.min(i * 3.0, 15.0),
+    })),
+  },
+];
 
 export const RESOLUTION_PROFILES: ResolutionProfile[] = [
   {
@@ -262,6 +344,26 @@ export class EditorState {
   ]);
   private agentEditingTimer: ReturnType<typeof setTimeout> | null = null;
   dynamicReticleEnabled = $state<boolean>(false);
+
+  // Dynamic Reticle & Spray Lab (§12, M9)
+  sprayLabOpen = $state<boolean>(false);
+  dynamicOptInOpen = $state<boolean>(false);
+  compliancePanelOpen = $state<boolean>(false);
+  gunProfiles = $state<GunProfile[]>(JSON.parse(JSON.stringify(DEFAULT_GUN_PROFILES)));
+  activeGunProfile = $state<GunProfile>(JSON.parse(JSON.stringify(DEFAULT_GUN_PROFILES[0])));
+  dynamicBindings = $state<DynamicBinding[]>([
+    {
+      id: 'bind-gap-spread',
+      property_path: 'layers[0].gap',
+      driver: 'spread',
+      in_range: [1.0, 10.0],
+      out_range: [0.0, 6.0],
+      curve: 'linear',
+      mode: 'add',
+    },
+  ]);
+  simulatedSpread = $state<number>(1.2);
+  simulatedSpeed = $state<number>(0.0);
 
   // Command Palette & Modals
   commandPaletteOpen = $state<boolean>(false);
@@ -722,6 +824,45 @@ export class EditorState {
         layer.offsetY += issue.suggested_fix.delta;
       }
     }
+  }
+
+  openSprayLab() {
+    this.sprayLabOpen = true;
+  }
+
+  closeSprayLab() {
+    this.sprayLabOpen = false;
+  }
+
+  requestDynamicOptIn() {
+    this.dynamicOptInOpen = true;
+  }
+
+  confirmDynamicOptIn() {
+    this.dynamicReticleEnabled = true;
+    this.dynamicOptInOpen = false;
+  }
+
+  disableDynamicReticle() {
+    this.dynamicReticleEnabled = false;
+  }
+
+  openCompliancePanel() {
+    this.compliancePanelOpen = true;
+  }
+
+  closeCompliancePanel() {
+    this.compliancePanelOpen = false;
+  }
+
+  addDynamicBinding(binding: DynamicBinding) {
+    this.pushUndo();
+    this.dynamicBindings = [...this.dynamicBindings, binding];
+  }
+
+  removeDynamicBinding(bindingId: string) {
+    this.pushUndo();
+    this.dynamicBindings = this.dynamicBindings.filter((b) => b.id !== bindingId);
   }
 }
 

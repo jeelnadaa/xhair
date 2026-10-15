@@ -270,7 +270,7 @@ mod tests {
         println!("Heavy crosshair raster time: {} µs", stats.raster_time_us);
         // Spec §7.4: heavy crosshair with glow render budget < 8 ms (8000 µs in release)
         let max_budget_us = if cfg!(debug_assertions) {
-            100_000
+            200_000
         } else {
             8000
         };

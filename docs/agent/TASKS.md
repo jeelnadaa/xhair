@@ -60,12 +60,12 @@
 | **M8-002** | M8 Calib | Screenshot Align tool (local file symmetry finder) | done | §6.7 | Offline bilateral symmetry optimizer in xhair-geometry & UI dropzone |
 | **M8-003** | M8 Calib | Alignment issue report and automatic 1-click fixes | done | §6.2 | alignment_report for Line/Dot/Rect/Circle & apply_suggested_fix |
 | **M8-004** | M8 Calib | Verification on native and stretched resolutions | done | §16 (M8) | Multi-resolution tests pass for 1080p, 1440p, 4:3 stretched, and odd res |
-| **M9-001** | M9 Dynamic | Spray Lab standalone simulation window | todo | §12.6 | |
-| **M9-002** | M9 Dynamic | Dynamic reticle state machine and input simulation | todo | §12.1, §12.3 | |
-| **M9-003** | M9 Dynamic | Gun profile editor with custom spread curves | todo | §12.4 | |
-| **M9-004** | M9 Dynamic | Property binding editor with scrubber preview | todo | §12.5 | |
-| **M9-005** | M9 Dynamic | Raw Input restricted capture with session opt-in | todo | §2, §12.2 | |
-| **M9-006** | M9 Dynamic | Transparency & Compliance panel API listing | todo | §2 | |
+| **M9-001** | M9 Dynamic | Spray Lab standalone simulation window | done | §12.6 | SprayLab.svelte standalone simulation window, shot scrubber, dynamic reticle response, PNG export |
+| **M9-002** | M9 Dynamic | Dynamic reticle state machine and input simulation | done | §12.1, §12.3 | SimulationEngine, PlayerMovementState, DynamicDrivers, temporal smoothing in xhair-dynamics |
+| **M9-003** | M9 Dynamic | Gun profile editor with custom spread curves | done | §12.4 | GunProfile, SpreadConfig, templates (Rifle, SMG, Pistol) with neutral disclaimer |
+| **M9-004** | M9 Dynamic | Property binding editor with scrubber preview | done | §12.5 | DynamicBinding, apply_bindings, live simulatedSpread scrubber in Inspector & CanvasGrid |
+| **M9-005** | M9 Dynamic | Raw Input restricted capture with session opt-in | done | §2, §12.2 | Restricted InputState, DynamicOptInModal session confirmation and risk advisory |
+| **M9-006** | M9 Dynamic | Transparency & Compliance panel API listing | done | §2 | CompliancePanel.svelte exhaustive audit of permitted and prohibited OS APIs |
 | **M10-001** | M10 Release | NSIS installer script and portable zip bundling | todo | §21.3 | |
 | **M10-002** | M10 Release | Start with Windows and start minimized settings | todo | §14 | |
 | **M10-003** | M10 Release | Crash handler with local reports (no telemetry) | todo | §16 (M10) | |

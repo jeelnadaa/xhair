@@ -176,4 +176,65 @@ describe('Editor State & Logic', () => {
       expect(layer.shape.thickness).toBe(2.0); // Fixed!
     }
   });
+
+  it('manages dynamic reticle session opt-in and risk lifecycle (§2, §12)', () => {
+    expect(state.dynamicReticleEnabled).toBe(false);
+    expect(state.dynamicOptInOpen).toBe(false);
+
+    // Request opt-in
+    state.requestDynamicOptIn();
+    expect(state.dynamicOptInOpen).toBe(true);
+    expect(state.dynamicReticleEnabled).toBe(false);
+
+    // Confirm opt-in
+    state.confirmDynamicOptIn();
+    expect(state.dynamicReticleEnabled).toBe(true);
+    expect(state.dynamicOptInOpen).toBe(false);
+
+    // Disable
+    state.disableDynamicReticle();
+    expect(state.dynamicReticleEnabled).toBe(false);
+  });
+
+  it('manages Spray Lab window and gun profile catalog (§12.6)', () => {
+    expect(state.sprayLabOpen).toBe(false);
+    state.openSprayLab();
+    expect(state.sprayLabOpen).toBe(true);
+
+    expect(state.gunProfiles.length).toBeGreaterThanOrEqual(3);
+    const rifle = state.gunProfiles.find((g) => g.id === 'gun-rifle-01');
+    expect(rifle).toBeDefined();
+    expect(rifle?.magazine).toBe(30);
+
+    state.closeSprayLab();
+    expect(state.sprayLabOpen).toBe(false);
+  });
+
+  it('manages Compliance Transparency panel (§2)', () => {
+    expect(state.compliancePanelOpen).toBe(false);
+    state.openCompliancePanel();
+    expect(state.compliancePanelOpen).toBe(true);
+    state.closeCompliancePanel();
+    expect(state.compliancePanelOpen).toBe(false);
+  });
+
+  it('adds and removes dynamic property bindings (§12.5)', () => {
+    const initialBindings = state.dynamicBindings.length;
+    const testBinding = {
+      id: 'test-scale-spread',
+      property_path: 'global.scale',
+      driver: 'spread' as const,
+      in_range: [1.0, 10.0] as [number, number],
+      out_range: [1.0, 1.5] as [number, number],
+      curve: 'linear' as const,
+      mode: 'set' as const,
+    };
+
+    state.addDynamicBinding(testBinding);
+    expect(state.dynamicBindings.length).toBe(initialBindings + 1);
+    expect(state.dynamicBindings.some((b) => b.id === 'test-scale-spread')).toBe(true);
+
+    state.removeDynamicBinding('test-scale-spread');
+    expect(state.dynamicBindings.length).toBe(initialBindings);
+  });
 });

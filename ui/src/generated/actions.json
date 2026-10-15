@@ -243,5 +243,26 @@
     "command": "calibration.set_offset",
     "mcp_tool": "calibration.set_offset",
     "description": "Sets the physical pixel calibration offset in game pixels"
+  },
+  {
+    "id": "gun.list",
+    "name": "List Gun Profiles",
+    "command": "gun.list",
+    "mcp_tool": "gun.list",
+    "description": "Lists gun profiles with custom spread and recoil curves"
+  },
+  {
+    "id": "dynamics.set_enabled",
+    "name": "Set Dynamic Reticle Enabled",
+    "command": "dynamics.set_enabled",
+    "mcp_tool": "dynamics.set_enabled",
+    "description": "Enables or disables reactive dynamic reticle with explicit risk confirmation"
+  },
+  {
+    "id": "dynamics.simulate",
+    "name": "Simulate Spray",
+    "command": "dynamics.simulate",
+    "mcp_tool": "dynamics.simulate",
+    "description": "Simulates continuous spray burst and calculates shot offsets and spread radii"
   }
 ]

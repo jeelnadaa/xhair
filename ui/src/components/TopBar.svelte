@@ -119,6 +119,42 @@
     </Tooltip>
 
     <Tooltip
+      title="Spray Lab"
+      description="Standalone simulated recoil & spray curve visualizer (§12.6, 100% safe)"
+      details="Click to test gun profiles and scrub shot impacts"
+    >
+      <button class="pill" onclick={() => editorState.openSprayLab()}>
+        🔫 Spray Lab
+      </button>
+    </Tooltip>
+
+    <Tooltip
+      title="Dynamic Reticle"
+      description={editorState.dynamicReticleEnabled
+        ? 'Restricted Raw Input simulation active for this session (§12)'
+        : 'Off by default. Click to open session risk opt-in (§2)'}
+      details="Reacts to user locomotion/fire inputs"
+    >
+      <button
+        class="pill {editorState.dynamicReticleEnabled ? 'active' : ''}"
+        onclick={() => (editorState.dynamicReticleEnabled ? editorState.disableDynamicReticle() : editorState.requestDynamicOptIn())}
+      >
+        <span class="dot-indicator"></span>
+        Dynamics {editorState.dynamicReticleEnabled ? 'ON' : 'OFF'}
+      </button>
+    </Tooltip>
+
+    <Tooltip
+      title="Compliance & Audit"
+      description="Exhaustive list of whitelisted OS APIs and strict zero-game-memory rules (§2)"
+      details="Click to inspect security & compliance guarantees"
+    >
+      <button class="pill" onclick={() => editorState.openCompliancePanel()}>
+        🛡️ Compliance
+      </button>
+    </Tooltip>
+
+    <Tooltip
       title="Visibility Score"
       description="WCAG-style contrast ratio against background"
       details="Score: {editorState.visibilityScore}:1 (High contrast)"

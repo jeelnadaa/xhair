@@ -10,4 +10,5 @@ description = "Dynamic Reticle pure simulation and recoil/spread modeling for xh
 [dependencies]
 xhair-model = { path = "../xhair-model" }
 serde.workspace = true
+schemars.workspace = true
 thiserror.workspace = true

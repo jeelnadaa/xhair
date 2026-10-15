@@ -469,6 +469,19 @@ pub fn list_tools() -> Vec<ToolDefinition> {
                 }
             }),
         },
+        ToolDefinition {
+            name: "dynamics.simulate".to_string(),
+            description:
+                "Simulates continuous spray burst and calculates shot offsets and spread radii."
+                    .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "profile": { "type": "string", "enum": ["rifle", "smg", "pistol"] },
+                    "shots": { "type": "integer", "minimum": 1 }
+                }
+            }),
+        },
     ]
 }
 
@@ -528,6 +541,7 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
         "meta.shortcuts" => meta::meta_shortcuts(ctx, args),
         "gun.list" => meta::gun_list(ctx, args),
         "dynamics.set_enabled" => meta::dynamics_set_enabled(ctx, args),
+        "dynamics.simulate" => meta::dynamics_simulate(ctx, args),
 
         _ => CallToolResult::error(format!("Unknown tool: {}", name)),
     };
