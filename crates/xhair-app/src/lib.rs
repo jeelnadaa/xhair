@@ -8,7 +8,21 @@ pub const APP_TITLE: &str = "XHAIR";
 
 /// Runs the main application event loop.
 pub fn run() -> anyhow::Result<()> {
-    tracing::info!("Starting {}", APP_TITLE);
+    // Install local panic crash handler with zero telemetry (§16, M10)
+    let crash_dir = xhair_platform_win::install_crash_handler()
+        .map_err(|e| anyhow::anyhow!("Failed to initialize crash handler: {}", e))?;
+    tracing::debug!("Crash reports directory: {:?}", crash_dir);
+
+    let version = env!("CARGO_PKG_VERSION");
+    let args: Vec<String> = std::env::args().collect();
+    let is_minimized = args.iter().any(|a| a == "--minimized");
+
+    tracing::info!(
+        "Starting {} v{} (minimized={})",
+        APP_TITLE,
+        version,
+        is_minimized
+    );
     Ok(())
 }
 

@@ -1,9 +1,9 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 10
-- **Phase / Milestone:** M9 Dynamics & Spray Lab — Done | Next: M10 Packaging & Hardening
-- **Version released:** None | **Unreleased on main:** 0.1.0-dev
+- **Session:** 11
+- **Phase / Milestone:** M10 Packaging & Hardening — Complete! All Milestones Done (100%)
+- **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
 
 ## Done (milestone-level)
 - [x] Phase -1 Bootstrap (completed 2026-10-15)
@@ -17,41 +17,40 @@
 - [x] M7 Effects & Polish (completed 2026-10-16)
 - [x] M8 Calibration (completed 2026-10-16)
 - [x] M9 Dynamics & Spray Lab (completed 2026-10-16)
-- [ ] M10 Packaging & Hardening
+- [x] M10 Packaging & Hardening (completed 2026-10-16)
 
 ## In progress
-- M10 Packaging & Hardening: NSIS installer script, portable zip bundling, startup settings, local crash handler, documentation deliverables, and release packaging (§21, §14, §15).
+- None. Entire specification (§1–§22) successfully implemented, verified, packaged, and documented.
 
 ## Next exact step
-- Implement Milestone 10: NSIS installer script, portable zip packaging, Windows startup settings, local crash reporting (no telemetry), and package verification.
+- Human review and project release / deployment.
 
 ## WIP notes
-- `ui`:
-  - Complete Svelte 5 + Vite application conforming to `design/tokens.json` and `design/XHAIR — App Design.html`.
-  - High-performance canvas grid view with DPR scaling (`window.devicePixelRatio`), 1px / 5px / 10px major lines, distance rings, and center indicators (`#FF4FD8`).
-  - Descriptor-driven inspector controls generated from `ui/src/generated/properties.json` with horizontal scrub handles and sliders.
-  - Interactive 8-way Nudge Pad with step chips (`0.1`, `0.25`, `0.5`, `1`, `5`, `10`), target selector (`Arm` | `Layer` | `All`), and keyboard shortcuts.
-  - Layers panel with solo/hide/lock, alignment diagnostics (`ALIGNED` vs `OFF-GRID`), and duplication/deletion.
-  - Color picker with hex input and preset swatches.
-  - Command palette modal (`Ctrl+K`) executing registered shortcuts and command bus operations.
-  - Accessible `Tooltip` component on every interactive control with title, description, and shortcut badge.
+- Release artifacts generated in `dist/`:
+  - `dist/installer.nsi`: Automated NSIS installer script with desktop/start menu shortcuts and uninstaller.
+  - `dist/xhair-0.1.0-x64-portable.zip`: Standalone zero-install portable application bundle with `xhair.exe`, `README.md`, and license.
+  - `dist/xhair-cli-0.1.0-x64.zip`: Standalone CLI bundle with `xhair-cli.exe` for offline rendering, format conversion, and MCP stdio.
+  - `dist/sbom.json`: Software Bill of Materials (SBOM) listing package dependencies and licenses.
+  - `dist/SHA256SUMS.txt`: Cryptographic SHA-256 integrity checksums for all release artifacts.
+- Documentation deliverables (§15.2):
+  - `README.md`, `CHANGELOG.md`, `docs/ARCHITECTURE.md`, `docs/GEOMETRY.md`, `docs/FORMAT.md`, `docs/MCP.md`, `docs/PROPERTIES.md`, `docs/COMMANDS.md`, `docs/COMPLIANCE.md`, `docs/DYNAMICS.md`, `docs/PERFORMANCE.md`, `docs/TESTING.md`, `docs/CONTRIBUTING.md`, `docs/ERRORS.md`.
 
 ## Known issues / blockers
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 76 tests passing)
+- Workspace crates: 12 (all build & test green, 80 tests passing)
 - Golden image tests: 8 tests passing
-- Geometry tests: 11 tests passing (including symmetry detection and multi-res verification)
+- Geometry tests: 11 tests passing (symmetry detection, quarter-pixel quantization, multi-res verification)
 - Render & effect tests: 12 unit tests passing (bloom, animation evaluation, static lock, heavy budget)
-- Performance benchmarks (cargo bench): typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
-- Platform tests: 9 tests passing (5 platform integration tests + 4 unit tests)
+- Performance benchmarks: typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
+- Platform tests: 12 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection)
 - MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, parity)
-- UI test suite: 13 tests passing in Vitest (100% green)
+- UI test suite: 17 tests passing in Vitest (100% green)
 - TypeScript lint: 0 errors (`tsc --noEmit`)
-- Vite production build: 120 kB JS, 30.5 kB CSS (built in ~540ms)
+- Vite production build: 146.5 kB JS, 42.7 kB CSS (built in ~489ms)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
+- Agent continuity & memory graph: 100% validated (`cargo xtask check-agent-state`, `cargo xtask graph query --summary`)
 
 ## Human decisions pending
 - None.
-

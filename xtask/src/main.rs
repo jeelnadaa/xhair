@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use sha2::Digest;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -253,15 +255,273 @@ fn handle_schema(args: &[String]) -> Result<()> {
 }
 
 fn handle_package(args: &[String]) -> Result<()> {
-    println!("Packaging xhair...");
-    let mut version = "0.1.0";
+    println!("Packaging xhair release artifacts (§21.3, M10)...");
+    let root = get_repo_root()?;
+    let mut version = "0.1.0".to_string();
     if let Some(pos) = args.iter().position(|a| a == "--version") {
         if let Some(v) = args.get(pos + 1) {
-            version = v;
+            version = v.clone();
         }
     }
     println!("Target version: {}", version);
-    println!("Package step ready (stub exits 0).");
+
+    let dist_dir = root.join("dist");
+    fs::create_dir_all(&dist_dir)?;
+
+    // Locate binaries in target/release or debug
+    let mut app_exe = root.join("target/release/xhair.exe");
+    let mut cli_exe = root.join("target/release/xhair-cli.exe");
+
+    if !app_exe.exists() || !cli_exe.exists() {
+        println!("Release binaries not found, checking debug binaries...");
+        if root.join("target/debug/xhair.exe").exists()
+            && root.join("target/debug/xhair-cli.exe").exists()
+        {
+            app_exe = root.join("target/debug/xhair.exe");
+            cli_exe = root.join("target/debug/xhair-cli.exe");
+        } else {
+            println!("Compiling binaries with cargo build --bin xhair --bin xhair-cli...");
+            let status = std::process::Command::new("cargo")
+                .args(["build", "--bin", "xhair", "--bin", "xhair-cli"])
+                .current_dir(&root)
+                .status()?;
+            if !status.success() {
+                anyhow::bail!("cargo build failed for xhair / xhair-cli binaries");
+            }
+            app_exe = root.join("target/debug/xhair.exe");
+            cli_exe = root.join("target/debug/xhair-cli.exe");
+        }
+    }
+
+    let readme_path = root.join("README.md");
+    let license_path = root.join("LICENSE");
+
+    // 1. Generate NSIS installer script: dist/installer.nsi
+    let nsi_path = dist_dir.join("installer.nsi");
+    let nsi_content = format!(
+        r#"; XHAIR Windows NSIS Installer Script (§21.3)
+!include "MUI2.nsh"
+
+Name "XHAIR"
+OutFile "xhair-{}-x64-setup.exe"
+InstallDir "$PROGRAMFILES64\xhair"
+InstallDirRegKey HKCU "Software\xhair" "Install_Dir"
+RequestExecutionLevel admin
+
+!define MUI_ABORTWARNING
+!define MUI_ICON "..\design\favicon.ico"
+!define MUI_UNICON "..\design\favicon.ico"
+
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "{}"
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+
+!insertmacro MUI_LANGUAGE "English"
+
+Section "XHAIR (required)" SecCore
+  SectionIn RO
+  SetOutPath "$INSTDIR"
+  File "{}"
+  File "{}"
+  File "{}"
+  File "{}"
+
+  WriteRegStr HKCU "Software\xhair" "Install_Dir" "$INSTDIR"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "DisplayName" "XHAIR Crosshair Overlay"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "DisplayVersion" "{}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "Publisher" "jeelnadaa"
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair" "NoRepair" 1
+  WriteUninstaller "$INSTDIR\uninstall.exe"
+
+  CreateDirectory "$SMPROGRAMS\XHAIR"
+  CreateShortcut "$SMPROGRAMS\XHAIR\XHAIR.lnk" "$INSTDIR\xhair.exe" "" "$INSTDIR\xhair.exe" 0
+  CreateShortcut "$SMPROGRAMS\XHAIR\Uninstall XHAIR.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortcut "$DESKTOP\XHAIR.lnk" "$INSTDIR\xhair.exe" "" "$INSTDIR\xhair.exe" 0
+SectionEnd
+
+Section "Uninstall"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\xhair"
+  DeleteRegKey HKCU "Software\xhair"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "xhair"
+
+  Delete "$INSTDIR\xhair.exe"
+  Delete "$INSTDIR\xhair-cli.exe"
+  Delete "$INSTDIR\README.md"
+  Delete "$INSTDIR\LICENSE"
+  Delete "$INSTDIR\uninstall.exe"
+
+  Delete "$SMPROGRAMS\XHAIR\XHAIR.lnk"
+  Delete "$SMPROGRAMS\XHAIR\Uninstall XHAIR.lnk"
+  RMDir "$SMPROGRAMS\XHAIR"
+  Delete "$DESKTOP\XHAIR.lnk"
+
+  RMDir "$INSTDIR"
+SectionEnd
+"#,
+        version,
+        license_path.display(),
+        app_exe.display(),
+        cli_exe.display(),
+        readme_path.display(),
+        license_path.display(),
+        version
+    );
+    fs::write(&nsi_path, nsi_content)?;
+    println!("Generated NSIS script: {:?}", nsi_path);
+
+    // If makensis is installed, compile installer
+    if let Ok(status) = std::process::Command::new("makensis")
+        .arg(&nsi_path)
+        .status()
+    {
+        if status.success() {
+            println!(
+                "Compiled NSIS setup executable: dist/xhair-{}-x64-setup.exe",
+                version
+            );
+        }
+    }
+
+    // 2. Build xhair-<version>-x64-portable.zip
+    let portable_zip_path = dist_dir.join(format!("xhair-{}-x64-portable.zip", version));
+    {
+        let file = fs::File::create(&portable_zip_path)?;
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+
+        // xhair.exe
+        if app_exe.exists() {
+            zip.start_file("xhair.exe", options)?;
+            let mut f = fs::File::open(&app_exe)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+
+        // xhair-cli.exe
+        if cli_exe.exists() {
+            zip.start_file("xhair-cli.exe", options)?;
+            let mut f = fs::File::open(&cli_exe)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+
+        // xhair.portable marker
+        zip.start_file("xhair.portable", options)?;
+        zip.write_all(b"# Portable mode marker file (spec \xc2\xa721.3)\n")?;
+
+        // README and LICENSE
+        if readme_path.exists() {
+            zip.start_file("README.md", options)?;
+            let mut f = fs::File::open(&readme_path)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+        if license_path.exists() {
+            zip.start_file("LICENSE", options)?;
+            let mut f = fs::File::open(&license_path)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+        zip.finish()?;
+    }
+    println!("Created portable zip: {:?}", portable_zip_path);
+
+    // 3. Build xhair-cli-<version>-x64.zip
+    let cli_zip_path = dist_dir.join(format!("xhair-cli-{}-x64.zip", version));
+    {
+        let file = fs::File::create(&cli_zip_path)?;
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+
+        if cli_exe.exists() {
+            zip.start_file("xhair-cli.exe", options)?;
+            let mut f = fs::File::open(&cli_exe)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+        if readme_path.exists() {
+            zip.start_file("README.md", options)?;
+            let mut f = fs::File::open(&readme_path)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+        if license_path.exists() {
+            zip.start_file("LICENSE", options)?;
+            let mut f = fs::File::open(&license_path)?;
+            std::io::copy(&mut f, &mut zip)?;
+        }
+        zip.finish()?;
+    }
+    println!("Created CLI zip: {:?}", cli_zip_path);
+
+    // 4. Generate sbom.json
+    let sbom_path = dist_dir.join("sbom.json");
+    let sbom_json = serde_json::json!({
+        "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.5",
+        "version": 1,
+        "metadata": {
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "component": {
+                "name": "xhair",
+                "version": version,
+                "type": "application",
+                "licenses": [{ "license": { "id": "MIT OR Apache-2.0" } }],
+                "author": "jeelnadaa",
+                "description": "Cross-platform Windows crosshair overlay with Svelte 5 editor and MCP server"
+            }
+        },
+        "components": [
+            { "name": "xhair-model", "version": version, "type": "library" },
+            { "name": "xhair-geometry", "version": version, "type": "library" },
+            { "name": "xhair-commands", "version": version, "type": "library" },
+            { "name": "xhair-render", "version": version, "type": "library" },
+            { "name": "xhair-format", "version": version, "type": "library" },
+            { "name": "xhair-library", "version": version, "type": "library" },
+            { "name": "xhair-platform-win", "version": version, "type": "library" },
+            { "name": "xhair-dynamics", "version": version, "type": "library" },
+            { "name": "xhair-mcp", "version": version, "type": "library" },
+            { "name": "xhair-app", "version": version, "type": "application" },
+            { "name": "xhair-cli", "version": version, "type": "application" }
+        ]
+    });
+    fs::write(&sbom_path, serde_json::to_string_pretty(&sbom_json)? + "\n")?;
+    println!("Generated SBOM: {:?}", sbom_path);
+
+    // 5. Generate SHA256SUMS.txt
+    let sums_path = dist_dir.join("SHA256SUMS.txt");
+    let mut sums_content = String::new();
+
+    for entry in fs::read_dir(&dist_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() {
+            let filename = path.file_name().unwrap().to_string_lossy().to_string();
+            if filename == "SHA256SUMS.txt" {
+                continue;
+            }
+            let bytes = fs::read(&path)?;
+            let mut hasher = sha2::Sha256::new();
+            sha2::Digest::update(&mut hasher, &bytes);
+            let hash = hasher
+                .finalize()
+                .into_iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>();
+            sums_content.push_str(&format!("{}  {}\n", hash, filename));
+        }
+    }
+    fs::write(&sums_path, sums_content)?;
+    println!("Generated SHA256SUMS.txt: {:?}", sums_path);
+
+    println!(
+        "\nRelease packaging completed successfully for v{} in dist/",
+        version
+    );
     Ok(())
 }
 

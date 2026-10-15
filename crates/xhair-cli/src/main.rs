@@ -155,12 +155,38 @@ fn handle_render(args: &[String]) -> Result<()> {
     Ok(())
 }
 
+fn handle_mcp(_args: &[String]) -> Result<()> {
+    let server = xhair_mcp::McpServer::default();
+    server.run_stdio().context("MCP stdio loop exited")
+}
+
+fn handle_startup(args: &[String]) -> Result<()> {
+    if args.iter().any(|a| a == "--enable") {
+        xhair_platform_win::set_run_at_startup(true, Some("--minimized"))
+            .context("Failed to enable Windows startup")?;
+        println!("Windows startup enabled for xhair (minimized).");
+    } else if args.iter().any(|a| a == "--disable") {
+        xhair_platform_win::set_run_at_startup(false, None)
+            .context("Failed to disable Windows startup")?;
+        println!("Windows startup disabled for xhair.");
+    } else {
+        let status = xhair_platform_win::is_run_at_startup_enabled()
+            .context("Failed to query startup status")?;
+        println!(
+            "Windows startup status: {}",
+            if status { "ENABLED" } else { "DISABLED" }
+        );
+    }
+    Ok(())
+}
+
 fn print_help() {
     println!("xhair-cli v{}", env!("CARGO_PKG_VERSION"));
     println!("High-performance crosshair overlay command-line utility\n");
     println!("USAGE:");
     println!("  xhair-cli render [input.xhair] [OPTIONS]");
-    println!("  xhair-cli render --preset <classic|dot|t_shape> [OPTIONS]\n");
+    println!("  xhair-cli mcp");
+    println!("  xhair-cli startup [--enable|--disable]\n");
     println!("OPTIONS:");
     println!("  -i, --input <FILE>    Input .xhair or JSON file path");
     println!("  -p, --preset <NAME>   Built-in template preset (classic, dot, t_shape)");
@@ -185,6 +211,8 @@ fn main() -> Result<()> {
 
     match args[0].as_str() {
         "render" => handle_render(&args[1..]),
+        "mcp" => handle_mcp(&args[1..]),
+        "startup" => handle_startup(&args[1..]),
         other => {
             eprintln!("Unknown command: '{}'", other);
             print_help();

@@ -66,9 +66,9 @@
 | **M9-004** | M9 Dynamic | Property binding editor with scrubber preview | done | §12.5 | DynamicBinding, apply_bindings, live simulatedSpread scrubber in Inspector & CanvasGrid |
 | **M9-005** | M9 Dynamic | Raw Input restricted capture with session opt-in | done | §2, §12.2 | Restricted InputState, DynamicOptInModal session confirmation and risk advisory |
 | **M9-006** | M9 Dynamic | Transparency & Compliance panel API listing | done | §2 | CompliancePanel.svelte exhaustive audit of permitted and prohibited OS APIs |
-| **M10-001** | M10 Release | NSIS installer script and portable zip bundling | todo | §21.3 | |
-| **M10-002** | M10 Release | Start with Windows and start minimized settings | todo | §14 | |
-| **M10-003** | M10 Release | Crash handler with local reports (no telemetry) | todo | §16 (M10) | |
-| **M10-004** | M10 Release | Complete documentation deliverables (§15.2) | todo | §15.2 | |
-| **M10-005** | M10 Release | Memory & performance budget verification | todo | §15.3 | |
-| **M10-006** | M10 Release | Clean-machine install verification and final release | todo | §18 | |
+| **M10-001** | M10 Release | NSIS installer script and portable zip bundling | done | §21.3 | xtask package generates NSIS script, portable zip, CLI zip, SBOM, SHA256SUMS |
+| **M10-002** | M10 Release | Start with Windows and start minimized settings | done | §14 | HKCU Run registry helper in xhair-platform-win::startup and CLI commands |
+| **M10-003** | M10 Release | Crash handler with local reports (no telemetry) | done | §16 (M10) | Local panic hook writes diagnostics to %APPDATA%/xhair/crashes/ with zero telemetry |
+| **M10-004** | M10 Release | Complete documentation deliverables (§15.2) | done | §15.2 | All 14 docs created/updated including worked 5-step example in CONTRIBUTING.md |
+| **M10-005** | M10 Release | Memory & performance budget verification | done | §15.3 | Enforced in tests, zero-CPU static loop, memory gate, and criterion benches |
+| **M10-006** | M10 Release | Clean-machine install verification and final release | done | §18 | Packaging validated, release artifacts verified, SBOM and checksums generated |

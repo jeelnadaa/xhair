@@ -44,4 +44,8 @@ pub enum PlatformError {
     /// Internal thread or channel communication error.
     #[error("Platform message channel error: {0}")]
     ChannelError(String),
+
+    /// General Windows API or system registry error.
+    #[error("Windows API error: {0}")]
+    Windows(String),
 }

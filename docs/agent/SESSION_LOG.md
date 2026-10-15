@@ -260,6 +260,52 @@
   - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
 - **Next:** Milestone 10: Packaging & Hardening (NSIS installer script, portable zip bundling, startup settings, local crash handler, complete documentation deliverables, memory & performance budget verification).
 
-
-
-
+## 2026-10-16 — Session 11
+- **Goal:** Milestone 10 Packaging & Hardening: Automated release packaging pipeline (`xtask package`), NSIS installer script, portable zip bundling, CLI standalone bundle, CycloneDX SBOM, SHA256SUMS.txt, Windows startup registry toggle (`HKCU\...\Run`), zero-telemetry local crash reporting, complete documentation deliverables (§15.2), and workspace verification (§14, §15, §16, §21).
+- **Planned Tasks:** M10-001, M10-002, M10-003, M10-004, M10-005, M10-006.
+- **Completed:**
+  - `crates/xhair-platform-win`:
+    - `startup.rs`: `is_run_at_startup_enabled` and `set_run_at_startup` using safe Win32 registry APIs (`RegOpenKeyExW`, `RegQueryValueExW`, `RegSetValueExW`, `RegDeleteValueW`) against `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+    - `crash_handler.rs`: Panic hook capturing thread name, location, payload, and backtrace; writing formatted diagnostic report to `%APPDATA%/xhair/crashes/crash_<timestamp>.log` with strictly zero network calls or telemetry.
+    - Updated `error.rs` with `PlatformError::Windows(String)`.
+    - Unit tests for crash report directory creation, startup status query, and current executable path.
+  - `crates/xhair-app`:
+    - Installed local crash handler on startup in `run()`.
+    - Configured `[[bin]] name = "xhair"` in `Cargo.toml`.
+  - `crates/xhair-cli`:
+    - Configured `[[bin]] name = "xhair-cli"`.
+    - Added `mcp` subcommand (stdio server runner) and `startup` subcommand (`--enable`, `--disable`) with status reporting.
+  - `xtask`:
+    - Implemented `handle_package` generating:
+      - `dist/installer.nsi`: Automated NSIS installer script with desktop/start menu shortcuts and uninstaller (§21.3).
+      - `dist/xhair-0.1.0-x64-portable.zip`: Complete standalone portable zip with `xhair.exe`, `README.md`, `LICENSE-MIT`, and `LICENSE-APACHE`.
+      - `dist/xhair-cli-0.1.0-x64.zip`: Standalone CLI archive with `xhair-cli.exe`.
+      - `dist/sbom.json`: Software Bill of Materials (SBOM) listing package dependencies and licenses.
+      - `dist/SHA256SUMS.txt`: SHA-256 cryptographic hashes of all packaged artifacts.
+  - Documentation Deliverables (§15.2):
+    - Created `docs/ARCHITECTURE.md` with system diagrams, crate responsibilities, runtime modes, and data flow.
+    - Created `docs/GEOMETRY.md` covering coordinate math, even/odd screen parity, stretch ratios, DPI scaling, and worked numerical examples.
+    - Created `docs/FORMAT.md` covering `.xhair`, `.xhairpack`, Brotli `XH1-...` share codes, and Valorant import syntax.
+    - Created `docs/COMMANDS.md` cataloging command bus registry, undo/redo, and patch diffs.
+    - Created `docs/COMPLIANCE.md` providing anti-cheat compliance rationale and full OS API audit.
+    - Created `docs/DYNAMICS.md` detailing recoil models, spread accumulation formulas, and Spray Lab.
+    - Created `docs/PERFORMANCE.md` specifying RAM/CPU budgets, measurement methodology, and benchmarks.
+    - Created `docs/TESTING.md` outlining the testing matrix and instructions for running all suites.
+    - Created `docs/CONTRIBUTING.md` with commit conventions and the 5-step worked example ("Add a new shape in 5 steps").
+    - Created `docs/ERRORS.md` cataloging `XH-1xxx` through `XH-9xxx` error codes with remediation hints.
+    - Updated `README.md` with quick start, features, install links, MCP usage, and documentation index.
+    - Updated `CHANGELOG.md` with complete Keep a Changelog notes for `0.1.0`.
+  - Quality & Continuity:
+    - Updated `docs/agent/TASKS.md` marking M10-001..006 as done (100% of all project milestones complete).
+    - Updated `docs/agent/PROJECT_STATE.md` with final measured metrics and release artifact verification.
+    - Ran `cargo xtask schema --check`: verified property documentation freshness.
+    - Ran `cargo xtask check-agent-state`: all agent continuity files verified.
+    - Ran `cargo xtask graph query --summary`: project memory graph validated.
+- **Tests & Quality:**
+  - `cargo test --workspace`: All tests passing across all 12 workspace crates (100% green).
+  - `pnpm -C ui test`: 17 Vitest tests passing (100% green).
+  - `pnpm -C ui build`: Production bundle built in ~489ms (146 kB JS, 42.7 kB CSS).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- package --version 0.1.0`: Release packaging verified in `dist/`.
+- **Project Complete:** All milestones from Phase -1 through Milestone 10 have been completed and verified.

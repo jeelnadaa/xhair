@@ -4,14 +4,17 @@
 #![deny(missing_docs)]
 
 pub mod calibration;
+pub mod crash_handler;
 pub mod error;
 pub mod foreground;
 pub mod hotkey;
 pub mod monitor;
 pub mod overlay;
+pub mod startup;
 pub mod tray;
 
 pub use calibration::create_calibration_crosshair;
+pub use crash_handler::{get_crash_reports_dir, install_crash_handler, write_crash_report};
 pub use error::PlatformError;
 pub use foreground::{get_foreground_window_info, is_game_foreground, ForegroundWindowInfo};
 pub use hotkey::{HotkeyAction, HotkeyBinding, HotkeyManager, HotkeyModifiers};
@@ -19,6 +22,7 @@ pub use monitor::{enumerate_monitors, get_monitor_at_point, get_primary_monitor,
 pub use overlay::{
     render_and_update, spawn_overlay, OverlayCommand, OverlayConfig, OverlayHandle, VisibilityMode,
 };
+pub use startup::{is_run_at_startup_enabled, set_run_at_startup};
 pub use tray::{TrayIcon, TrayStatus, WM_TRAY_CALLBACK};
 
 /// Default game executable name for foreground auto-visibility (§8.1).

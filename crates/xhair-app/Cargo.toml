@@ -7,6 +7,10 @@ authors.workspace = true
 license.workspace = true
 description = "Tauri shell, system tray, runtime modes, and app wiring for xhair"
 
+[[bin]]
+name = "xhair"
+path = "src/main.rs"
+
 [dependencies]
 xhair-commands = { path = "../xhair-commands" }
 xhair-render = { path = "../xhair-render" }
