@@ -18,19 +18,25 @@ export type SymmetryType = 'None' | 'MirrorH' | 'MirrorV' | 'MirrorHV' | 'Radial
 
 export interface ShapeData {
   type: ShapeType;
-  // Line arms
+  // Line arms / TShape
   length?: number;
   thickness?: number;
   gap?: number;
   armCount?: number;
+  armOffsets?: Array<{ x: number; y: number }>;
   // Dot
   diameter?: number;
   isSquare?: boolean;
   // Ring / Circle
   radius?: number;
-  // Cross / Plus / T-Shape
+  // Cross / Plus / T-Shape / Chevron / Polygon / Star
   innerOffset?: number;
   armThickness?: number;
+  angle?: number;
+  points?: number;
+  innerRadius?: number;
+  // Custom SVG path
+  pathData?: string;
 }
 
 export interface Layer {

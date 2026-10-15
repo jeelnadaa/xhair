@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 11
-- **Phase / Milestone:** M10 Packaging & Hardening — Complete! All Milestones Done (100%)
+- **Session:** 12
+- **Phase / Milestone:** Atomic 2D element movement and custom shape builder complete
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
 
 ## Done (milestone-level)

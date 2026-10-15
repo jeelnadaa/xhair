@@ -7,16 +7,33 @@
   let scrubStartX = $state<number>(0);
   let scrubStartVal = $state<number>(0);
 
+  const PRESET_COLORS = ['#36F2CB', '#00FF00', '#FF3864', '#FFFFFF', '#FFE600', '#FF4FD8', '#00B2FF'];
+
+  const SVG_PRESETS = [
+    { label: 'Arrow', path: 'M 0,-8 L 6,6 L 0,3 L -6,6 Z' },
+    { label: 'Diamond', path: 'M 0,-8 L 8,0 L 0,8 L -8,0 Z' },
+    { label: 'Triangle', path: 'M 0,-8 L 7,6 L -7,6 Z' },
+    { label: 'Chevron', path: 'M -6,5 L 0,0 L 6,5' },
+    { label: 'Crosshair', path: 'M -8,0 L -2,0 M 2,0 L 8,0 M 0,-8 L 0,-2 M 0,2 L 0,8' },
+  ];
+
   function getPropertyValue(name: string): number {
     const layer = editorState.selectedLayer;
     if (!layer) return 0;
 
-    if (name === 'line.length') return layer.shape.length ?? 6;
-    if (name === 'line.thickness') return layer.shape.thickness ?? 2;
-    if (name === 'line.gap') return layer.shape.gap ?? 4;
-    if (name === 'line.arm_count') return layer.shape.armCount ?? 4;
-    if (name === 'dot.diameter') return layer.shape.diameter ?? 2;
-    if (name === 'global.opacity') return layer.opacity ?? 1.0;
+    if (name === 'line.length' || name === 'shape.length') return layer.shape.length ?? 6;
+    if (name === 'line.thickness' || name === 'shape.thickness') return layer.shape.thickness ?? 2;
+    if (name === 'line.gap' || name === 'shape.gap') return layer.shape.gap ?? 4;
+    if (name === 'line.arm_count' || name === 'shape.arm_count') return layer.shape.armCount ?? 4;
+    if (name === 'dot.diameter' || name === 'shape.diameter') return layer.shape.diameter ?? 2;
+    if (name === 'shape.radius') return layer.shape.radius ?? 8;
+    if (name === 'shape.inner_radius') return layer.shape.innerRadius ?? 4;
+    if (name === 'shape.points') return layer.shape.points ?? 6;
+    if (name === 'shape.angle') return layer.shape.angle ?? 90;
+    if (name === 'layer.offset_x') return layer.offsetX ?? 0;
+    if (name === 'layer.offset_y') return layer.offsetY ?? 0;
+    if (name === 'layer.rotation') return layer.rotation ?? 0;
+    if (name === 'global.opacity' || name === 'layer.opacity') return layer.opacity ?? 1.0;
     return 0;
   }
 
@@ -44,14 +61,10 @@
 
   function onScrubMove(e: MouseEvent) {
     if (!activeScrubProp) return;
-    const desc = DESCRIPTORS.find((d) => d.name === activeScrubProp);
-    if (!desc) return;
-
     const deltaX = e.clientX - scrubStartX;
-    const step = e.altKey ? desc.fine_step : e.shiftKey ? desc.step * 10 : desc.step;
+    const step = e.altKey ? 0.1 : e.shiftKey ? 2.0 : 0.5;
     const stepsMoved = Math.round(deltaX / 5);
     let newVal = scrubStartVal + stepsMoved * step;
-    newVal = Math.max(desc.min, Math.min(desc.max, newVal));
     newVal = Math.round(newVal * 100) / 100;
     editorState.updateProperty(activeScrubProp, newVal);
   }
@@ -72,69 +85,559 @@
   </div>
 
   {#if editorState.selectedLayer}
-    {@const shapeType = editorState.selectedLayer.shape.type}
-    <div class="properties-list">
-      {#each DESCRIPTORS as desc}
-        <!-- Filter descriptors relevant to selected layer type -->
-        {#if (desc.name.startsWith('line.') && shapeType === 'LineArms') || (desc.name.startsWith('dot.') && shapeType === 'Dot') || desc.name.startsWith('global.')}
-          {@const val = getPropertyValue(desc.name)}
-          {@const percent = Math.min(100, Math.max(0, ((val - desc.min) / (desc.max - desc.min)) * 100))}
+    {@const layer = editorState.selectedLayer}
+    {@const shape = layer.shape}
 
+    <div class="properties-list">
+      <!-- Section: Color & Appearance -->
+      <div class="prop-section">
+        <span class="section-title">Color & Appearance</span>
+        <div class="color-row">
+          <div class="swatches">
+            {#each PRESET_COLORS as c}
+              <button
+                class="swatch-btn {layer.color === c ? 'active' : ''}"
+                style="background: {c};"
+                onclick={() => editorState.setLayerColor(c)}
+                aria-label="Color {c}"
+              ></button>
+            {/each}
+          </div>
+          <input
+            type="color"
+            class="native-color-picker"
+            value={layer.color}
+            oninput={(e) => editorState.setLayerColor((e.target as HTMLInputElement).value)}
+            aria-label="Custom color picker"
+          />
+        </div>
+      </div>
+
+      <!-- Section: Transform & Position (2D Movement) -->
+      <div class="prop-section">
+        <span class="section-title">Position & Transform</span>
+
+        <!-- Position X -->
+        <div class="property-row">
+          <div class="row">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <span
+              class="property-label {activeScrubProp === 'layer.offset_x' ? 'scrubbing' : ''}"
+              onmousedown={(e) => startScrub('layer.offset_x', e)}
+            >
+              Position X ↔
+            </span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                step="0.5"
+                value={layer.offsetX}
+                oninput={(e) => handleNumberChange('layer.offset_x', e)}
+                aria-label="Position X"
+              />
+              <span class="unit-label">px</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="-50"
+              max="50"
+              step="0.5"
+              value={layer.offsetX}
+              oninput={(e) => handleSliderChange('layer.offset_x', e)}
+              aria-label="Position X slider"
+            />
+            <div class="slider-fill-visual" style="width: {((layer.offsetX + 50) / 100) * 100}%;"></div>
+          </div>
+        </div>
+
+        <!-- Position Y -->
+        <div class="property-row">
+          <div class="row">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <span
+              class="property-label {activeScrubProp === 'layer.offset_y' ? 'scrubbing' : ''}"
+              onmousedown={(e) => startScrub('layer.offset_y', e)}
+            >
+              Position Y ↔
+            </span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                step="0.5"
+                value={layer.offsetY}
+                oninput={(e) => handleNumberChange('layer.offset_y', e)}
+                aria-label="Position Y"
+              />
+              <span class="unit-label">px</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="-50"
+              max="50"
+              step="0.5"
+              value={layer.offsetY}
+              oninput={(e) => handleSliderChange('layer.offset_y', e)}
+              aria-label="Position Y slider"
+            />
+            <div class="slider-fill-visual" style="width: {((layer.offsetY + 50) / 100) * 100}%;"></div>
+          </div>
+        </div>
+
+        <!-- Rotation -->
+        <div class="property-row">
+          <div class="row">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <span
+              class="property-label {activeScrubProp === 'layer.rotation' ? 'scrubbing' : ''}"
+              onmousedown={(e) => startScrub('layer.rotation', e)}
+            >
+              Rotation ↔
+            </span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                min="0"
+                max="360"
+                step="1"
+                value={layer.rotation}
+                oninput={(e) => handleNumberChange('layer.rotation', e)}
+                aria-label="Rotation"
+              />
+              <span class="unit-label">°</span>
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="360"
+              step="1"
+              value={layer.rotation}
+              oninput={(e) => handleSliderChange('layer.rotation', e)}
+              aria-label="Rotation slider"
+            />
+            <div class="slider-fill-visual" style="width: {(layer.rotation / 360) * 100}%;"></div>
+          </div>
+        </div>
+
+        <!-- Opacity -->
+        <div class="property-row">
+          <div class="row">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <span
+              class="property-label {activeScrubProp === 'layer.opacity' ? 'scrubbing' : ''}"
+              onmousedown={(e) => startScrub('layer.opacity', e)}
+            >
+              Opacity ↔
+            </span>
+            <div class="input-with-unit">
+              <input
+                type="number"
+                class="input-text mono prop-number-input"
+                min="0"
+                max="1"
+                step="0.05"
+                value={layer.opacity}
+                oninput={(e) => handleNumberChange('layer.opacity', e)}
+                aria-label="Opacity"
+              />
+            </div>
+          </div>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="prop-slider"
+              min="0"
+              max="1"
+              step="0.05"
+              value={layer.opacity}
+              oninput={(e) => handleSliderChange('layer.opacity', e)}
+              aria-label="Opacity slider"
+            />
+            <div class="slider-fill-visual" style="width: {(layer.opacity || 1) * 100}%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Shape Geometry -->
+      <div class="prop-section">
+        <span class="section-title">Shape Geometry ({shape.type})</span>
+
+        <!-- LineArms / TShape Parameters -->
+        {#if shape.type === 'LineArms' || shape.type === 'TShape'}
           <div class="property-row">
             <div class="row">
-              <Tooltip
-                title={desc.label}
-                description={desc.tip}
-                details="Default: {desc.default_value}{desc.unit ? ` ${desc.unit}` : ''} · Range: {desc.min}–{desc.max}"
-              >
-                <span
-                  class="property-label {activeScrubProp === desc.name ? 'scrubbing' : ''}"
-                  onmousedown={(e) => startScrub(desc.name, e)}
-                  role="slider"
-                  tabindex="0"
-                  aria-valuenow={val}
-                  aria-valuemin={desc.min}
-                  aria-valuemax={desc.max}
-                  aria-label={desc.label}
-                >
-                  {desc.label} ↔
-                </span>
-              </Tooltip>
-
+              <span class="property-label">Length</span>
               <div class="input-with-unit">
                 <input
                   type="number"
                   class="input-text mono prop-number-input"
-                  min={desc.min}
-                  max={desc.max}
-                  step={desc.step}
-                  value={val}
-                  oninput={(e) => handleNumberChange(desc.name, e)}
-                  aria-label="{desc.label} numeric input"
+                  min="1"
+                  max="40"
+                  step="1"
+                  value={shape.length ?? 6}
+                  oninput={(e) => handleNumberChange('shape.length', e)}
                 />
-                {#if desc.unit}
-                  <span class="unit-label">{desc.unit}</span>
-                {/if}
+                <span class="unit-label">px</span>
               </div>
             </div>
-
-            <!-- Slider Control with Fill Track -->
             <div class="slider-wrapper">
               <input
                 type="range"
                 class="prop-slider"
-                min={desc.min}
-                max={desc.max}
-                step={desc.step}
-                value={val}
-                oninput={(e) => handleSliderChange(desc.name, e)}
-                aria-label="{desc.label} slider"
+                min="1"
+                max="40"
+                step="1"
+                value={shape.length ?? 6}
+                oninput={(e) => handleSliderChange('shape.length', e)}
               />
-              <div class="slider-fill-visual" style="width: {percent}%;"></div>
+              <div class="slider-fill-visual" style="width: {(((shape.length ?? 6) - 1) / 39) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Thickness</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="12"
+                  step="1"
+                  value={shape.thickness ?? 2}
+                  oninput={(e) => handleNumberChange('shape.thickness', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="12"
+                step="1"
+                value={shape.thickness ?? 2}
+                oninput={(e) => handleSliderChange('shape.thickness', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 11) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Gap</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="0"
+                  max="30"
+                  step="0.5"
+                  value={shape.gap ?? 4}
+                  oninput={(e) => handleNumberChange('shape.gap', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="0"
+                max="30"
+                step="0.5"
+                value={shape.gap ?? 4}
+                oninput={(e) => handleSliderChange('shape.gap', e)}
+              />
+              <div class="slider-fill-visual" style="width: {((shape.gap ?? 4) / 30) * 100}%;"></div>
             </div>
           </div>
         {/if}
-      {/each}
+
+        <!-- Dot Parameters -->
+        {#if shape.type === 'Dot'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Diameter</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="16"
+                  step="0.5"
+                  value={shape.diameter ?? 2}
+                  oninput={(e) => handleNumberChange('shape.diameter', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="16"
+                step="0.5"
+                value={shape.diameter ?? 2}
+                oninput={(e) => handleSliderChange('shape.diameter', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.diameter ?? 2) - 1) / 15) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 4px;">
+            <span class="property-label">Dot Style</span>
+            <div class="chips-group">
+              <button
+                class="pill-chip {!shape.isSquare ? 'active' : ''}"
+                onclick={() => editorState.setDotSquare(false)}
+              >
+                Round
+              </button>
+              <button
+                class="pill-chip {shape.isSquare ? 'active' : ''}"
+                onclick={() => editorState.setDotSquare(true)}
+              >
+                Square
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Circle / Ring Parameters -->
+        {#if shape.type === 'Circle' || shape.type === 'Ring'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="2"
+                  max="40"
+                  step="0.5"
+                  value={shape.radius ?? 8}
+                  oninput={(e) => handleNumberChange('shape.radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="2"
+                max="40"
+                step="0.5"
+                value={shape.radius ?? 8}
+                oninput={(e) => handleSliderChange('shape.radius', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.radius ?? 8) - 2) / 38) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Thickness</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={shape.thickness ?? 2}
+                  oninput={(e) => handleNumberChange('shape.thickness', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                class="prop-slider"
+                min="1"
+                max="10"
+                step="1"
+                value={shape.thickness ?? 2}
+                oninput={(e) => handleSliderChange('shape.thickness', e)}
+              />
+              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 9) * 100}%;"></div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Chevron Parameters -->
+        {#if shape.type === 'Chevron'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Length</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="2"
+                  max="30"
+                  step="1"
+                  value={shape.length ?? 7}
+                  oninput={(e) => handleNumberChange('shape.length', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Angle</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="30"
+                  max="150"
+                  step="5"
+                  value={shape.angle ?? 90}
+                  oninput={(e) => handleNumberChange('shape.angle', e)}
+                />
+                <span class="unit-label">°</span>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Polygon Parameters -->
+        {#if shape.type === 'Polygon'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="3"
+                  max="40"
+                  step="1"
+                  value={shape.radius ?? 8}
+                  oninput={(e) => handleNumberChange('shape.radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Sides / Points</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="3"
+                  max="12"
+                  step="1"
+                  value={shape.points ?? 6}
+                  oninput={(e) => handleNumberChange('shape.points', e)}
+                />
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Star Parameters -->
+        {#if shape.type === 'Star'}
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Outer Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="4"
+                  max="40"
+                  step="1"
+                  value={shape.radius ?? 9}
+                  oninput={(e) => handleNumberChange('shape.radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Inner Radius</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="1"
+                  max="30"
+                  step="1"
+                  value={shape.innerRadius ?? 4}
+                  oninput={(e) => handleNumberChange('shape.inner_radius', e)}
+                />
+                <span class="unit-label">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="property-row">
+            <div class="row">
+              <span class="property-label">Star Points</span>
+              <div class="input-with-unit">
+                <input
+                  type="number"
+                  class="input-text mono prop-number-input"
+                  min="3"
+                  max="10"
+                  step="1"
+                  value={shape.points ?? 4}
+                  oninput={(e) => handleNumberChange('shape.points', e)}
+                />
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- SvgPath Parameters -->
+        {#if shape.type === 'SvgPath'}
+          <div class="property-row">
+            <span class="property-label">Vector Presets:</span>
+            <div class="chips-group" style="flex-wrap: wrap;">
+              {#each SVG_PRESETS as p}
+                <button
+                  class="pill-chip {shape.pathData === p.path ? 'active' : ''}"
+                  onclick={() => editorState.setShapePathData(p.path)}
+                >
+                  {p.label}
+                </button>
+              {/each}
+            </div>
+
+            <span class="property-label" style="margin-top: 6px;">Path Data (SVG):</span>
+            <textarea
+              class="input-text mono path-textarea"
+              rows="2"
+              value={shape.pathData ?? ''}
+              oninput={(e) => editorState.setShapePathData((e.target as HTMLTextAreaElement).value)}
+            ></textarea>
+          </div>
+        {/if}
+      </div>
 
       <!-- Dynamic Binding Live Preview Scrubber (§12.5) -->
       <div class="dynamic-scrubber-section">
@@ -313,5 +816,96 @@
 
   .binding-driver {
     color: var(--text-muted);
+  }
+
+  .prop-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swatches {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .swatch-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 100ms ease, border-color 100ms ease;
+  }
+
+  .swatch-btn:hover {
+    transform: scale(1.15);
+  }
+
+  .swatch-btn.active {
+    border-color: #FFFFFF;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  }
+
+  .native-color-picker {
+    width: 28px;
+    height: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .path-textarea {
+    width: 100%;
+    font-size: 11px;
+    resize: vertical;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .chips-group {
+    display: flex;
+    gap: 4px;
+  }
+
+  .pill-chip {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-family: var(--font-mono);
+  }
+
+  .pill-chip:hover {
+    color: var(--text);
+  }
+
+  .pill-chip.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
   }
 </style>

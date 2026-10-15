@@ -309,3 +309,34 @@
   - `cargo fmt --check`: 0 diffs.
   - `cargo run --package xtask -- package --version 0.1.0`: Release packaging verified in `dist/`.
 - **Project Complete:** All milestones from Phase -1 through Milestone 10 have been completed and verified.
+
+## 2026-10-16 — Session 12
+- **Goal:** Enable atomic 2D movement for every element (crosshair, layer, arms) across all directions (left, right, up, down, diagonals), direct mouse canvas dragging, and add full custom shape creation and editing support.
+- **Completed:**
+  - `ui/src/lib/types.ts`:
+    - Expanded `ShapeData` interface to support atomic arm offsets (`armOffsets?: Array<{ x: number; y: number }>`), `angle`, `points`, `innerRadius`, and `pathData`.
+  - `ui/src/lib/state.svelte.ts`:
+    - Defaulted `nudgeTarget` to `'layer'`.
+    - Rewrote `nudge(dx, dy)` so nudging operates in full 2D space for `all`, `layer`, and individual `arm` offsets.
+    - Added `selectArm(armIndex: number)` and `resetNudge()` for individual arm/layer/crosshair offsets.
+    - Added `addLayer(type: ShapeType, name?: string)` supporting `Dot`, `Circle`, `Ring`, `TShape`, `Chevron`, `Polygon`, `Star`, `SvgPath`, and `LineArms`.
+    - Expanded `updateProperty` and added helper methods for path data, dot square/round style, and glow.
+  - `ui/src/components/CanvasGrid.svelte`:
+    - Added rasterization for all shapes: `LineArms` (with individual `armOffsets[a]` and selected arm indicator), `TShape`, `Chevron`, `Polygon`, `Star`, `SvgPath`, `Dot`, `Ring`, and `Circle`.
+    - Added direct left-click mouse drag interaction on canvas for moving elements with real-time feedback.
+    - Connected tool palette shortcuts (`V`, `A`, `L`, `D`, `R`, `C`, `P`) for immediate shape addition and selection.
+  - `ui/src/components/NudgePad.svelte`:
+    - Added Arm Selector button bar (`Top (↑)`, `Right (→)`, `Bottom (↓)`, `Left (←)`) when `nudgeTarget === 'arm'`.
+    - Added real-time target and offset readout: `X ±0.0 px · Y ±0.0 px`.
+  - `ui/src/components/LayersPanel.svelte`:
+    - Added prominent `+ Add Shape ▾` dropdown button with 1-click creation of all supported shapes.
+  - `ui/src/components/Inspector.svelte`:
+    - Added Position X, Position Y, Rotation, and Opacity controls.
+    - Added competitive color preset swatches and custom color picker.
+    - Added shape-specific parameter controls for all custom shapes (LineArms, TShape, Dot, Circle/Ring, Chevron, Polygon, Star, SvgPath).
+- **Tests & Quality:**
+  - `pnpm -C ui test`: 17 Vitest tests passing (100% green).
+  - `pnpm -C ui build`: Built in ~490ms, 0 warnings.
+  - `cargo test --workspace`: All tests passing.
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: Clean, 0 diffs.

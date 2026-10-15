@@ -57,10 +57,9 @@ describe('Editor State & Logic', () => {
     state.nudgeTarget = 'arm';
     state.selectedArmIndex = 1; // Right arm
     state.nudgeStep = 1.0;
-    const initialGap = state.selectedLayer.shape.gap ?? 4;
 
     state.nudge(1, 0);
-    expect(state.selectedLayer.shape.gap).toBe(initialGap + 1.0);
+    expect(state.selectedLayer.shape.armOffsets?.[1]?.x).toBe(1.0);
   });
 
   it('supports undo and redo', () => {

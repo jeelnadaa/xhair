@@ -140,9 +140,52 @@
         for (let a = 0; a < arms; a++) {
           const angle = (a * 2 * Math.PI) / arms - Math.PI / 2;
           ctx.save();
+          // Apply atomic 2D arm offset
+          const armOff = layer.shape.armOffsets?.[a];
+          if (armOff) {
+            ctx.translate(armOff.x * zoom, armOff.y * zoom);
+          }
           ctx.rotate(angle + Math.PI / 2);
           // Draw arm going upward from gap
           ctx.fillRect(-thick / 2, -gap - len, thick, len);
+
+          // Highlight selected arm if target is arm
+          if (
+            layer.id === editorState.selectedLayerId &&
+            editorState.nudgeTarget === 'arm' &&
+            a === editorState.selectedArmIndex
+          ) {
+            ctx.strokeStyle = '#FF4FD8';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-thick / 2 - 1.5, -gap - len - 1.5, thick + 3, len + 3);
+          }
+          ctx.restore();
+        }
+      } else if (layer.shape.type === 'TShape') {
+        const len = (layer.shape.length || 6) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const spreadDelta = Math.max(0, (editorState.simulatedSpread - 1.2) * 0.8);
+        const effectiveGap = Math.max(0, (layer.shape.gap || 3) + spreadDelta);
+        const gap = effectiveGap * zoom;
+        // 3 arms: Right, Bottom, Left
+        const tAngles = [Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+        for (let a = 0; a < 3; a++) {
+          ctx.save();
+          const armOff = layer.shape.armOffsets?.[a];
+          if (armOff) {
+            ctx.translate(armOff.x * zoom, armOff.y * zoom);
+          }
+          ctx.rotate(tAngles[a]);
+          ctx.fillRect(-thick / 2, -gap - len, thick, len);
+          if (
+            layer.id === editorState.selectedLayerId &&
+            editorState.nudgeTarget === 'arm' &&
+            a === editorState.selectedArmIndex
+          ) {
+            ctx.strokeStyle = '#FF4FD8';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-thick / 2 - 1.5, -gap - len - 1.5, thick + 3, len + 3);
+          }
           ctx.restore();
         }
       } else if (layer.shape.type === 'Dot') {
@@ -162,6 +205,77 @@
         ctx.beginPath();
         ctx.arc(0, 0, rad, 0, Math.PI * 2);
         ctx.stroke();
+      } else if (layer.shape.type === 'Chevron') {
+        const len = (layer.shape.length || 7) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const angleDeg = layer.shape.angle || 90;
+        const halfAngle = (angleDeg * Math.PI) / 360;
+        const dx = Math.sin(halfAngle) * len;
+        const dy = Math.cos(halfAngle) * len;
+        ctx.lineWidth = thick;
+        ctx.strokeStyle = layer.color;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'miter';
+        ctx.beginPath();
+        ctx.moveTo(-dx, dy);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(dx, dy);
+        ctx.stroke();
+      } else if (layer.shape.type === 'Polygon') {
+        const rad = (layer.shape.radius || 8) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const points = Math.max(3, layer.shape.points || 6);
+        ctx.lineWidth = thick;
+        ctx.strokeStyle = layer.color;
+        ctx.beginPath();
+        for (let i = 0; i < points; i++) {
+          const theta = (i * 2 * Math.PI) / points - Math.PI / 2;
+          const px = Math.cos(theta) * rad;
+          const py = Math.sin(theta) * rad;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      } else if (layer.shape.type === 'Star') {
+        const rOuter = (layer.shape.radius || 9) * zoom;
+        const rInner = (layer.shape.innerRadius || 4) * zoom;
+        const thick = (layer.shape.thickness || 2) * zoom;
+        const points = Math.max(3, layer.shape.points || 4);
+        ctx.lineWidth = thick;
+        ctx.strokeStyle = layer.color;
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+          const r = i % 2 === 0 ? rOuter : rInner;
+          const theta = (i * Math.PI) / points - Math.PI / 2;
+          const px = Math.cos(theta) * r;
+          const py = Math.sin(theta) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      } else if (layer.shape.type === 'SvgPath') {
+        const pathData = layer.shape.pathData || 'M 0,-8 L 6,6 L 0,3 L -6,6 Z';
+        try {
+          const path2d = new Path2D(pathData);
+          ctx.save();
+          ctx.scale(zoom, zoom);
+          ctx.lineWidth = (layer.shape.thickness || 2) / zoom;
+          ctx.strokeStyle = layer.color;
+          ctx.fillStyle = layer.color;
+          ctx.stroke(path2d);
+          ctx.restore();
+        } catch {
+          ctx.strokeStyle = '#FF3864';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-6, -6);
+          ctx.lineTo(6, 6);
+          ctx.moveTo(6, -6);
+          ctx.lineTo(-6, 6);
+          ctx.stroke();
+        }
       }
 
       ctx.restore();
@@ -236,6 +350,45 @@
     ctx.restore();
   }
 
+  let isDraggingTarget = $state(false);
+  let dragStartClientX = $state(0);
+  let dragStartClientY = $state(0);
+  let initialTargetX = $state(0);
+  let initialTargetY = $state(0);
+
+  function handleMouseDown(e: MouseEvent) {
+    if (e.button === 1 || e.buttons === 4 || e.altKey || (editorState.activeTool === 'select' && e.shiftKey)) {
+      // Middle click or Alt+drag to pan
+      isPanning = true;
+      startPanX = e.clientX;
+      startPanY = e.clientY;
+      return;
+    }
+
+    if (e.button === 0) {
+      // Left click dragging target element (layer, arm, or all)
+      isDraggingTarget = true;
+      dragStartClientX = e.clientX;
+      dragStartClientY = e.clientY;
+
+      if (editorState.nudgeTarget === 'all') {
+        initialTargetX = editorState.crosshair.offsetX;
+        initialTargetY = editorState.crosshair.offsetY;
+      } else if (editorState.nudgeTarget === 'layer' && editorState.selectedLayer) {
+        initialTargetX = editorState.selectedLayer.offsetX;
+        initialTargetY = editorState.selectedLayer.offsetY;
+      } else if (editorState.nudgeTarget === 'arm' && editorState.selectedLayer) {
+        const armCount = editorState.selectedLayer.shape.armCount || 4;
+        if (!editorState.selectedLayer.shape.armOffsets || editorState.selectedLayer.shape.armOffsets.length < armCount) {
+          editorState.selectedLayer.shape.armOffsets = Array.from({ length: armCount }, () => ({ x: 0, y: 0 }));
+        }
+        const arm = editorState.selectedLayer.shape.armOffsets[editorState.selectedArmIndex];
+        initialTargetX = arm.x;
+        initialTargetY = arm.y;
+      }
+    }
+  }
+
   function handleMouseMove(e: MouseEvent) {
     if (!canvasEl || !containerEl) return;
     const rect = canvasEl.getBoundingClientRect();
@@ -247,6 +400,28 @@
       editorState.panY += mouseY - startPanY;
       startPanX = mouseX;
       startPanY = mouseY;
+      renderCanvas();
+      return;
+    }
+
+    if (isDraggingTarget) {
+      const zoom = editorState.zoom;
+      const deltaX = (e.clientX - dragStartClientX) / zoom;
+      const deltaY = (e.clientY - dragStartClientY) / zoom;
+
+      if (editorState.nudgeTarget === 'all') {
+        editorState.crosshair.offsetX = Math.round((initialTargetX + deltaX) * 10) / 10;
+        editorState.crosshair.offsetY = Math.round((initialTargetY + deltaY) * 10) / 10;
+      } else if (editorState.nudgeTarget === 'layer' && editorState.selectedLayer) {
+        editorState.selectedLayer.offsetX = Math.round((initialTargetX + deltaX) * 10) / 10;
+        editorState.selectedLayer.offsetY = Math.round((initialTargetY + deltaY) * 10) / 10;
+      } else if (editorState.nudgeTarget === 'arm' && editorState.selectedLayer) {
+        const arm = editorState.selectedLayer.shape.armOffsets?.[editorState.selectedArmIndex];
+        if (arm) {
+          arm.x = Math.round((initialTargetX + deltaX) * 10) / 10;
+          arm.y = Math.round((initialTargetY + deltaY) * 10) / 10;
+        }
+      }
       renderCanvas();
       return;
     }
@@ -264,17 +439,31 @@
     hoverPixelJ = Math.floor(profileH / 2 + hoverGameY);
   }
 
-  function handleMouseDown(e: MouseEvent) {
-    if (e.button === 1 || e.buttons === 4 || e.altKey || editorState.activeTool === 'select' && e.shiftKey) {
-      // Middle click or Alt+drag to pan
-      isPanning = true;
-      startPanX = e.clientX;
-      startPanY = e.clientY;
+  function handleMouseUp() {
+    if (isDraggingTarget) {
+      editorState.pushUndo();
+      isDraggingTarget = false;
     }
+    isPanning = false;
   }
 
-  function handleMouseUp() {
-    isPanning = false;
+  function handleToolSelect(toolId: ToolType) {
+    editorState.activeTool = toolId;
+    if (toolId === 'select') {
+      editorState.nudgeTarget = 'layer';
+    } else if (toolId === 'direct') {
+      editorState.nudgeTarget = 'arm';
+    } else if (toolId === 'lines') {
+      editorState.addLayer('LineArms', 'Line Arms');
+    } else if (toolId === 'dot') {
+      editorState.addLayer('Dot', 'Center Dot');
+    } else if (toolId === 'rect') {
+      editorState.addLayer('TShape', 'T-Shape');
+    } else if (toolId === 'circle') {
+      editorState.addLayer('Circle', 'Circle / Ring');
+    } else if (toolId === 'pen') {
+      editorState.addLayer('SvgPath', 'Custom Path');
+    }
   }
 
   function handleWheel(e: WheelEvent) {
@@ -344,7 +533,7 @@
       <Tooltip title={tool.tip} shortcut={tool.shortcut}>
         <button
           class="btn btn-icon mono tool-btn {editorState.activeTool === tool.id ? 'btn-selected' : ''}"
-          onclick={() => (editorState.activeTool = tool.id)}
+          onclick={() => handleToolSelect(tool.id)}
           aria-label="Tool {tool.label}"
         >
           {tool.label}

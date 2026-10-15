@@ -1,6 +1,8 @@
 import type {
   Crosshair,
   Layer,
+  ShapeType,
+  ShapeData,
   PropertyDescriptor,
   ResolutionProfile,
   ToolType,
@@ -324,7 +326,7 @@ export class EditorState {
 
   // Nudge Control
   nudgeStep = $state<number>(0.5);
-  nudgeTarget = $state<NudgeTarget>('arm');
+  nudgeTarget = $state<NudgeTarget>('layer');
   nudgeFrame = $state<NudgeFrame>('screen');
 
   // Active Profile & System Flags
@@ -627,7 +629,7 @@ export class EditorState {
     this.selectedLayerId = created.layers[0].id;
   }
 
-  // Nudge in 8 directions (§9.4)
+  // Nudge in 8 directions with atomic element precision (§9.4)
   nudge(dx: number, dy: number) {
     this.pushUndo();
     const stepX = dx * this.nudgeStep;
@@ -640,28 +642,14 @@ export class EditorState {
       this.selectedLayer.offsetX = Math.round((this.selectedLayer.offsetX + stepX) * 100) / 100;
       this.selectedLayer.offsetY = Math.round((this.selectedLayer.offsetY + stepY) * 100) / 100;
     } else if (this.nudgeTarget === 'arm' && this.selectedLayer) {
-      // For arm nudge, adjust layer offset or gap based on arm direction
-      if (this.selectedArmIndex === 0) {
-        // Top arm: up decreases gap, down increases gap
-        if (this.selectedLayer.shape.gap !== undefined) {
-          this.selectedLayer.shape.gap = Math.max(0, this.selectedLayer.shape.gap - stepY);
-        }
-      } else if (this.selectedArmIndex === 1) {
-        // Right arm
-        if (this.selectedLayer.shape.gap !== undefined) {
-          this.selectedLayer.shape.gap = Math.max(0, this.selectedLayer.shape.gap + stepX);
-        }
-      } else if (this.selectedArmIndex === 2) {
-        // Bottom arm
-        if (this.selectedLayer.shape.gap !== undefined) {
-          this.selectedLayer.shape.gap = Math.max(0, this.selectedLayer.shape.gap + stepY);
-        }
-      } else if (this.selectedArmIndex === 3) {
-        // Left arm
-        if (this.selectedLayer.shape.gap !== undefined) {
-          this.selectedLayer.shape.gap = Math.max(0, this.selectedLayer.shape.gap - stepX);
-        }
+      const armCount = this.selectedLayer.shape.armCount || 4;
+      if (!this.selectedLayer.shape.armOffsets || this.selectedLayer.shape.armOffsets.length < armCount) {
+        this.selectedLayer.shape.armOffsets = Array.from({ length: armCount }, () => ({ x: 0, y: 0 }));
       }
+      const armIdx = Math.max(0, Math.min(this.selectedArmIndex, armCount - 1));
+      const arm = this.selectedLayer.shape.armOffsets[armIdx];
+      arm.x = Math.round((arm.x + stepX) * 100) / 100;
+      arm.y = Math.round((arm.y + stepY) * 100) / 100;
     }
   }
 
@@ -670,10 +658,105 @@ export class EditorState {
     if (this.nudgeTarget === 'all') {
       this.crosshair.offsetX = 0;
       this.crosshair.offsetY = 0;
-    } else if (this.selectedLayer) {
+    } else if (this.nudgeTarget === 'layer' && this.selectedLayer) {
       this.selectedLayer.offsetX = 0;
       this.selectedLayer.offsetY = 0;
+    } else if (this.nudgeTarget === 'arm' && this.selectedLayer && this.selectedLayer.shape.armOffsets) {
+      if (this.selectedLayer.shape.armOffsets[this.selectedArmIndex]) {
+        this.selectedLayer.shape.armOffsets[this.selectedArmIndex] = { x: 0, y: 0 };
+      }
     }
+  }
+
+  selectArm(armIndex: number) {
+    this.selectedArmIndex = armIndex;
+    this.nudgeTarget = 'arm';
+  }
+
+  addLayer(type: ShapeType, name?: string) {
+    this.pushUndo();
+    const id = `layer-${Date.now()}`;
+    const layerColor = this.crosshair.layers[0]?.color || '#00FFFF';
+
+    let shape: ShapeData;
+    let defaultName = name;
+
+    switch (type) {
+      case 'Dot':
+        shape = { type: 'Dot', diameter: 2, isSquare: false };
+        defaultName ||= 'Center Dot';
+        break;
+      case 'Circle':
+        shape = { type: 'Circle', radius: 8, thickness: 2 };
+        defaultName ||= 'Target Circle';
+        break;
+      case 'Ring':
+        shape = { type: 'Ring', radius: 6, thickness: 1 };
+        defaultName ||= 'Inner Ring';
+        break;
+      case 'TShape':
+        shape = {
+          type: 'TShape',
+          length: 6,
+          thickness: 2,
+          gap: 3,
+          armCount: 3,
+          armOffsets: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
+        };
+        defaultName ||= 'T-Shape';
+        break;
+      case 'Chevron':
+        shape = { type: 'Chevron', length: 7, thickness: 2, angle: 90 };
+        defaultName ||= 'Chevron Arrow';
+        break;
+      case 'Polygon':
+        shape = { type: 'Polygon', radius: 8, points: 6, thickness: 2 };
+        defaultName ||= 'Hexagon Reticle';
+        break;
+      case 'Star':
+        shape = { type: 'Star', radius: 9, innerRadius: 4, points: 4, thickness: 2 };
+        defaultName ||= 'Star Reticle';
+        break;
+      case 'SvgPath':
+        shape = {
+          type: 'SvgPath',
+          pathData: 'M 0,-8 L 6,6 L 0,3 L -6,6 Z',
+          thickness: 2,
+          innerOffset: 1.0,
+        };
+        defaultName ||= 'Custom Vector';
+        break;
+      case 'Cross':
+      case 'Plus':
+      case 'LineArms':
+      default:
+        shape = {
+          type: 'LineArms',
+          length: 6,
+          thickness: 2,
+          gap: 4,
+          armCount: 4,
+          armOffsets: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
+        };
+        defaultName ||= 'Line Arms';
+        break;
+    }
+
+    const newLayer: Layer = {
+      id,
+      name: defaultName,
+      visible: true,
+      locked: false,
+      shape,
+      color: layerColor,
+      opacity: 1.0,
+      offsetX: 0,
+      offsetY: 0,
+      rotation: 0,
+    };
+
+    this.crosshair.layers.push(newLayer);
+    this.selectedLayerId = id;
   }
 
   // Layer Mutations
@@ -733,17 +816,31 @@ export class EditorState {
     if (!this.selectedLayer) return;
     this.pushUndo();
 
-    if (propName === 'line.length' && this.selectedLayer.shape.length !== undefined) {
+    if ((propName === 'line.length' || propName === 'shape.length') && this.selectedLayer.shape.length !== undefined) {
       this.selectedLayer.shape.length = value;
-    } else if (propName === 'line.thickness' && this.selectedLayer.shape.thickness !== undefined) {
+    } else if ((propName === 'line.thickness' || propName === 'shape.thickness') && this.selectedLayer.shape.thickness !== undefined) {
       this.selectedLayer.shape.thickness = value;
-    } else if (propName === 'line.gap' && this.selectedLayer.shape.gap !== undefined) {
+    } else if ((propName === 'line.gap' || propName === 'shape.gap') && this.selectedLayer.shape.gap !== undefined) {
       this.selectedLayer.shape.gap = value;
-    } else if (propName === 'line.arm_count' && this.selectedLayer.shape.armCount !== undefined) {
+    } else if ((propName === 'line.arm_count' || propName === 'shape.arm_count') && this.selectedLayer.shape.armCount !== undefined) {
       this.selectedLayer.shape.armCount = value;
-    } else if (propName === 'dot.diameter' && this.selectedLayer.shape.diameter !== undefined) {
+    } else if ((propName === 'dot.diameter' || propName === 'shape.diameter') && this.selectedLayer.shape.diameter !== undefined) {
       this.selectedLayer.shape.diameter = value;
-    } else if (propName === 'global.opacity') {
+    } else if (propName === 'shape.radius' && this.selectedLayer.shape.radius !== undefined) {
+      this.selectedLayer.shape.radius = value;
+    } else if (propName === 'shape.inner_radius' && this.selectedLayer.shape.innerRadius !== undefined) {
+      this.selectedLayer.shape.innerRadius = value;
+    } else if (propName === 'shape.points' && this.selectedLayer.shape.points !== undefined) {
+      this.selectedLayer.shape.points = Math.round(value);
+    } else if (propName === 'shape.angle' && this.selectedLayer.shape.angle !== undefined) {
+      this.selectedLayer.shape.angle = value;
+    } else if (propName === 'layer.offset_x' || propName === 'transform.offset_x') {
+      this.selectedLayer.offsetX = value;
+    } else if (propName === 'layer.offset_y' || propName === 'transform.offset_y') {
+      this.selectedLayer.offsetY = value;
+    } else if (propName === 'layer.rotation' || propName === 'transform.rotation') {
+      this.selectedLayer.rotation = value;
+    } else if (propName === 'global.opacity' || propName === 'layer.opacity') {
       this.selectedLayer.opacity = value;
     }
   }
@@ -752,6 +849,29 @@ export class EditorState {
     if (!this.selectedLayer) return;
     this.pushUndo();
     this.selectedLayer.color = color;
+  }
+
+  setShapePathData(pathData: string) {
+    if (!this.selectedLayer) return;
+    this.pushUndo();
+    this.selectedLayer.shape.pathData = pathData;
+  }
+
+  setDotSquare(isSquare: boolean) {
+    if (!this.selectedLayer) return;
+    this.pushUndo();
+    this.selectedLayer.shape.isSquare = isSquare;
+  }
+
+  setLayerGlow(radius: number, color?: string) {
+    if (!this.selectedLayer) return;
+    this.pushUndo();
+    this.selectedLayer.glowRadius = radius;
+    if (color) {
+      this.selectedLayer.glowColor = color;
+    } else if (!this.selectedLayer.glowColor) {
+      this.selectedLayer.glowColor = this.selectedLayer.color;
+    }
   }
 
   // Calibration Methods (§6.7, M8)

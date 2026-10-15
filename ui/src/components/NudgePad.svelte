@@ -143,6 +143,49 @@
     {/each}
   </div>
 
+  <!-- Arm Selection Sub-bar when Arm target is active -->
+  {#if editorState.nudgeTarget === 'arm'}
+    <div class="arm-selector-group">
+      <div class="arm-buttons mono">
+        {#each [
+          { idx: 0, label: 'Top (↑)' },
+          { idx: 1, label: 'Right (→)' },
+          { idx: 2, label: 'Bottom (↓)' },
+          { idx: 3, label: 'Left (←)' }
+        ] as a}
+          <button
+            class="btn btn-arm {editorState.selectedArmIndex === a.idx ? 'btn-selected' : ''}"
+            onclick={() => editorState.selectArm(a.idx)}
+          >
+            {a.label}
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  <!-- Active Target Offset Readout -->
+  <div class="offset-status mono">
+    {#if editorState.nudgeTarget === 'all'}
+      <span class="status-lbl">All:</span>
+      <span class="offset-val">
+        X {editorState.crosshair.offsetX >= 0 ? `+${editorState.crosshair.offsetX}` : editorState.crosshair.offsetX} · Y {editorState.crosshair.offsetY >= 0 ? `+${editorState.crosshair.offsetY}` : editorState.crosshair.offsetY} px
+      </span>
+    {:else if editorState.nudgeTarget === 'layer'}
+      <span class="status-lbl">{editorState.selectedLayer?.name || 'Layer'}:</span>
+      <span class="offset-val">
+        X {(editorState.selectedLayer?.offsetX ?? 0) >= 0 ? `+${editorState.selectedLayer?.offsetX ?? 0}` : editorState.selectedLayer?.offsetX} · Y {(editorState.selectedLayer?.offsetY ?? 0) >= 0 ? `+${editorState.selectedLayer?.offsetY ?? 0}` : editorState.selectedLayer?.offsetY} px
+      </span>
+    {:else}
+      {@const armName = ['Top', 'Right', 'Bottom', 'Left'][editorState.selectedArmIndex] || `Arm ${editorState.selectedArmIndex}`}
+      {@const armOff = editorState.selectedLayer?.shape.armOffsets?.[editorState.selectedArmIndex] || { x: 0, y: 0 }}
+      <span class="status-lbl">{armName} Arm:</span>
+      <span class="offset-val">
+        X {armOff.x >= 0 ? `+${armOff.x}` : armOff.x} · Y {armOff.y >= 0 ? `+${armOff.y}` : armOff.y} px
+      </span>
+    {/if}
+  </div>
+
   <!-- Frame Footnote -->
   <p class="frame-hint">
     Frame: Screen axes · step in game px · Hold Shift (10×) / Alt (0.1×)
@@ -199,5 +242,46 @@
     margin-top: 10px;
     font-size: 11px;
     line-height: 1.3;
+  }
+
+  .arm-selector-group {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .arm-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+
+  .btn-arm {
+    height: 24px;
+    padding: 0 4px;
+    font-size: 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .offset-status {
+    margin-top: 10px;
+    padding: 6px 8px;
+    background: rgba(18, 22, 27, 0.7);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .status-lbl {
+    color: var(--text-muted);
+  }
+
+  .offset-val {
+    color: var(--accent);
+    font-weight: 600;
   }
 </style>
