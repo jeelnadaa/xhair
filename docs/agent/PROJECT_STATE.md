@@ -1,8 +1,8 @@
 # Project State
 
-- **Updated:** 2026-10-15
-- **Session:** 5
-- **Phase / Milestone:** M4 Overlay Daemon — Done | Next: M5 Editor UI
+- **Updated:** 2026-10-16
+- **Session:** 6
+- **Phase / Milestone:** M5 Editor UI — Done | Next: M6 MCP Server
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
@@ -12,7 +12,7 @@
 - [x] M2 Renderer + CLI (completed 2026-10-15)
 - [x] M3 Library + Format (completed 2026-10-15)
 - [x] M4 Overlay Daemon (completed 2026-10-15)
-- [ ] M5 Editor UI
+- [x] M5 Editor UI (completed 2026-10-16)
 - [ ] M6 MCP Server
 - [ ] M7 Effects & Polish
 - [ ] M8 Calibration
@@ -20,21 +20,21 @@
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M5 Editor UI: Svelte 5 + Vite + Tauri 2 editor UI, high-performance canvas grid with DPR scaling, descriptor-driven inspector, layers panel, and 8-way nudge pad.
+- M6 MCP Server: MCP server generated from command registry, stdio and loopback HTTP transports, proxy-to-running-app IPC, MCP resources, and parity test suite.
 
 ## Next exact step
-- Scaffold Tauri 2 + Svelte 5 application shell in `ui/` integrating tokens from `design/tokens.json` and WASM renderer.
+- Implement `xhair-mcp` server tools generated from `xhair-commands` registry with JSON-RPC stdio and loopback HTTP transport.
 
 ## WIP notes
-- `xhair-platform-win`:
-  - Dedicated background message-loop thread with `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE` popup window.
-  - 32-bit premultiplied BGRA DIB surface rasterized via `tiny-skia` and committed via `UpdateLayeredWindow`.
-  - Zero CPU idle render loop: renders strictly on update commands or geometry change.
-  - Per-Monitor-V2 DPI awareness and physical pixel monitor bounds enumeration.
-  - Safe limited-query foreground process tracking (`VALORANT-Win64-Shipping.exe`) and game window client rect following (`follow_game_window`).
-  - System tray icon with status flags tooltip (`TrayIcon`).
-  - Global hotkeys manager (`RegisterHotKey`) with conflict detection.
-  - Calibration test pattern generator (`create_calibration_crosshair`).
+- `ui`:
+  - Complete Svelte 5 + Vite application conforming to `design/tokens.json` and `design/XHAIR — App Design.html`.
+  - High-performance canvas grid view with DPR scaling (`window.devicePixelRatio`), 1px / 5px / 10px major lines, distance rings, and center indicators (`#FF4FD8`).
+  - Descriptor-driven inspector controls generated from `ui/src/generated/properties.json` with horizontal scrub handles and sliders.
+  - Interactive 8-way Nudge Pad with step chips (`0.1`, `0.25`, `0.5`, `1`, `5`, `10`), target selector (`Arm` | `Layer` | `All`), and keyboard shortcuts.
+  - Layers panel with solo/hide/lock, alignment diagnostics (`ALIGNED` vs `OFF-GRID`), and duplication/deletion.
+  - Color picker with hex input and preset swatches.
+  - Command palette modal (`Ctrl+K`) executing registered shortcuts and command bus operations.
+  - Accessible `Tooltip` component on every interactive control with title, description, and shortcut badge.
 
 ## Known issues / blockers
 - None.
@@ -43,6 +43,9 @@
 - Workspace crates: 12 (all build & test green, 67 tests passing)
 - Golden image tests: 8 tests passing
 - Platform tests: 9 tests passing (5 platform integration tests + 4 unit tests)
+- UI test suite: 11 tests passing in Vitest (100% green)
+- TypeScript lint: 0 errors (`tsc --noEmit`)
+- Vite production build: 88 kB JS, 14 kB CSS (built in ~350ms)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 
 ## Human decisions pending

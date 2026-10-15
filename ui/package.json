@@ -4,8 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node -e \"process.exit(0)\"",
-    "lint": "node -e \"process.exit(0)\"",
-    "build": "node -e \"process.exit(0)\""
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^26.6.5",
+    "svelte": "^5.57.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  },
+  "pnpm": {
+    "verifyDepsBeforeRun": false
   }
 }

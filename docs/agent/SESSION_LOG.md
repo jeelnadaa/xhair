@@ -92,4 +92,34 @@
     - `pnpm -C ui test; pnpm -C ui lint`: green.
 - **Next:** Milestone 5: Editor UI (`ui/` Svelte 5 + Vite + Tauri 2 shell, high-performance canvas grid with DPR scaling, descriptor-driven inspector, layers panel, and 8-way nudge pad).
 
+## 2026-10-16 — Session 6
+- **Goal:** Milestone 5 Editor UI: Svelte 5 + Vite application conforming to `design/tokens.json` and `design/XHAIR — App Design.html`, interactive high-performance canvas grid with DPR scaling, descriptor-driven inspector controls and tooltips, layers panel, 8-way nudge pad, color picker, command palette, and UI test suite.
+- **Planned Tasks:** M5-001, M5-002, M5-003, M5-004, M5-005, M5-006, M5-007, M5-008.
+- **Completed:**
+  - `ui`:
+    - Setup Svelte 5 + TypeScript + Vite with hoisted linker configuration and strict type checking.
+    - `src/app.css`: Tokenized design system matching `design/tokens.json` (dark base `#0B0D10`, surface `#12161B`/`#1A2027`, accent `#36F2CB`, guide `#FF4FD8`, `Manrope`, `JetBrains Mono`).
+    - `src/lib/types.ts`: Full TypeScript domain models for crosshair, layers, shapes, descriptors, resolution profiles, and tools.
+    - `src/lib/state.svelte.ts`: Reactive Svelte 5 state store with runes (`$state`, `$derived`), multi-level undo/redo history, fine nudging in 8 directions, layer management, alignment diagnostics, and WCAG contrast scoring.
+    - `src/lib/shortcuts.ts`: Central shortcuts registry and command palette definitions (§9.8).
+    - `src/components/Tooltip.svelte`: Accessible keyboard & hover tooltip component present on every interactive control (§9, Invariant P5).
+    - `src/components/TopBar.svelte`: Header with brand styling, undo/redo controls, and live status pills (`Overlay ON/OFF`, `MCP ON`, `Resolution Profile`, `Contrast Score`).
+    - `src/components/LibrarySidebar.svelte`: Searchable sidebar with live SVG crosshair thumbnails and "+ New crosshair" creation.
+    - `src/components/CanvasGrid.svelte`: High-performance 2D canvas with DPR scaling, pixel grid, 5px/10px major lines, distance rings, center indicators (`#FF4FD8`), rulers, floating tool palette (`V`, `A`, `L`, `D`, `R`, `C`, `P`, `B`), zoom chips (`1×`–`32×`, `1:1`), and coordinate readouts.
+    - `src/components/Inspector.svelte`: Property descriptor controls generated from `ui/src/generated/properties.json` with horizontal scrub handles and sliders.
+    - `src/components/LayersPanel.svelte`: Layers list with solo/hide/lock, alignment diagnostics badges (`ALIGNED` vs `OFF-GRID`), duplicate, and delete.
+    - `src/components/NudgePad.svelte`: 3×3 directional buttons (`↖`, `↑`, `↗`, `←`, `•`, `→`, `↙`, `↓`, `↘`), step chips (`0.1`, `0.25`, `0.5`, `1`, `5`, `10`), target selector (`Arm` | `Layer` | `All`), and keyboard shortcuts (`Arrow`, `Shift+Arrow`, `Alt+Arrow`, `Ctrl+Arrow`).
+    - `src/components/ColorPicker.svelte`: Hex input and curated presets swatches.
+    - `src/components/CommandPalette.svelte`: Spotlight modal (`Ctrl+K`) for searching and executing registered actions.
+    - `tests/editor.test.ts`: 11 Vitest unit tests covering descriptors, state initialization, nudging, undo/redo, layer CRUD, alignment diagnostics, contrast scoring, and shortcuts.
+- **Tests & Quality:**
+  - `pnpm -C ui test`: 11 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Production bundle built in ~350ms (88 kB JS, 14 kB CSS).
+  - `cargo test --workspace`: 67 tests passing (100% green).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+- **Next:** Milestone 6: MCP Server (`xhair-mcp` stdio & loopback HTTP transports, proxy-to-running-app IPC, MCP resources and prompts, parity test suite).
+
 

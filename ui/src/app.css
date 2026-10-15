@@ -1,0 +1,221 @@
+:root {
+  --bg: #0B0D10;
+  --surface1: #12161B;
+  --surface2: #1A2027;
+  --border: #262E38;
+  --border-focus: #36F2CB;
+  --text: #E9EEF3;
+  --text-muted: #93A0AF;
+  --accent: #36F2CB;
+  --accent-dim: #0F2A26;
+  --warning: #FFB454;
+  --warning-dim: #33260F;
+  --danger: #FF5C5C;
+  --danger-dim: #3A1414;
+  --center-guide: #FF4FD8;
+
+  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 99px;
+
+  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Button Component Styles */
+.btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 32px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 100ms ease, border-color 100ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: #222a33;
+  border-color: #384352;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #04110E;
+  border-color: var(--accent);
+  font-weight: 800;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4efdd9;
+  border-color: #4efdd9;
+}
+
+.btn-selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex: none;
+}
+
+/* Panel Containers */
+.panel {
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.panel-header {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Status Pills */
+.pill {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(18, 22, 27, 0.7);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill.active {
+  color: var(--accent);
+  border-color: #1d6b5c;
+  background: var(--accent-dim);
+}
+
+.pill.warning {
+  color: var(--warning);
+  border-color: #5c431d;
+  background: var(--warning-dim);
+}
+
+/* Inputs */
+.input-text {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  height: 32px;
+  padding: 0 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.input-text:focus {
+  border-color: var(--accent);
+}
+
+/* Badges */
+.badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.badge-warning {
+  background: var(--warning-dim);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
+/* Track / Slider */
+.slider-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.slider-fill {
+  height: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* Utility Row */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

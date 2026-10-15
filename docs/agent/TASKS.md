@@ -38,14 +38,14 @@
 | **M4-004** | M4 Overlay | Global hotkey registration and conflict checks | done | §8.4 | Complete |
 | **M4-005** | M4 Overlay | System tray icon, context menu, and tooltip states | done | §8.3 | Complete |
 | **M4-006** | M4 Overlay | Overlay calibration test pattern overlay | done | §6.7 | Complete |
-| **M5-001** | M5 UI | Setup Svelte 5 + Vite + Tauri 2 shell | todo | §3.1 | |
-| **M5-002** | M5 UI | High-performance canvas grid view with DPR scaling | todo | §6.8 | |
-| **M5-003** | M5 UI | Descriptor-driven inspector controls and tooltips | todo | §5.2, §5.3 | |
-| **M5-004** | M5 UI | Layers panel, ordering, solo/hide/lock | todo | §9.3 | |
-| **M5-005** | M5 UI | 8-way Nudge Pad with step chips & frame selector | todo | §9.4 | |
-| **M5-006** | M5 UI | Color picker, gradient editor, and presets | todo | §9.5 | |
-| **M5-007** | M5 UI | Command palette and shortcut registry | todo | §9.8 | |
-| **M5-008** | M5 UI | Playwright and Vitest UI test suite | todo | §15.3 | |
+| **M5-001** | M5 UI | Setup Svelte 5 + Vite + Tauri 2 shell | done | §3.1 | Complete |
+| **M5-002** | M5 UI | High-performance canvas grid view with DPR scaling | done | §6.8 | Complete |
+| **M5-003** | M5 UI | Descriptor-driven inspector controls and tooltips | done | §5.2, §5.3 | Complete |
+| **M5-004** | M5 UI | Layers panel, ordering, solo/hide/lock | done | §9.3 | Complete |
+| **M5-005** | M5 UI | 8-way Nudge Pad with step chips & frame selector | done | §9.4 | Complete |
+| **M5-006** | M5 UI | Color picker, gradient editor, and presets | done | §9.5 | Complete |
+| **M5-007** | M5 UI | Command palette and shortcut registry | done | §9.8 | Complete |
+| **M5-008** | M5 UI | Playwright and Vitest UI test suite | done | §15.3 | Complete |
 | **M6-001** | M6 MCP | MCP server generated from command registry | todo | §13.1 | |
 | **M6-002** | M6 MCP | stdio and loopback HTTP transports with auth token | todo | §13.2, §13.7 | |
 | **M6-003** | M6 MCP | Proxy-to-running-app IPC mechanism | todo | §1.4, §13.2 | |
