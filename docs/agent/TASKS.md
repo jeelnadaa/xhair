@@ -8,12 +8,12 @@
 | **P-1-004** | Phase -1 | Configure release pipeline (release-please, workflows) | done | §21 | Complete |
 | **P-1-005** | Phase -1 | Set up project memory graph and `cargo xtask` | done | §22 | Complete |
 | **P-1-006** | Phase -1 | Commit and verify baseline CI/tests green | done | §19 | Complete |
-| **M0-001** | M0 Design | Review FigCraft tools and generate tokens.json | todo | §17.1 | |
-| **M0-002** | M0 Design | Design component library with all states | todo | §17.3 | |
-| **M0-003** | M0 Design | Design 25 application screens and flows | todo | §17.4 | |
-| **M0-004** | M0 Design | Export screens & components to `design/` | todo | §17.1 | |
-| **M0-005** | M0 Design | Complete `design/README.md` route & command map | todo | §17.1 | |
-| **M0-006** | M0 Design | Present design summary and await human approval | todo | §17.5 | Mandatory stop |
+| **M0-001** | M0 Design | Review FigCraft tools and generate tokens.json | done | §17.1 | Complete |
+| **M0-002** | M0 Design | Design component library with all states | done | §17.3 | Complete |
+| **M0-003** | M0 Design | Design 25 application screens and flows | done | §17.4 | Complete |
+| **M0-004** | M0 Design | Export screens & components to `design/` | done | §17.1 | Complete |
+| **M0-005** | M0 Design | Complete `design/README.md` route & command map | done | §17.1 | Complete |
+| **M0-006** | M0 Design | Present design summary and await human approval | doing | §17.5 | Awaiting human approval |
 | **M1-001** | M1 Found. | Implement `xhair-model` domain types & validation | todo | §4 | |
 | **M1-002** | M1 Found. | Implement `xhair-geometry` coordinate & alignment math | todo | §6 | |
 | **M1-003** | M1 Found. | Implement `xhair-commands` command bus & undo/redo | todo | §5.1 | |
