@@ -426,6 +426,38 @@ SectionEnd
             let mut f = fs::File::open(&license_path)?;
             std::io::copy(&mut f, &mut zip)?;
         }
+
+        // Include compiled UI bundle (ui/dist) for offline editor serving
+        let ui_dist = root.join("ui/dist");
+        if ui_dist.exists() {
+            fn add_dir_to_zip(
+                dir: &Path,
+                prefix: &str,
+                zip: &mut zip::ZipWriter<fs::File>,
+                options: zip::write::SimpleFileOptions,
+            ) -> Result<()> {
+                for entry in fs::read_dir(dir)? {
+                    let entry = entry?;
+                    let path = entry.path();
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    let zip_path = if prefix.is_empty() {
+                        name.clone()
+                    } else {
+                        format!("{}/{}", prefix, name)
+                    };
+                    if path.is_file() {
+                        zip.start_file(&zip_path, options)?;
+                        let mut f = fs::File::open(&path)?;
+                        std::io::copy(&mut f, zip)?;
+                    } else if path.is_dir() {
+                        add_dir_to_zip(&path, &zip_path, zip, options)?;
+                    }
+                }
+                Ok(())
+            }
+            let _ = add_dir_to_zip(&ui_dist, "ui/dist", &mut zip, options);
+        }
+
         zip.finish()?;
     }
     println!("Created portable zip: {:?}", portable_zip_path);

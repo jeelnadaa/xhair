@@ -121,6 +121,13 @@ impl OverlayHandle {
             let _ = handle.join();
         }
     }
+
+    /// Waits for the overlay thread to exit.
+    pub fn wait(mut self) {
+        if let Some(handle) = self.thread_handle.take() {
+            let _ = handle.join();
+        }
+    }
 }
 
 /// Spawns the overlay window on a dedicated message-loop thread (§8.1).

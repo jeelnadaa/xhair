@@ -12,6 +12,8 @@ name = "xhair"
 path = "src/main.rs"
 
 [dependencies]
+xhair-model = { path = "../xhair-model" }
+xhair-geometry = { path = "../xhair-geometry" }
 xhair-commands = { path = "../xhair-commands" }
 xhair-render = { path = "../xhair-render" }
 xhair-platform-win = { path = "../xhair-platform-win" }
