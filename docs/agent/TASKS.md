@@ -13,13 +13,13 @@
 | **M0-003** | M0 Design | Design 25 application screens and flows | done | §17.4 | Complete |
 | **M0-004** | M0 Design | Export screens & components to `design/` | done | §17.1 | Complete |
 | **M0-005** | M0 Design | Complete `design/README.md` route & command map | done | §17.1 | Complete |
-| **M0-006** | M0 Design | Present design summary and await human approval | doing | §17.5 | Awaiting human approval |
-| **M1-001** | M1 Found. | Implement `xhair-model` domain types & validation | todo | §4 | |
-| **M1-002** | M1 Found. | Implement `xhair-geometry` coordinate & alignment math | todo | §6 | |
-| **M1-003** | M1 Found. | Implement `xhair-commands` command bus & undo/redo | todo | §5.1 | |
-| **M1-004** | M1 Found. | Implement property descriptors macro and JSON export | todo | §5.2 | |
-| **M1-005** | M1 Found. | Settings model and error types catalog | todo | §14, §15.1 | |
-| **M1-006** | M1 Found. | Foundations property and unit test suites | todo | §16 (M1) | |
+| **M0-006** | M0 Design | Present design summary and await human approval | done | §17.5 | Approved by user |
+| **M1-001** | M1 Found. | Implement `xhair-model` domain types & validation | done | §4 | Complete |
+| **M1-002** | M1 Found. | Implement `xhair-geometry` coordinate & alignment math | done | §6 | Complete |
+| **M1-003** | M1 Found. | Implement `xhair-commands` command bus & undo/redo | done | §5.1 | Complete |
+| **M1-004** | M1 Found. | Implement property descriptors macro and JSON export | done | §5.2 | Complete |
+| **M1-005** | M1 Found. | Settings model and error types catalog | done | §14, §15.1 | Complete |
+| **M1-006** | M1 Found. | Foundations property and unit test suites | done | §16 (M1) | Complete |
 | **M2-001** | M2 Render | Implement `xhair-render` tiny-skia shape rasterizers | todo | §7 | |
 | **M2-002** | M2 Render | Implement paints, gradients, and strokes | todo | §4.4, §4.5 | |
 | **M2-003** | M2 Render | Implement effects (blur, glow, shadow) | todo | §4.6 | |

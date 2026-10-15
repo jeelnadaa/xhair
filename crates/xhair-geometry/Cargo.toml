@@ -11,3 +11,8 @@ description = "Resolution, DPI, edge-vs-center, snapping, and stretch math for x
 xhair-model = { path = "../xhair-model" }
 serde.workspace = true
 schemars.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

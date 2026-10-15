@@ -28,6 +28,8 @@ jobs:
         run: cargo test --workspace
       - name: Verify Agent Continuity State
         run: cargo run --package xtask -- check-agent-state
+      - name: Verify Property Schema Drift
+        run: cargo run --package xtask -- schema --check
       - name: Query Memory Graph
         run: cargo run --package xtask -- graph query --summary
 

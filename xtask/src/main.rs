@@ -199,6 +199,59 @@ fn handle_check_agent_state() -> Result<()> {
     Ok(())
 }
 
+fn handle_schema(args: &[String]) -> Result<()> {
+    let root = get_repo_root()?;
+    let registry = xhair_commands::PropertyRegistry::standard();
+    let json_content = serde_json::to_string_pretty(&registry)? + "\n";
+    let md_content = registry.to_markdown();
+
+    let json_path = root.join("ui/src/generated/properties.json");
+    let md_path = root.join("docs/PROPERTIES.md");
+
+    let check_mode = args.iter().any(|a| a == "--check");
+
+    if check_mode {
+        let existing_json = if json_path.exists() {
+            fs::read_to_string(&json_path)?
+        } else {
+            String::new()
+        };
+        let existing_md = if md_path.exists() {
+            fs::read_to_string(&md_path)?
+        } else {
+            String::new()
+        };
+
+        let json_normalized = existing_json.replace("\r\n", "\n");
+        let md_normalized = existing_md.replace("\r\n", "\n");
+        let gen_json_normalized = json_content.replace("\r\n", "\n");
+        let gen_md_normalized = md_content.replace("\r\n", "\n");
+
+        if json_normalized != gen_json_normalized || md_normalized != gen_md_normalized {
+            anyhow::bail!(
+                "Property schema drift detected! Run 'cargo xtask schema' to regenerate."
+            );
+        }
+
+        println!("Property schemas and documentation are up to date.");
+        Ok(())
+    } else {
+        if let Some(parent) = json_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        if let Some(parent) = md_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        fs::write(&json_path, json_content)?;
+        fs::write(&md_path, md_content)?;
+
+        println!("Generated properties schema: {:?}", json_path);
+        println!("Generated properties documentation: {:?}", md_path);
+        Ok(())
+    }
+}
+
 fn handle_package(args: &[String]) -> Result<()> {
     println!("Packaging xhair...");
     let mut version = "0.1.0";
@@ -215,17 +268,18 @@ fn handle_package(args: &[String]) -> Result<()> {
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.is_empty() {
-        eprintln!("Usage: cargo xtask [graph | check-agent-state | package] [args...]");
+        eprintln!("Usage: cargo xtask [graph | check-agent-state | schema | package] [args...]");
         return Ok(());
     }
 
     match args[0].as_str() {
         "graph" => handle_graph(&args[1..]),
         "check-agent-state" => handle_check_agent_state(),
+        "schema" => handle_schema(&args[1..]),
         "package" => handle_package(&args[1..]),
         other => {
             eprintln!("Unknown xtask command: {}", other);
-            eprintln!("Available: graph, check-agent-state, package");
+            eprintln!("Available: graph, check-agent-state, schema, package");
             std::process::exit(1);
         }
     }

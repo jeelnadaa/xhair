@@ -15,3 +15,20 @@
   - Decisions: ADR-0001 accepted.
   - Tests status: All 12 workspace tests passing, clippy clean, rustfmt clean, agent state check green, graph summary query verified.
   - Mandatory Stop: Presenting Phase 0 design to the human for review and approval before starting M1 implementation.
+
+## 2026-10-15 — Session 2
+- **Goal:** Milestone 1 Foundations: core domain model, coordinate & alignment math with proptests, command bus with undo/redo/batches/coalescing, property descriptors, and schema drift checks.
+- **Planned Tasks:** M1-001, M1-002, M1-003, M1-004, M1-005, M1-006.
+- **Completed:**
+  - `xhair-model`: Domain models (`crosshair.rs`, `layer.rs`, `shapes.rs`, `paint.rs`, `effects.rs`, `units.rs`, `settings.rs`, `error.rs`). Fully typed crosshairs, layers, transforms, paints, and error catalog with error codes XH-1001..XH-1008.
+  - `xhair-geometry`: Coordinate conversion, screen center alignment with even/odd raster alignment rules (§6.2), non-uniform stretch ratio math, DPI scaling, alignment diagnostic reports, and 3 proptest suites verifying mathematical invariants.
+  - `xhair-commands`: Pure command bus with mutation diff calculation, inverse command generation, history stack with 100-entry depth, coalescing bursts for rapid nudges, atomic batch transactions, dry-run simulation mode, and bus event subscribers.
+  - Descriptors & Drift checks (`M1-004`): Schema-driven property registry with mandatory plain-language tooltips for every control (`PropertyRegistry::standard()`). Added `cargo xtask schema` and `cargo xtask schema --check` to export `ui/src/generated/properties.json` and `docs/PROPERTIES.md`. Integrated into CI workflow.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 25 unit and property tests passing.
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run --package xtask -- check-agent-state`: all continuity files verified.
+  - `cargo run --package xtask -- schema --check`: verified up to date.
+- **Next:** Milestone 2: `xhair-render` tiny-skia rasterizers, gradients/strokes/glow, and CLI render command.
+

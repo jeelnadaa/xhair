@@ -2,13 +2,13 @@
 
 - **Updated:** 2026-10-15
 - **Session:** 1
-- **Phase / Milestone:** Phase 0 Design — Complete (Awaiting Human Approval)
+- **Phase / Milestone:** M1 Foundations — Done | Next: M2 Renderer + CLI
 - **Version released:** None | **Unreleased on main:** 0.1.0-dev
 
 ## Done (milestone-level)
 - [x] Phase -1 Bootstrap (completed 2026-10-15)
-- [x] Phase 0 Design (completed 2026-10-15, awaiting human approval)
-- [ ] M1 Foundations
+- [x] Phase 0 Design (approved by user 2026-10-15)
+- [x] M1 Foundations (completed 2026-10-15)
 - [ ] M2 Renderer + CLI
 - [ ] M3 Library + Format
 - [ ] M4 Overlay Daemon
@@ -20,25 +20,25 @@
 - [ ] M10 Packaging & Hardening
 
 ## In progress
-- M0-006: Present design summary and await human approval before Phase 1 (M1).
+- M2 Renderer + CLI: Implement `xhair-render` tiny-skia rasterizers, paints/gradients/strokes, effects, and WASM/native golden tests.
 
 ## Next exact step
-- Await human approval on Phase 0 design tokens, components, and screen layouts.
-- Upon approval, proceed to M1 Foundations (`crates/xhair-model`, `crates/xhair-geometry`, `crates/xhair-commands`).
+- Implement shape rasterizers in `xhair-render` (`lines.rs`, `dot.rs`, `circle.rs`, `cross.rs`, `t_shape.rs`, `polygon.rs`, `pixels.rs`, `text.rs`).
 
 ## WIP notes
-- `design/tokens.json` generated.
-- `design/components/components.md` and component PNGs generated.
-- `design/screens/` generated with 1x and 2x renders of Editor, Library, Calibration, Resolution Profiles, and MCP Settings.
-- `design/README.md` complete with full 25-screen command mapping.
+- Domain model implemented in `xhair-model` with validation, error catalog, settings, and templates.
+- Alignment and coordinate math with even/odd rules, non-uniform stretch, and proptests implemented in `xhair-geometry`.
+- Command bus with pure state transitions, atomic batches, coalescing nudges, undo/redo, and dry-run implemented in `xhair-commands`.
+- Property descriptors with tooltips and validation registry implemented with `cargo xtask schema` export (`ui/src/generated/properties.json` and `docs/PROPERTIES.md`).
 
 ## Known issues / blockers
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green)
-- Screen renders: 10 PNGs (1x and 2x)
-- Component renders: 4 PNGs
+- Workspace crates: 12 (all build & test green, 25 tests passing)
+- Proptests: 3 suites in `xhair-geometry` (center coordinates, DPI scaling, coordinate mapping round trip)
+- Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 
 ## Human decisions pending
-- Approval of Phase 0 Design before starting M1 implementation.
+- None.
+
