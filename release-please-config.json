@@ -9,8 +9,7 @@
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" },
-        { "type": "json", "path": "ui/package.json", "jsonpath": "$.version" },
-        { "type": "json", "path": "crates/xhair-app/tauri.conf.json", "jsonpath": "$.version" }
+        { "type": "json", "path": "ui/package.json", "jsonpath": "$.version" }
       ]
     }
   }
