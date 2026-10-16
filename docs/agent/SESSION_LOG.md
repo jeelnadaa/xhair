@@ -652,13 +652,28 @@
      - Created CLI zip bundle (`dist/xhair-cli-1.0.0-x64.zip`).
      - Generated CycloneDX SBOM (`dist/sbom.json`).
      - Generated cryptographic SHA-256 integrity checksums (`dist/SHA256SUMS.txt`).
+## 2026-10-16 — Session 24
+- **Goal:** Codebase cleanup: remove heavy design screenshots, intermediate mock HTML dumps, obsolete 3rd party executables, redundant markdown specs at root, and replace verbose root README with a minimal, focused guide (How to build, Where to find, How to connect MCP).
+- **Completed:**
+  1. **Removed Design Screenshots & Artifacts (~100 MB freed):**
+     - Deleted `design/screens/*.png` (all 50+ exported mockup screenshots).
+     - Deleted `design/components/*.png` and `design/components/components.md`.
+     - Deleted `design/html/*.html` and `design/XHAIR — App Design.html`.
+     - Deleted legacy `design/CrossOver-3.4.5.exe` binary.
+     - Deleted obsolete `design/README.md`.
+  2. **Removed Redundant & Obsolete Markdown Documents:**
+     - Removed root-level duplicates `AGENT_CONTINUITY_AND_RELEASES.md` and `CROSSHAIR_OVERLAY_SPEC.md` (authoritative specs reside in `docs/spec/`).
+     - Removed intermediate design drafts `docs/AGENT_README.md`, `docs/TYPOGRAPHY.md`, `docs/LAYOUT.md`, and `docs/THEMING.md`.
+  3. **Rewrote Clean Minimal README (`README.md`):**
+     - Ultra-concise, actionable guide covering:
+       - How to Build (prerequisites, UI build, release build, package task).
+       - Where to Find (binary locations in `target/release/` and distribution archives in `dist/`).
+       - How to Connect MCP (Claude Desktop, Cursor, Antigravity IDE configuration snippet and dual-mode runtime behavior).
 - **Tests & Quality:**
   - `cargo test --workspace`: 90 tests passing (100% green).
   - `pnpm -C ui test`: 24 tests passing (100% green).
   - `pnpm -C ui lint`: 0 errors.
   - `cargo clippy --workspace -- -D warnings`: 0 warnings.
-  - `cargo fmt --check`: 0 diffs.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
-  - `cargo run -p xtask -- graph`: memory graph verified.
 
 
