@@ -105,16 +105,16 @@
 
 ## Phase 4: Production Hardening, Verification & Release
 
-- [ ] **4.1 Full Workspace Test Suite Verification**
-  - [ ] Backend: `cargo test --workspace` 100% green.
-  - [ ] Parity CI: `cargo test -p xhair-mcp --test parity` 100% verified.
-  - [ ] Frontend: `pnpm.cmd -C ui test` 100% green.
-  - [ ] Typescript: `pnpm.cmd -C ui lint` 0 errors.
+- [x] **4.1 Full Workspace Test Suite Verification**
+  - [x] Backend: `cargo test --workspace` 100% green (90 tests passing).
+  - [x] Parity CI: `cargo test -p xhair-mcp --test parity` 100% verified.
+  - [x] Frontend: `pnpm.cmd -C ui test` 100% green (24 tests passing).
+  - [x] Typescript: `pnpm.cmd -C ui lint` 0 errors.
 
-- [ ] **4.2 End-to-End Integration Tests**
-  - [ ] Write integration test: MCP tool mutates crosshair -> disk library updates -> overlay updates.
-  - [ ] Write integration test: UI saves profile -> file saved in `%APPDATA%/xhair/crosshairs/`.
+- [x] **4.2 End-to-End Integration Tests**
+  - [x] Write integration test: MCP tool mutates crosshair -> disk library updates -> overlay updates (`test_e2e_mcp_mutates_crosshair_library_and_overlay`).
+  - [x] Write integration test: UI saves profile -> file saved in `%APPDATA%/xhair/crosshairs/` (`test_e2e_ui_saves_profile_to_disk`).
 
-- [ ] **4.3 Automated Production Packaging**
-  - [ ] Execute `cargo xtask package --version 1.0.0`.
-  - [ ] Verify NSIS installer, portable zip bundle, CycloneDX SBOM, and SHA256 checksums.
+- [x] **4.3 Automated Production Packaging**
+  - [x] Execute `cargo xtask package --version 1.0.0`.
+  - [x] Verify NSIS installer, portable zip bundle, CycloneDX SBOM, and SHA256 checksums in `dist/`.

@@ -627,4 +627,38 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph`: memory graph verified.
 
+## 2026-10-16 — Session 23
+- **Goal:** Production Readiness Phase 4: Production Hardening, Verification & Release (full workspace test suite verification, MCP parity verification, end-to-end integration tests, and v1.0.0 automated production packaging).
+- **Completed:**
+  1. **OverlaySender Headless Construction (`crates/xhair-platform-win/src/overlay.rs`):**
+     - Added `OverlaySender::new(sender, hwnd_raw)` constructor.
+     - Guarded `PostMessageW` with `if self.hwnd_raw != 0` allowing headless tests to construct and route messages through channels without requiring an active Win32 window.
+  2. **End-to-End Integration Tests (`crates/xhair-app/src/lib.rs`):**
+     - `test_e2e_mcp_mutates_crosshair_library_and_overlay`: Spawns MCP server with real temporary `LibraryEngine` and `Win32OverlayController(OverlaySender)`. Invokes `layer.add` tool via JSON-RPC, asserts document mutation, verifies disk `.xhair` file persistence under `library/crosshairs/<id>.xhair`, and captures the resulting `OverlayCommand::SetCrosshair` over the overlay channel.
+     - `test_e2e_ui_saves_profile_to_disk`: Spawns local REST server on loopback, creates a new `Crosshair`, POSTs it to `/api/library/save`, verifies `200 OK` JSON response, confirms file exists on disk, and verifies receipt of `OverlayCommand::SetCrosshair`.
+  3. **Full Test Suite & Parity Verification:**
+     - `cargo test --workspace`: 90 Rust unit and integration tests passing across all 12 crates (100% green).
+     - `cargo test -p xhair-mcp --test parity`: 100% parity across 35 tools, 25 commands, and UI actions.
+     - `pnpm -C ui test`: 24 Vitest tests passing (100% green).
+     - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+     - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+     - `cargo fmt --check`: 0 diffs.
+  4. **Release Binaries & Frontend Production Bundle:**
+     - Compiled optimized release binaries: `cargo build --release --bin xhair --bin xhair-cli` (`target/release/xhair.exe` and `target/release/xhair-cli.exe`).
+     - Built frontend production bundle: `pnpm -C ui build` (Vite 8.3.4, 239 kB JS, 63 kB CSS).
+  5. **Automated Production Packaging (`cargo run -p xtask -- package --version 1.0.0`):**
+     - Generated NSIS installer script (`dist/installer.nsi`) with desktop & start menu shortcuts, uninstaller, and registry keys.
+     - Created standalone portable zip bundle (`dist/xhair-1.0.0-x64-portable.zip`).
+     - Created CLI zip bundle (`dist/xhair-cli-1.0.0-x64.zip`).
+     - Generated CycloneDX SBOM (`dist/sbom.json`).
+     - Generated cryptographic SHA-256 integrity checksums (`dist/SHA256SUMS.txt`).
+- **Tests & Quality:**
+  - `cargo test --workspace`: 90 tests passing (100% green).
+  - `pnpm -C ui test`: 24 tests passing (100% green).
+  - `pnpm -C ui lint`: 0 errors.
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
+
 

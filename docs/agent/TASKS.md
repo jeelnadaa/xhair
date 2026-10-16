@@ -99,4 +99,6 @@
 | **PR-013** | Phase 3 | Figma-Style Drag-to-Scrub Numerical Inputs | done | PR §3.3 | ScrubInput.svelte with horizontal label drag, Alt=0.1x, Shift=10x, direct type |
 | **PR-014** | Phase 3 | Clean In-Place Modal & Group Creation | done | PR §3.4 | Inline group creation & renaming (no window.prompt), desktop context menus |
 | **PR-015** | Phase 3 | Collapsible Diagnostics & Labs Bottom Drawer | done | PR §3.5 | BottomDock.svelte with Timeline, Spray Lab, Calibration, and MCP Live Stream |
-
+| **PR-016** | Phase 4 | Full Workspace Test Suite Verification | done | PR §4.1 | 90 Rust tests + Vitest 24 tests + parity test + clippy + fmt + tsc 100% green |
+| **PR-017** | Phase 4 | End-to-End Integration Tests | done | PR §4.2 | MCP mutation -> library -> overlay E2E and UI profile save -> disk E2E |
+| **PR-018** | Phase 4 | Automated Production Packaging | done | PR §4.3 | cargo xtask package --version 1.0.0: NSIS installer, portable zip, CLI zip, SBOM, SHA256SUMS |

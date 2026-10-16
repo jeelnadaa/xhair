@@ -408,4 +408,118 @@ mod tests {
         assert!(xhair_mcp::read_endpoint_info().is_none());
         mcp_server.stop_http();
     }
+
+    #[test]
+    fn test_e2e_mcp_mutates_crosshair_library_and_overlay() {
+        let temp_dir = tempfile::tempdir().expect("tempdir failed");
+        let library = xhair_library::LibraryEngine::new(temp_dir.path()).expect("engine failed");
+        let mcp_ctx = xhair_mcp::ServerContext::new(Some(library));
+
+        let (tx, rx) = std::sync::mpsc::channel::<OverlayCommand>();
+        let overlay_sender = OverlaySender::new(tx, 0);
+        mcp_ctx.set_overlay_controller(Arc::new(Win32OverlayController::new(overlay_sender)));
+
+        let initial_ch = Crosshair::new_classic("E2E Test Reticle");
+        let ch_id = initial_ch.id;
+        mcp_ctx.with_state(|state| {
+            if let Some(ref mut lib) = state.library {
+                lib.save_crosshair(&initial_ch, None).unwrap();
+            }
+            state.active_crosshair_id = Some(ch_id);
+            state.bus.register_document(initial_ch.clone());
+        });
+
+        // Mutate crosshair using MCP layer.add tool
+        let new_layer =
+            xhair_model::layer::Layer::new("Center Dot", xhair_model::shapes::LayerKind::default());
+        let args = serde_json::json!({
+            "layer": new_layer,
+        });
+        let result = xhair_mcp::tools::call_tool(&mcp_ctx, "layer.add", args);
+        assert!(
+            !result.is_error,
+            "layer.add tool should succeed: {:?}",
+            result
+        );
+
+        // 1. Verify in-memory state has the added layer (classic 1 layer + 1 added = 2)
+        let mutated_ch =
+            mcp_ctx.with_state(|state| state.bus.documents.get(&ch_id).unwrap().clone());
+        assert_eq!(mutated_ch.layers.len(), 2);
+
+        // 2. Verify disk library has the updated crosshair
+        mcp_ctx.with_state(|state| {
+            if let Some(ref mut lib) = state.library {
+                lib.save_crosshair(&mutated_ch, None).unwrap();
+                let loaded = lib.load_crosshair(ch_id).unwrap();
+                assert_eq!(loaded.layers.len(), 2);
+            }
+        });
+
+        // 3. Verify overlay receiver received the updated crosshair command
+        let cmd = rx.try_recv().expect("overlay should have received command");
+        match cmd {
+            OverlayCommand::SetCrosshair(ch) => {
+                assert_eq!(ch.id, ch_id);
+                assert_eq!(ch.layers.len(), 2);
+            }
+            other => panic!("expected SetCrosshair command, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_e2e_ui_saves_profile_to_disk() {
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
+
+        let temp_dir = tempfile::tempdir().expect("tempdir failed");
+        let library = xhair_library::LibraryEngine::new(temp_dir.path()).expect("engine failed");
+        let mcp_ctx = xhair_mcp::ServerContext::new(Some(library));
+
+        let (tx, rx) = std::sync::mpsc::channel::<OverlayCommand>();
+        let overlay_sender = OverlaySender::new(tx, 0);
+        let port = server::start_ui_server(Some(overlay_sender), Some(mcp_ctx.clone()))
+            .expect("start server");
+
+        let ch = Crosshair::new_classic("Disk Saved Reticle");
+        let ch_id = ch.id;
+        let body = serde_json::to_string(&ch).unwrap();
+        let req = format!(
+            "POST /api/library/save HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: {}\r\nContent-Type: application/json\r\n\r\n{}",
+            body.len(),
+            body
+        );
+
+        let mut stream = TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream.write_all(req.as_bytes()).unwrap();
+        let mut resp = Vec::new();
+        stream.read_to_end(&mut resp).unwrap();
+        let resp_str = String::from_utf8_lossy(&resp);
+        assert!(resp_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_str.contains("\"status\":\"ok\""));
+
+        // 1. Verify file exists on disk in the library data dir (library/crosshairs/<id>.xhair)
+        let expected_file = temp_dir
+            .path()
+            .join("library")
+            .join("crosshairs")
+            .join(format!("{}.xhair", ch_id));
+        assert!(
+            expected_file.exists(),
+            "crosshair file should exist at {:?}",
+            expected_file
+        );
+        let disk_content = std::fs::read_to_string(expected_file).unwrap();
+        assert!(disk_content.contains("Disk Saved Reticle"));
+
+        // 2. Verify overlay receiver received the updated crosshair command
+        let cmd = rx.try_recv().expect("overlay should have received command");
+        match cmd {
+            OverlayCommand::SetCrosshair(received_ch) => {
+                assert_eq!(received_ch.id, ch_id);
+                assert_eq!(received_ch.name, "Disk Saved Reticle");
+            }
+            other => panic!("expected SetCrosshair command, got {:?}", other),
+        }
+    }
 }

@@ -105,14 +105,21 @@ pub struct OverlaySender {
 }
 
 impl OverlaySender {
+    /// Creates a new OverlaySender handle.
+    pub fn new(sender: Sender<OverlayCommand>, hwnd_raw: isize) -> Self {
+        Self { sender, hwnd_raw }
+    }
+
     /// Sends a command to the overlay window thread.
     pub fn send(&self, cmd: OverlayCommand) -> Result<(), PlatformError> {
         self.sender
             .send(cmd)
             .map_err(|e| PlatformError::ChannelError(e.to_string()))?;
-        unsafe {
-            let hwnd = HWND(self.hwnd_raw as *mut _);
-            let _ = PostMessageW(hwnd, WM_APP_OVERLAY_UPDATE, WPARAM(0), LPARAM(0));
+        if self.hwnd_raw != 0 {
+            unsafe {
+                let hwnd = HWND(self.hwnd_raw as *mut _);
+                let _ = PostMessageW(hwnd, WM_APP_OVERLAY_UPDATE, WPARAM(0), LPARAM(0));
+            }
         }
         Ok(())
     }
