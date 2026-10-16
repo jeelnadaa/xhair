@@ -239,16 +239,40 @@ pub fn run() -> anyhow::Result<()> {
                 .build(&window)
                 .map_err(|e| anyhow::anyhow!("Failed to create webview: {}", e))?;
 
+            let initial_size = window.inner_size();
+            let _ = webview.set_bounds(wry::Rect {
+                position: wry::dpi::Position::Logical(wry::dpi::LogicalPosition::new(0.0, 0.0)),
+                size: wry::dpi::Size::Physical(wry::dpi::PhysicalSize::new(
+                    initial_size.width,
+                    initial_size.height,
+                )),
+            });
+
             event_loop.run(move |event, _, control_flow| {
-                let _ = &webview;
                 *control_flow = tao::event_loop::ControlFlow::Wait;
-                if let tao::event::Event::WindowEvent {
-                    event: tao::event::WindowEvent::CloseRequested,
-                    ..
-                } = event
-                {
-                    xhair_mcp::clear_endpoint_info();
-                    *control_flow = tao::event_loop::ControlFlow::Exit;
+                match event {
+                    tao::event::Event::WindowEvent {
+                        event: tao::event::WindowEvent::Resized(size),
+                        ..
+                    } => {
+                        let _ = webview.set_bounds(wry::Rect {
+                            position: wry::dpi::Position::Logical(wry::dpi::LogicalPosition::new(
+                                0.0, 0.0,
+                            )),
+                            size: wry::dpi::Size::Physical(wry::dpi::PhysicalSize::new(
+                                size.width,
+                                size.height,
+                            )),
+                        });
+                    }
+                    tao::event::Event::WindowEvent {
+                        event: tao::event::WindowEvent::CloseRequested,
+                        ..
+                    } => {
+                        xhair_mcp::clear_endpoint_info();
+                        *control_flow = tao::event_loop::ControlFlow::Exit;
+                    }
+                    _ => {}
                 }
             });
         }

@@ -15,6 +15,20 @@
 
 <header class="top-bar">
   <div class="brand-group">
+    <Tooltip
+      title={editorState.leftRailCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+      shortcut="Ctrl+B"
+    >
+      <button
+        class="btn btn-icon btn-panel-toggle {editorState.leftRailCollapsed ? 'inactive' : 'active'}"
+        onclick={() => editorState.toggleLeftRail()}
+        aria-label="Toggle Library Sidebar"
+      >
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1zm4 1.5H2.5v7H6v-7zm1.5 7h6v-7h-6v7z" />
+        </svg>
+      </button>
+    </Tooltip>
     <strong class="brand">XHAIR</strong>
     <span class="sep">/</span>
     <input
@@ -237,6 +251,21 @@
         Contrast {editorState.visibilityScore}:1
       </div>
     </Tooltip>
+
+    <Tooltip
+      title={editorState.rightRailCollapsed ? 'Expand Inspector' : 'Collapse Inspector'}
+      shortcut="Ctrl+I"
+    >
+      <button
+        class="btn btn-icon btn-panel-toggle {editorState.rightRailCollapsed ? 'inactive' : 'active'}"
+        onclick={() => editorState.toggleRightRail()}
+        aria-label="Toggle Inspector Panel"
+      >
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1zm8 1.5v7h3.5v-7H10zm-1.5 0h-6v7h6v-7z" />
+        </svg>
+      </button>
+    </Tooltip>
   </div>
 </header>
 
@@ -337,6 +366,37 @@
 
   .save-status-icon {
     font-size: 13px;
+  }
+
+  .btn-panel-toggle {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+
+  .btn-panel-toggle:hover {
+    color: var(--text);
+    background: var(--surface3);
+    border-color: var(--accent);
+  }
+
+  .btn-panel-toggle.active {
+    color: var(--accent);
+    background: var(--surface3);
+  }
+
+  .btn-panel-toggle.inactive {
+    color: var(--text-dim);
+    opacity: 0.6;
   }
 
   .actions-group {

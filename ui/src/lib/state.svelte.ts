@@ -529,6 +529,34 @@ export class EditorState {
   screenshotDetectedOffset = $state<{ x: number; y: number } | null>(null);
   screenshotConfidence = $state<number>(0);
 
+  // Resizable & Expandable Studio Rails
+  leftRailWidth = $state<number>(320);
+  rightRailWidth = $state<number>(340);
+  leftRailCollapsed = $state<boolean>(false);
+  rightRailCollapsed = $state<boolean>(false);
+
+  toggleLeftRail() {
+    this.leftRailCollapsed = !this.leftRailCollapsed;
+  }
+
+  toggleRightRail() {
+    this.rightRailCollapsed = !this.rightRailCollapsed;
+  }
+
+  setLeftRailWidth(w: number) {
+    this.leftRailWidth = Math.max(260, Math.min(540, w));
+    if (this.leftRailCollapsed && w >= 260) {
+      this.leftRailCollapsed = false;
+    }
+  }
+
+  setRightRailWidth(w: number) {
+    this.rightRailWidth = Math.max(280, Math.min(560, w));
+    if (this.rightRailCollapsed && w >= 280) {
+      this.rightRailCollapsed = false;
+    }
+  }
+
   // Animation & Timeline (§4.7)
   currentTime = $state<number>(0.0);
   isPlaying = $state<boolean>(false);

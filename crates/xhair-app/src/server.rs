@@ -367,37 +367,52 @@ fn handle_connection(
         trimmed
     };
 
-    let (content_type, body): (&str, Vec<u8>) = if let Some(ref dist) = dist_dir {
-        let file_path = dist.join(target_file);
-        if file_path.exists() && file_path.is_file() {
-            let mime = guess_mime(target_file);
-            let data = fs::read(&file_path).unwrap_or_default();
-            (mime, data)
-        } else if let Some(file) = EmbeddedDist::get(target_file) {
-            let mime = guess_mime(target_file);
-            (mime, file.data.to_vec())
+    let normalized = target_file.replace('\\', "/");
+    let is_asset = normalized.starts_with("assets/")
+        || normalized.ends_with(".js")
+        || normalized.ends_with(".css")
+        || normalized.ends_with(".svg")
+        || normalized.ends_with(".png")
+        || normalized.ends_with(".woff2")
+        || normalized.ends_with(".woff")
+        || normalized.ends_with(".ttf")
+        || normalized.ends_with(".json")
+        || normalized.ends_with(".ico");
+
+    let dist_file_data = dist_dir.as_ref().and_then(|d| {
+        let p = d.join(target_file);
+        if p.exists() && p.is_file() {
+            fs::read(&p).ok()
         } else {
-            // SPA fallback: return index.html
-            let index_data = fs::read(dist.join("index.html"))
-                .ok()
-                .or_else(|| EmbeddedDist::get("index.html").map(|f| f.data.to_vec()))
-                .unwrap_or_default();
-            ("text/html; charset=utf-8", index_data)
+            None
         }
-    } else if let Some(file) = EmbeddedDist::get(target_file) {
-        let mime = guess_mime(target_file);
-        (mime, file.data.to_vec())
-    } else if let Some(index) = EmbeddedDist::get("index.html") {
-        ("text/html; charset=utf-8", index.data.to_vec())
-    } else {
+    });
+
+    let embedded_file_data = EmbeddedDist::get(&normalized).map(|f| f.data.to_vec());
+
+    let (status, content_type, body) = if let Some(data) = dist_file_data.or(embedded_file_data) {
+        ("200 OK", guess_mime(&normalized), data)
+    } else if is_asset {
         (
-            "text/html; charset=utf-8",
-            b"<!DOCTYPE html><html><body><h1>XHAIR UI</h1></body></html>".to_vec(),
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            b"Not Found".to_vec(),
         )
+    } else {
+        // SPA HTML fallback for navigation routes
+        let index_data = dist_dir
+            .as_ref()
+            .and_then(|d| fs::read(d.join("index.html")).ok())
+            .or_else(|| EmbeddedDist::get("index.html").map(|f| f.data.to_vec()))
+            .unwrap_or_else(|| {
+                b"<!DOCTYPE html><html><body><h1>XHAIR UI</h1></body></html>".to_vec()
+            });
+        ("200 OK", "text/html; charset=utf-8", index_data)
     };
 
     let header = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+        "HTTP/1.1 {}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+        status,
         content_type,
         body.len()
     );
@@ -428,5 +443,41 @@ mod tests {
         );
         assert_eq!(guess_mime("style.css"), "text/css; charset=utf-8");
         assert_eq!(guess_mime("icon.svg"), "image/svg+xml");
+    }
+
+    #[test]
+    fn test_server_serves_index_and_assets() {
+        use std::io::{Read, Write};
+        let port = start_ui_server(None, None).expect("start_ui_server");
+        let mut stream =
+            std::net::TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect");
+        stream
+            .write_all(b"GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
+            .unwrap();
+        let mut res = String::new();
+        stream.read_to_string(&mut res).unwrap();
+        assert!(res.contains("200 OK"));
+        assert!(res.contains("XHAIR"));
+
+        // Extract js path
+        let js_path = res
+            .split("src=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let mut stream2 =
+            std::net::TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect");
+        let req = format!(
+            "GET {} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
+            js_path
+        );
+        stream2.write_all(req.as_bytes()).unwrap();
+        let mut res2 = String::new();
+        stream2.read_to_string(&mut res2).unwrap();
+        assert!(res2.contains("200 OK"));
+        assert!(res2.contains("application/javascript"));
+        assert!(!res2.contains("<!DOCTYPE html>"));
     }
 }

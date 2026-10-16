@@ -55,7 +55,7 @@
 </script>
 
 <aside class="unified-inspector">
-  <!-- Inspector Header -->
+  <!-- Inspector Header with Collapse Toggle -->
   <div class="inspector-header">
     <div class="header-left">
       <span class="header-title">Inspector</span>
@@ -65,9 +65,20 @@
         <span class="selection-badge mono empty">No Selection</span>
       {/if}
     </div>
-    {#if editorState.selectedLayers.length > 1}
-      <span class="multi-select-badge mono">{editorState.selectedLayers.length} layers</span>
-    {/if}
+    <div class="header-right">
+      {#if editorState.selectedLayers.length > 1}
+        <span class="multi-select-badge mono">{editorState.selectedLayers.length} layers</span>
+      {/if}
+      <Tooltip title="Collapse Inspector" shortcut="Ctrl+I">
+        <button
+          class="btn-inspector-collapse"
+          onclick={() => editorState.toggleRightRail()}
+          aria-label="Collapse Inspector"
+        >
+          ▶
+        </button>
+      </Tooltip>
+    </div>
   </div>
 
   {#if editorState.selectedLayer}
@@ -707,9 +718,9 @@
 
 <style>
   .unified-inspector {
-    width: 320px;
-    flex: none;
-    border-left: 1px solid var(--border, #262930);
+    width: 100%;
+    height: 100%;
+    flex: 1;
     background: var(--surface1, #0f1013);
     display: flex;
     flex-direction: column;
@@ -733,6 +744,32 @@
     align-items: center;
     gap: 8px;
     overflow: hidden;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-inspector-collapse {
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #8b949e);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border-radius: var(--radius-xs, 4px);
+    transition: all 120ms ease;
+  }
+
+  .btn-inspector-collapse:hover {
+    color: var(--text, #f0f6fc);
+    background: var(--surface3, #1e2128);
   }
 
   .header-title {

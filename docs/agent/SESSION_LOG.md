@@ -708,5 +708,28 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph`: memory graph verified.
 
-
-
+## 2026-10-16 — Session 26
+- **Goal:** Fix blank screen in native desktop window, make Left and Right studio rails expandable and resizable with drag splitters and collapse toggles, and de-cramp the Left Sidebar layout.
+- **Root Cause & Solution:**
+  1. **Blank Screen Root Cause in Native Desktop Window:**
+     - In `crates/xhair-app/src/lib.rs`, `wry::WebView` bounds were not updated upon Tao window creation and resize events (`WindowEvent::Resized`). When launched or maximized, WebView2 failed to render or match client coordinates. Fixed by querying `window.inner_size()` immediately after `build(&window)` and setting initial bounds, as well as updating bounds dynamically on every `tao::event::WindowEvent::Resized(size)`.
+     - In `crates/xhair-app/src/server.rs`, missing static assets (`.js`, `.css`, etc.) previously triggered an SPA fallback returning `200 OK` with `text/html`, which caused WebView2's JavaScript module loader to fail strict MIME-type checks and halt initialization. Fixed by normalizing slash paths and strictly returning `404 Not Found` for static assets.
+     - In `ui/src/app.css`, explicitly set `html, body, #app` to `width: 100%; height: 100%; overflow: hidden;` preventing DOM collapse.
+  2. **Expandable & Resizable Studio Rails:**
+     - Added reactive state in `EditorState` (`ui/src/lib/state.svelte.ts`): `leftRailWidth` (min 260px, default 320px, max 540px), `rightRailWidth` (min 280px, default 340px, max 560px), `leftRailCollapsed: boolean`, `rightRailCollapsed: boolean`.
+     - Added draggable splitters (`.rail-resizer.resizer-left` and `.resizer-right`) with smooth pointer capture (`pointerdown`, `pointermove`, `pointerup`).
+     - Added collapse buttons on each rail header (`◀` on left, `▶` on right) and slim floating expand strips when collapsed.
+     - Added one-click panel toggle buttons with SVG icons in `TopBar.svelte` with `Ctrl+B` (Sidebar) and `Ctrl+I` (Inspector) keyboard shortcuts.
+  3. **Left Sidebar De-cramping (`LibrarySidebar.svelte`):**
+     - Increased default sidebar width from 260px to 320px.
+     - Upgraded SVG reticle preview thumbnails from 36×36px to 44×44px with crisp borders, background, and centered coordinates.
+     - Increased crosshair list item padding from 6×8px to 10×12px (min-height 58px) with clean name typography and separate pill badges for tags and layer counts.
+     - De-cramp layer cards with 8×10px padding (min-height 38px), 13px icon buttons, 10px swatch dots, and clear shape badges.
+     - Enlarged search bar and group items with generous breathing room.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 91 Rust tests passing (100% green).
+  - `pnpm -C ui test`: 25 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings across workspace.
+  - `cargo fmt --check`: 0 diffs.
+  - Fresh release binary recompiled at `target/release/xhair.exe`.

@@ -389,5 +389,40 @@ describe('Editor State & Logic', () => {
     expect(state.library.length).toBe(originalCount);
     expect(state.library.find((c) => c.id === duplicatedId)).toBeUndefined();
   });
+
+  it('handles expandable and collapsible studio rails', () => {
+    expect(state.leftRailWidth).toBe(320);
+    expect(state.rightRailWidth).toBe(340);
+    expect(state.leftRailCollapsed).toBe(false);
+    expect(state.rightRailCollapsed).toBe(false);
+
+    // Toggle collapse
+    state.toggleLeftRail();
+    expect(state.leftRailCollapsed).toBe(true);
+    state.toggleLeftRail();
+    expect(state.leftRailCollapsed).toBe(false);
+
+    state.toggleRightRail();
+    expect(state.rightRailCollapsed).toBe(true);
+    state.toggleRightRail();
+    expect(state.rightRailCollapsed).toBe(false);
+
+    // Resizing within bounds
+    state.setLeftRailWidth(400);
+    expect(state.leftRailWidth).toBe(400);
+
+    // Clamp min / max
+    state.setLeftRailWidth(100);
+    expect(state.leftRailWidth).toBe(260); // Clamped to min 260
+    state.setLeftRailWidth(800);
+    expect(state.leftRailWidth).toBe(540); // Clamped to max 540
+
+    state.setRightRailWidth(450);
+    expect(state.rightRailWidth).toBe(450);
+    state.setRightRailWidth(150);
+    expect(state.rightRailWidth).toBe(280); // Clamped to min 280
+    state.setRightRailWidth(900);
+    expect(state.rightRailWidth).toBe(560); // Clamped to max 560
+  });
 });
 

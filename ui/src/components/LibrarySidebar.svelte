@@ -192,7 +192,7 @@
 <svelte:window onclick={handleGlobalClick} />
 
 <aside class="left-rail">
-  <!-- Segmented Tab Header (Library vs Layers) -->
+  <!-- Segmented Tab Header (Library vs Layers) with Collapse Toggle -->
   <div class="rail-tabs-header">
     <button
       class="rail-tab-btn {activeTab === 'library' ? 'active' : ''}"
@@ -210,6 +210,15 @@
       <span>Layers</span>
       <span class="tab-badge">{editorState.crosshair.layers.length}</span>
     </button>
+    <Tooltip title="Collapse Sidebar" shortcut="Ctrl+B">
+      <button
+        class="btn-rail-collapse"
+        onclick={() => editorState.toggleLeftRail()}
+        aria-label="Collapse Sidebar"
+      >
+        ◀
+      </button>
+    </Tooltip>
   </div>
 
   {#if activeTab === 'library'}
@@ -324,27 +333,27 @@
           >
             <!-- SVG Thumbnail -->
             <div class="thumbnail">
-              <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
-                <rect width="36" height="36" fill="#090A0D" />
+              <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+                <rect width="44" height="44" fill="#090A0D" />
                 {#each item.layers as layer}
                   {#if layer.visible}
                     {#if layer.shape.type === 'LineArms'}
-                      {@const len = (layer.shape.length || 6) * 1.3}
+                      {@const len = (layer.shape.length || 6) * 1.5}
                       {@const thick = Math.max(1.5, layer.shape.thickness || 2)}
-                      {@const gap = (layer.shape.gap || 4) * 1.3}
-                      <rect x={18 - thick / 2} y={18 - gap - len} width={thick} height={len} fill={layer.color} />
-                      <rect x={18 - thick / 2} y={18 + gap} width={thick} height={len} fill={layer.color} />
-                      <rect x={18 - gap - len} y={18 - thick / 2} width={len} height={thick} fill={layer.color} />
-                      <rect x={18 + gap} y={18 - thick / 2} width={len} height={thick} fill={layer.color} />
+                      {@const gap = (layer.shape.gap || 4) * 1.4}
+                      <rect x={22 - thick / 2} y={22 - gap - len} width={thick} height={len} fill={layer.color} />
+                      <rect x={22 - thick / 2} y={22 + gap} width={thick} height={len} fill={layer.color} />
+                      <rect x={22 - gap - len} y={22 - thick / 2} width={len} height={thick} fill={layer.color} />
+                      <rect x={22 + gap} y={22 - thick / 2} width={len} height={thick} fill={layer.color} />
                     {:else if layer.shape.type === 'Dot'}
-                      {@const d = (layer.shape.diameter || 2) * 1.5}
+                      {@const d = (layer.shape.diameter || 2) * 1.8}
                       {#if layer.shape.isSquare}
-                        <rect x={18 - d / 2} y={18 - d / 2} width={d} height={d} fill={layer.color} />
+                        <rect x={22 - d / 2} y={22 - d / 2} width={d} height={d} fill={layer.color} />
                       {:else}
-                        <circle cx="18" cy="18" r={d / 2} fill={layer.color} />
+                        <circle cx="22" cy="22" r={d / 2} fill={layer.color} />
                       {/if}
                     {:else}
-                      <circle cx="18" cy="18" r="4" fill="none" stroke={layer.color} stroke-width="1.5" />
+                      <circle cx="22" cy="22" r="5" fill="none" stroke={layer.color} stroke-width="1.5" />
                     {/if}
                   {/if}
                 {/each}
@@ -371,7 +380,8 @@
               {:else}
                 <div class="name">{item.name}</div>
                 <div class="meta mono">
-                  {item.tags[0] || 'Default'} · {item.layers.length} layers
+                  <span class="meta-tag">{item.tags[0] || 'Default'}</span>
+                  <span class="meta-pill">{item.layers.length} {item.layers.length === 1 ? 'layer' : 'layers'}</span>
                 </div>
               {/if}
             </div>
@@ -688,9 +698,9 @@
 
 <style>
   .left-rail {
-    width: 260px;
-    flex: none;
-    border-right: 1px solid var(--border, #262930);
+    width: 100%;
+    height: 100%;
+    flex: 1;
     background: var(--surface1, #0f1013);
     display: flex;
     flex-direction: column;
@@ -701,8 +711,30 @@
 
   .rail-tabs-header {
     display: flex;
+    align-items: center;
     border-bottom: 1px solid var(--border, #262930);
     background: var(--surface2, #16181d);
+  }
+
+  .btn-rail-collapse {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border, #262930);
+    color: var(--text-muted, #8b949e);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 120ms ease;
+    flex-shrink: 0;
+  }
+
+  .btn-rail-collapse:hover {
+    color: var(--text, #f0f6fc);
+    background: var(--surface3, #1e2128);
   }
 
   .rail-tab-btn {
@@ -889,66 +921,94 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
     padding-right: 2px;
   }
 
   .crosshair-item {
     background: var(--surface2, #16181d);
-    border: 1px solid transparent;
+    border: 1px solid var(--border, #262930);
     border-radius: var(--radius-md, 8px);
-    padding: 6px 8px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     cursor: pointer;
     color: var(--text, #f0f6fc);
     position: relative;
-    transition: border-color 100ms ease, background 100ms ease;
+    transition: all 120ms ease;
+    min-height: 58px;
   }
 
   .crosshair-item:hover {
     background: var(--surface3, #1e2128);
+    border-color: var(--border-strong, #3a3a3a);
   }
 
   .crosshair-item.active {
     border-color: var(--accent, #38bdf8);
     background: var(--surface3, #1e2128);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2);
   }
 
   .thumbnail {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--radius-sm, 6px);
     overflow: hidden;
     border: 1px solid var(--border, #262930);
+    background: #090a0d;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     overflow: hidden;
     flex: 1;
+    min-width: 0;
   }
 
   .name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text, #f0f6fc);
   }
 
   .meta {
+    font-size: 11px;
+    color: var(--text-muted, #8b949e);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .meta-tag {
+    color: var(--accent, #38bdf8);
+    font-weight: 500;
+    font-size: 10px;
+  }
+
+  .meta-pill {
+    background: var(--surface1, #0f1013);
+    border: 1px solid var(--border, #262930);
+    padding: 1px 6px;
+    border-radius: 4px;
     font-size: 10px;
     color: var(--text-muted, #8b949e);
   }
 
   .active-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--accent, #38bdf8);
     box-shadow: 0 0 6px var(--accent, #38bdf8);
@@ -1046,14 +1106,15 @@
   .layer-card {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 8px;
+    gap: 8px;
+    padding: 8px 10px;
     background: var(--surface2, #16181d);
     border: 1px solid transparent;
     border-radius: var(--radius-sm, 6px);
     color: var(--text, #f0f6fc);
     cursor: pointer;
     transition: all 100ms ease;
+    min-height: 38px;
   }
 
   .layer-card:hover {
@@ -1078,14 +1139,18 @@
     border: none;
     color: var(--text-muted, #8b949e);
     cursor: pointer;
-    font-size: 11px;
-    padding: 2px;
+    font-size: 13px;
+    padding: 4px;
     border-radius: var(--radius-xs, 4px);
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .layer-icon-btn:hover {
     color: var(--text, #f0f6fc);
+    background: var(--surface3, #1e2128);
   }
 
   .layer-icon-btn.active {
@@ -1097,10 +1162,11 @@
   }
 
   .layer-swatch {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
   }
 
   .layer-title-area {
@@ -1108,10 +1174,12 @@
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+    min-width: 0;
+    gap: 1px;
   }
 
   .layer-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -1119,13 +1187,13 @@
   }
 
   .layer-kind {
-    font-size: 9px;
-    color: var(--text-muted, #6e7681);
+    font-size: 10px;
+    color: var(--text-muted, #8b949e);
   }
 
   .badge-fix {
     font-size: 9px;
-    padding: 1px 4px;
+    padding: 2px 6px;
     background: rgba(234, 179, 8, 0.2);
     border: 1px solid #eab308;
     color: #eab308;
