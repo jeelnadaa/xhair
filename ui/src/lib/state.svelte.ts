@@ -316,6 +316,174 @@ export function uniqueId(prefix: string): string {
   return `${prefix}-${Date.now()}-${idCounter}`;
 }
 
+export function isValidCrosshair(c: unknown): c is Crosshair {
+  if (!c || typeof c !== 'object') return false;
+  const obj = c as Record<string, unknown>;
+  if (!obj.id || typeof obj.id !== 'string') return false;
+  if (!obj.name || typeof obj.name !== 'string') return false;
+  if (!Array.isArray(obj.layers) || obj.layers.length === 0) return false;
+  return (obj.layers as Array<unknown>).every((l) => {
+    if (!l || typeof l !== 'object') return false;
+    const layer = l as Record<string, unknown>;
+    return (
+      layer.id &&
+      layer.shape &&
+      typeof layer.shape === 'object' &&
+      typeof (layer.shape as Record<string, unknown>).type === 'string'
+    );
+  });
+}
+
+export function canonicalToUiCrosshair(raw: any): Crosshair | null {
+  if (!raw || typeof raw !== 'object') return null;
+  if (isValidCrosshair(raw)) return raw;
+  if (!raw.id || !raw.name || !Array.isArray(raw.layers)) return null;
+
+  const uiLayers: Layer[] = [];
+  for (const l of raw.layers) {
+    if (!l || typeof l !== 'object') continue;
+    let shape: ShapeData = { type: 'LineArms', length: 6, thickness: 2, gap: 4, armCount: 4 };
+
+    if (l.shape && typeof l.shape === 'object' && l.shape.type) {
+      shape = l.shape;
+    } else if (l.kind && typeof l.kind === 'object') {
+      const k = l.kind;
+      switch (k.kind) {
+        case 'line':
+          shape = {
+            type: 'LineArms',
+            length: k.length ?? 6,
+            thickness: k.thickness ?? 2,
+            gap: k.gap ?? 4,
+            armCount: k.arm_count ?? 4,
+          };
+          break;
+        case 'dot':
+          shape = {
+            type: 'Dot',
+            diameter: k.diameter ?? 2,
+            isSquare: k.shape === 'square',
+          };
+          break;
+        case 't_shape':
+          shape = {
+            type: 'TShape',
+            length: k.bar_length ?? 10,
+            thickness: k.thickness ?? 2,
+            gap: k.gap ?? 2,
+          };
+          break;
+        case 'circle':
+          shape = {
+            type: 'Circle',
+            radius: (k.diameter ?? 10) / 2,
+          };
+          break;
+        case 'ring':
+          shape = {
+            type: 'Ring',
+            radius: k.outer_radius ?? 8,
+            thickness: k.thickness ?? 2,
+          };
+          break;
+        case 'arc':
+          shape = {
+            type: 'Arc',
+            radius: k.radius ?? 8,
+            thickness: k.thickness ?? 2,
+            startAngle: k.start_angle ?? 0,
+            endAngle: k.end_angle ?? 180,
+          };
+          break;
+        case 'rect':
+          shape = {
+            type: 'Rect',
+            width: k.width ?? 8,
+            height: k.height ?? 8,
+          };
+          break;
+        case 'triangle':
+          shape = {
+            type: 'Triangle',
+            base: k.base ?? 8,
+          };
+          break;
+        case 'polygon':
+          shape = {
+            type: 'Polygon',
+            points: k.sides ?? 5,
+            radius: k.radius ?? 8,
+          };
+          break;
+        case 'chevron':
+          shape = {
+            type: 'Chevron',
+            length: k.arm_length ?? 8,
+            thickness: k.thickness ?? 2,
+            gap: k.gap ?? 2,
+            angle: k.angle ?? 90,
+          };
+          break;
+        case 'path':
+          shape = {
+            type: 'SvgPath',
+            pathData: k.data ?? '',
+          };
+          break;
+        default:
+          shape = { type: 'LineArms', length: 6, thickness: 2, gap: 4, armCount: 4 };
+      }
+    }
+
+    let color = '#36F2CB';
+    if (typeof l.color === 'string') {
+      color = l.color;
+    } else if (l.fill?.color) {
+      const c = l.fill.color;
+      const r = Math.round(c.r).toString(16).padStart(2, '0');
+      const g = Math.round(c.g).toString(16).padStart(2, '0');
+      const b = Math.round(c.b).toString(16).padStart(2, '0');
+      color = `#${r}${g}${b}`.toUpperCase();
+    }
+
+    const ox = l.offsetX ?? l.transform?.offset?.x ?? 0;
+    const oy = l.offsetY ?? l.transform?.offset?.y ?? 0;
+    const rot = l.rotation ?? l.transform?.rotation ?? 0;
+
+    uiLayers.push({
+      id: l.id || uniqueId('layer'),
+      name: l.name || 'Layer',
+      visible: l.visible ?? true,
+      locked: l.locked ?? false,
+      shape,
+      color,
+      opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
+      offsetX: ox,
+      offsetY: oy,
+      rotation: rot,
+      glowRadius: l.glowRadius ?? l.effects?.glow?.radius,
+      glowColor: l.glowColor ?? (l.effects?.glow?.color ? '#36F2CB' : undefined),
+    });
+  }
+
+  if (uiLayers.length === 0) return null;
+
+  return {
+    id: raw.id,
+    name: raw.name || 'Crosshair',
+    description: raw.description || '',
+    author: raw.author || 'User',
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    favorite: raw.favorite ?? false,
+    formatVersion: raw.format_version || raw.formatVersion || 1,
+    offsetX: raw.offsetX ?? raw.global?.offset?.x ?? 0,
+    offsetY: raw.offsetY ?? raw.global?.offset?.y ?? 0,
+    scale: raw.scale ?? raw.global?.scale ?? 1.0,
+    opacity: raw.opacity ?? raw.global?.opacity ?? 1.0,
+    layers: uiLayers,
+  };
+}
+
 function loadSavedLibrary(): Crosshair[] {
   if (typeof localStorage !== 'undefined') {
     try {
@@ -323,11 +491,19 @@ function loadSavedLibrary(): Crosshair[] {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const valid = parsed
+            .map((item) => canonicalToUiCrosshair(item))
+            .filter((item): item is Crosshair => isValidCrosshair(item));
+          if (valid.length > 0) {
+            return valid;
+          }
         }
       }
     } catch (e) {
       console.error('Failed to load library from localStorage:', e);
+      try {
+        localStorage.removeItem('xhair_library');
+      } catch (_) {}
     }
   }
   return JSON.parse(JSON.stringify(PRESET_LIBRARY));
@@ -339,15 +515,20 @@ function loadSavedCrosshair(defaultLib: Crosshair[]): Crosshair {
       const raw = localStorage.getItem('xhair_active_crosshair');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.id) {
-          return parsed;
+        const converted = canonicalToUiCrosshair(parsed);
+        if (isValidCrosshair(converted)) {
+          return converted;
         }
       }
     } catch (e) {
       console.error('Failed to load active crosshair from localStorage:', e);
+      try {
+        localStorage.removeItem('xhair_active_crosshair');
+      } catch (_) {}
     }
   }
-  return defaultLib[0] ? JSON.parse(JSON.stringify(defaultLib[0])) : JSON.parse(JSON.stringify(INITIAL_CROSSHAIR));
+  const fallback = defaultLib.find(isValidCrosshair) || INITIAL_CROSSHAIR;
+  return JSON.parse(JSON.stringify(fallback));
 }
 
 export class EditorState {
@@ -571,15 +752,17 @@ export class EditorState {
 
   // Derived selected layer(s)
   selectedLayer = $derived(
-    this.crosshair.layers.find((l) => this.selectedLayerIds.includes(l.id)) || this.crosshair.layers[0]
+    (this.crosshair?.layers && this.crosshair.layers.find((l) => this.selectedLayerIds.includes(l.id))) ||
+      this.crosshair?.layers?.[0] ||
+      INITIAL_CROSSHAIR.layers[0]
   );
 
   selectedLayers = $derived(
-    this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id))
+    this.crosshair?.layers ? this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id)) : []
   );
 
   isMovedFromCenter = $derived(
-    Math.abs(this.crosshair.offsetX) > 0.001 || Math.abs(this.crosshair.offsetY) > 0.001
+    Math.abs(this.crosshair?.offsetX ?? 0) > 0.001 || Math.abs(this.crosshair?.offsetY ?? 0) > 0.001
   );
 
   // Alignment Diagnostic
@@ -588,7 +771,7 @@ export class EditorState {
     const isEvenH = this.activeProfile.height % 2 === 0;
     const centerMode = isEvenW ? 'pixel-edge' : 'pixel-middle';
     const subpixel =
-      Math.abs(this.crosshair.offsetX % 1) > 0.001 || Math.abs(this.crosshair.offsetY % 1) > 0.001;
+      Math.abs((this.crosshair?.offsetX ?? 0) % 1) > 0.001 || Math.abs((this.crosshair?.offsetY ?? 0) % 1) > 0.001;
 
     let msg = `Center = ${centerMode === 'pixel-edge' ? 'pixel edge (even W)' : 'pixel middle (odd W)'}`;
     if (subpixel) {
@@ -607,6 +790,9 @@ export class EditorState {
   // Derived alignment issues for all layers (§6.2)
   alignmentIssues = $derived.by<AlignmentIssue[]>(() => {
     const issues: AlignmentIssue[] = [];
+    if (!this.crosshair?.layers || !Array.isArray(this.crosshair.layers)) {
+      return issues;
+    }
     const w = this.activeProfile.width;
     const h = this.activeProfile.height;
 
@@ -842,19 +1028,26 @@ export class EditorState {
                 const getResp = await fetch(`/api/library/get?id=${summary.id}`);
                 if (getResp.ok) {
                   const full = await getResp.json();
-                  items.push(full);
+                  const converted = canonicalToUiCrosshair(full);
+                  if (converted && isValidCrosshair(converted)) {
+                    items.push(converted);
+                  }
                 }
               } catch (_) {}
             }
             if (items.length > 0) {
               this.library = items;
+              let target: Crosshair | undefined;
               if (data.active_id) {
-                const active = items.find((c) => c.id === data.active_id);
-                if (active) {
-                  this.crosshair = JSON.parse(JSON.stringify(active));
-                  this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
-                  this.syncWithOverlay();
-                }
+                target = items.find((c) => c.id === data.active_id);
+              }
+              if (!target && !items.some((c) => c.id === this.crosshair.id)) {
+                target = items[0];
+              }
+              if (target && isValidCrosshair(target)) {
+                this.crosshair = JSON.parse(JSON.stringify(target));
+                this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
+                this.syncWithOverlay();
               }
             }
           }
@@ -946,20 +1139,21 @@ export class EditorState {
   }
 
   selectCrosshair(id: string) {
-    const item = this.library.find((c) => c.id === id);
-    if (item) {
-      this.pushUndo();
-      this.crosshair = JSON.parse(JSON.stringify(item));
-      this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
-      if (typeof localStorage !== 'undefined') {
-        try {
-          localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      this.syncWithOverlay();
+    let item = this.library.find((c) => c.id === id);
+    if (!item || !isValidCrosshair(item)) {
+      item = this.library.find(isValidCrosshair) || INITIAL_CROSSHAIR;
     }
+    this.pushUndo();
+    this.crosshair = JSON.parse(JSON.stringify(item));
+    this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    this.syncWithOverlay();
   }
 
   duplicateCrosshair(id: string) {
@@ -975,29 +1169,71 @@ export class EditorState {
   }
 
   deleteCrosshair(id: string) {
-    if (this.library.length <= 1) return;
+    if (this.library.length <= 1) {
+      this.library = JSON.parse(JSON.stringify(PRESET_LIBRARY));
+      this.selectCrosshair(this.library[0].id);
+      return;
+    }
     const idx = this.library.findIndex((c) => c.id === id);
     if (idx === -1) return;
     this.pushUndo();
     this.library.splice(idx, 1);
-    if (this.crosshair.id === id) {
+    if (this.library.length === 0) {
+      this.library = JSON.parse(JSON.stringify(PRESET_LIBRARY));
+      this.selectCrosshair(this.library[0].id);
+    } else if (this.crosshair.id === id) {
       const next = this.library[Math.max(0, idx - 1)] || this.library[0];
-      if (next) {
+      if (next && isValidCrosshair(next)) {
         this.selectCrosshair(next.id);
+      } else {
+        const valid = this.library.find(isValidCrosshair) || INITIAL_CROSSHAIR;
+        this.selectCrosshair(valid.id);
       }
     }
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('xhair_library', JSON.stringify(this.library));
+        localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
       } catch (e) {
         console.error(e);
       }
     }
     if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
-      fetch(`/api/library/delete?id=${id}`, { method: 'POST' }).catch((e) =>
+      fetch(`/api/library/delete?id=${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      }).catch((e) =>
         console.warn('Failed to delete from server library:', e)
       );
     }
+  }
+
+  resetStorage() {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.clear();
+      } catch (e) {
+        console.error('Failed to clear localStorage:', e);
+      }
+    }
+    this.library = JSON.parse(JSON.stringify(PRESET_LIBRARY));
+    this.crosshair = JSON.parse(JSON.stringify(INITIAL_CROSSHAIR));
+    this.selectedLayerIds = [this.crosshair.layers[0]?.id || 'layer-arms-1'];
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('xhair_library', JSON.stringify(this.library));
+        localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
+      fetch('/api/storage/reset', { method: 'POST' }).catch((e) =>
+        console.warn('Failed to call /api/storage/reset:', e)
+      );
+    }
+    this.syncWithOverlay();
   }
 
   // Selection Model (§3)
@@ -1258,6 +1494,12 @@ export class EditorState {
     if (idx !== -1) {
       if (moveToTrash) {
         this.library = this.library.filter((c) => c.groupId !== id);
+        if (this.library.length === 0) {
+          this.library = JSON.parse(JSON.stringify(PRESET_LIBRARY));
+        }
+        if (!this.library.some((c) => c.id === this.crosshair.id)) {
+          this.selectCrosshair(this.library[0].id);
+        }
       } else {
         for (const c of this.library) {
           if (c.groupId === id) {
@@ -1268,6 +1510,14 @@ export class EditorState {
       this.groups.splice(idx, 1);
       if (this.activeGroupId === id) {
         this.activeGroupId = this.groups[0]?.id ?? '';
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('xhair_library', JSON.stringify(this.library));
+          localStorage.setItem('xhair_active_crosshair', JSON.stringify(this.crosshair));
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
   }
@@ -1465,12 +1715,14 @@ export class EditorState {
   }
 
   deleteLayer(layerId: string) {
-    if (this.crosshair.layers.length <= 1) return; // Keep at least one layer
+    if (!this.crosshair?.layers || this.crosshair.layers.length <= 1) return; // Keep at least one layer
     const idx = this.crosshair.layers.findIndex((l) => l.id === layerId);
     if (idx !== -1) {
       this.pushUndo();
       this.crosshair.layers.splice(idx, 1);
-      this.selectedLayerId = this.crosshair.layers[Math.max(0, idx - 1)].id;
+      const next = this.crosshair.layers[Math.max(0, idx - 1)] || this.crosshair.layers[0];
+      this.selectedLayerId = next ? next.id : '';
+      this.saveCurrentProfile();
     }
   }
 

@@ -260,23 +260,57 @@ fn handle_connection(
             return;
         } else if path == "/api/library/delete" {
             let body_str = String::from_utf8_lossy(&body);
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&body_str) {
-                if let Some(id_str) = val.get("id").and_then(|v| v.as_str()) {
-                    if let Ok(id) = id_str.parse::<xhair_model::units::CrosshairId>() {
-                        if let Some(ctx) = mcp_ctx {
-                            ctx.with_state(|state| {
-                                if let Some(ref mut lib) = state.library {
-                                    let _ = lib.delete_crosshair(id);
-                                }
-                                state.bus.documents.remove(&id);
-                            });
-                        }
-                        send_json_response(&mut stream, "200 OK", "{\"status\":\"ok\"}");
-                        return;
+            let id_param = raw_path.split('?').nth(1).and_then(|q| {
+                q.split('&')
+                    .find(|pair| pair.starts_with("id="))
+                    .map(|pair| pair.trim_start_matches("id="))
+            });
+
+            let target_id = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                val.get("id")
+                    .and_then(|v| v.as_str().map(|s| s.to_string()))
+            } else {
+                id_param.map(|s| s.to_string())
+            };
+
+            if let Some(id_str) = target_id {
+                if let Ok(id) = id_str.parse::<xhair_model::units::CrosshairId>() {
+                    if let Some(ctx) = mcp_ctx {
+                        ctx.with_state(|state| {
+                            if let Some(ref mut lib) = state.library {
+                                let _ = lib.delete_crosshair(id);
+                            }
+                            state.bus.documents.remove(&id);
+                            if state.active_crosshair_id == Some(id) {
+                                state.active_crosshair_id = None;
+                            }
+                        });
                     }
+                    send_json_response(&mut stream, "200 OK", "{\"status\":\"ok\"}");
+                    return;
                 }
             }
             send_json_response(&mut stream, "400 Bad Request", "{\"error\":\"Invalid id\"}");
+            return;
+        } else if path == "/api/storage/reset" {
+            if let Some(ctx) = mcp_ctx {
+                ctx.with_state(|state| {
+                    if let Some(ref mut lib) = state.library {
+                        let _ = fs::remove_dir_all(lib.crosshairs_dir());
+                        let _ = fs::create_dir_all(lib.crosshairs_dir());
+                        let _ = fs::remove_file(lib.index_path());
+                        let _ = lib.reload_index();
+                        let default_ch = xhair_model::crosshair::Crosshair::new_default();
+                        let _ = lib.save_crosshair(&default_ch, None);
+                        state.active_crosshair_id = Some(default_ch.id);
+                        state.bus.register_document(default_ch.clone());
+                        if let Some(sender) = overlay_sender {
+                            let _ = sender.send(OverlayCommand::SetCrosshair(Box::new(default_ch)));
+                        }
+                    }
+                });
+            }
+            send_json_response(&mut stream, "200 OK", "{\"status\":\"reset_ok\"}");
             return;
         }
 

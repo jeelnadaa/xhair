@@ -733,3 +733,33 @@
   - `cargo clippy --workspace -- -D warnings`: 0 warnings across workspace.
   - `cargo fmt --check`: 0 diffs.
   - Fresh release binary recompiled at `target/release/xhair.exe`.
+
+## 2026-10-16 — Session 27
+- **Goal:** Resolve persistent blank screen after crosshair deletion, harden UI state against malformed/canonical crosshairs, eliminate unhandled Svelte 5 exceptions, and implement comprehensive storage reset across CLI, UI, and backend.
+- **Root Cause & Diagnosis:**
+  1. When a crosshair was deleted or loaded from disk, the crosshair object lacked `layers[i].shape` (or contained canonical Rust `.kind` representations from `/api/library/get` rather than UI `ShapeData`), or left `this.crosshair` out of sync with `localStorage`.
+  2. Svelte 5 derived signals (`selectedLayer`, `selectedLayers`, `alignmentIssues`) and canvas loops accessed `.layers.find(...)` or `.shape.type` without guards. In Svelte 5, throwing during component instantiation completely halts the mount lifecycle, leaving the WebView2 canvas pitch black (`#0A0A0A`).
+  3. Because WebView2 persisted the corrupted state to `localStorage.getItem('xhair_active_crosshair')` in `%APPDATA%/xhair` and `xhair.exe.WebView2`, restarting the app repeatedly reloaded the broken data and crashed immediately on boot.
+- **Fixes & Enhancements:**
+  1. **Schema Validation & Bidirectional Bridge (`ui/src/lib/state.svelte.ts`):**
+     - Added `isValidCrosshair(c: unknown)` schema validator checking ID, name, array of layers, and shape types.
+     - Added `canonicalToUiCrosshair(raw: any)` converter seamlessly transforming domain Rust `.xhair` formats (`kind: { kind: 'line' | 'dot' | ... }`, `fill: { color: { r, g, b, a } }`, `transform.offset`) into UI `ShapeData` format.
+     - Hardened `loadSavedLibrary()` and `loadSavedCrosshair()` to validate all entries, purge corrupt keys from `localStorage`, and fall back to `PRESET_LIBRARY` / `INITIAL_CROSSHAIR`.
+     - In `deleteCrosshair(id)`: guaranteed non-empty library (re-seeds default presets if last item deleted), selects fallback, and updates `localStorage.setItem('xhair_active_crosshair')`.
+     - In `selectCrosshair(id)`, `deleteCrosshairGroup(id)`, and `deleteLayer(id)`: added strict existence & shape guards and auto-save.
+  2. **Defensive Svelte 5 Components:**
+     - `state.svelte.ts`: Wrapped `selectedLayer` with optional chaining and fallback to `INITIAL_CROSSHAIR.layers[0]`. Guarded `selectedLayers` (fallback `[]`) and `alignmentIssues`.
+     - `CanvasGrid.svelte`: Guarded all `ch.layers` loops and marquee selections with `Array.isArray(editorState.crosshair?.layers) ? ... : []`.
+     - `LibrarySidebar.svelte`: Guarded `topLevelLayers`, layer count badges, and context menu actions.
+  3. **Multi-Tier Storage Reset:**
+     - Added `resetStorage()` method to `EditorState` in UI and added a "Reset Storage" action under "Storage & Diagnostics" in `AppearanceModal.svelte`.
+     - Added `/api/storage/reset` POST endpoint in `xhair-app` HTTP server to clear disk catalog and re-seed clean `Cyan Gap` default reticle.
+     - Added `--reset-storage` CLI flag to `xhair.exe` to purge disk cache and WebView2 state directory on launch.
+     - Added `xhair-cli storage-reset` (alias `reset-storage`) command to `xhair-cli` for instant headless reset.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 91 tests passing (100% green).
+  - `pnpm -C ui test`: 25 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings across workspace.
+  - `cargo fmt --check`: 0 diffs.
+  - Release binaries recompiled: `target/release/xhair.exe` and `target/release/xhair-cli.exe`.

@@ -90,19 +90,38 @@ pub fn run() -> anyhow::Result<()> {
     let version = env!("CARGO_PKG_VERSION");
     let args: Vec<String> = std::env::args().collect();
     let is_minimized = args.iter().any(|a| a == "--minimized");
+    let should_reset = args
+        .iter()
+        .any(|a| a == "--reset-storage" || a == "reset-storage");
 
     tracing::info!(
-        "Starting {} v{} (minimized={})",
+        "Starting {} v{} (minimized={}, reset_storage={})",
         APP_TITLE,
         version,
-        is_minimized
+        is_minimized,
+        should_reset
     );
 
     // 2. Initialize disk storage engine (§10)
     let data_dir = xhair_library::LibraryEngine::resolve_data_dir();
+    if should_reset {
+        let _ = std::fs::remove_dir_all(&data_dir);
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let _ = std::fs::remove_dir_all(exe_dir.join("xhair.exe.WebView2"));
+            }
+        }
+        tracing::info!("Storage reset completed successfully.");
+    }
+
     let library = match xhair_library::LibraryEngine::new(&data_dir) {
-        Ok(lib) => {
+        Ok(mut lib) => {
             tracing::info!("Initialized library engine at {:?}", data_dir);
+            // Auto-seed default crosshair if catalog is empty
+            if lib.index().crosshairs.is_empty() {
+                let default_ch = Crosshair::new_default();
+                let _ = lib.save_crosshair(&default_ch, None);
+            }
             Some(lib)
         }
         Err(e) => {

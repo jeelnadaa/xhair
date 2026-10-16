@@ -50,6 +50,16 @@
     editorState.setTheme(themeId);
     previewedTheme = null;
   }
+
+  let resetSuccess = $state(false);
+
+  function handleResetStorage() {
+    if (confirm('Are you sure you want to reset all storage to factory defaults? This clears cached data and restores default presets.')) {
+      editorState.resetStorage();
+      resetSuccess = true;
+      setTimeout(() => (resetSuccess = false), 3000);
+    }
+  }
 </script>
 
 {#if editorState.appearanceModalOpen}
@@ -157,6 +167,20 @@
                 </div>
               </button>
             {/each}
+          </div>
+        </section>
+
+        <!-- Section: Storage & Diagnostics -->
+        <section class="section">
+          <h3 class="section-heading">Storage & Diagnostics</h3>
+          <div class="storage-box">
+            <div class="storage-info">
+              <div class="storage-title">Reset Local & Disk Storage</div>
+              <div class="storage-desc">Purges corrupt browser cache, resets catalog, and restores clean default presets.</div>
+            </div>
+            <button class="btn btn-danger" onclick={handleResetStorage}>
+              {resetSuccess ? '✓ Cleared' : 'Reset Storage'}
+            </button>
           </div>
         </section>
       </div>
@@ -424,5 +448,51 @@
     justify-content: flex-end;
     gap: 8px;
     background: var(--surface1);
+  }
+
+  .storage-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .storage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .storage-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .storage-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .btn-danger {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff453a;
+    border: 1px solid rgba(255, 59, 48, 0.35);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 120ms ease;
+    white-space: nowrap;
+  }
+
+  .btn-danger:hover {
+    background: rgba(255, 59, 48, 0.25);
+    border-color: rgba(255, 59, 48, 0.6);
   }
 </style>

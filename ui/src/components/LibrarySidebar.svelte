@@ -78,7 +78,9 @@
   );
 
   let topLevelLayers = $derived(
-    editorState.crosshair.layers.filter((l) => !l.groupId)
+    Array.isArray(editorState.crosshair?.layers)
+      ? editorState.crosshair.layers.filter((l) => !l.groupId)
+      : []
   );
 
   function startCreateGroup() {
@@ -208,7 +210,7 @@
     >
       <span class="tab-icon">☰</span>
       <span>Layers</span>
-      <span class="tab-badge">{editorState.crosshair.layers.length}</span>
+      <span class="tab-badge">{editorState.crosshair?.layers?.length || 0}</span>
     </button>
     <Tooltip title="Collapse Sidebar" shortcut="Ctrl+B">
       <button
@@ -553,7 +555,7 @@
             <!-- Delete Layer Button -->
             <button
               class="layer-icon-btn delete-btn"
-              disabled={editorState.crosshair.layers.length <= 1}
+              disabled={(editorState.crosshair?.layers?.length ?? 0) <= 1}
               onclick={(e) => {
                 e.stopPropagation();
                 editorState.deleteLayer(layer.id);
@@ -569,7 +571,7 @@
       <!-- Layers Summary Footer -->
       <div class="rail-footer">
         <span class="mono" style="font-size: 11px; color: var(--text-muted);">
-          {editorState.crosshair.layers.length} layers · {editorState.alignmentIssues.length === 0 ? '✓ All Aligned' : `${editorState.alignmentIssues.length} issues`}
+          {editorState.crosshair?.layers?.length || 0} layers · {editorState.alignmentIssues.length === 0 ? '✓ All Aligned' : `${editorState.alignmentIssues.length} issues`}
         </span>
       </div>
     </div>
@@ -624,7 +626,7 @@
         <button
           class="context-menu-item"
           onclick={() => {
-            const l = editorState.crosshair.layers.find((x) => x.id === contextMenu.targetId);
+            const l = editorState.crosshair?.layers?.find((x) => x.id === contextMenu.targetId);
             if (l) startRenameLayer(l);
           }}
         >

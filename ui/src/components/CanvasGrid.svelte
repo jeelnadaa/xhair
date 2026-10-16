@@ -119,7 +119,8 @@
 
     // 4. Render Crosshair Layers
     const ch = editorState.crosshair;
-    for (const layer of ch.layers) {
+    const layers = Array.isArray(ch?.layers) ? ch.layers : [];
+    for (const layer of layers) {
       if (!layer.visible) continue;
       ctx.save();
       // Apply layer global offset + crosshair offset
@@ -352,7 +353,7 @@
     }
 
     // 4b. Blank-Start Empty State (§2, §12)
-    if (ch.layers.length === 0) {
+    if (layers.length === 0) {
       ctx.save();
       ctx.fillStyle = '#8E98A8';
       ctx.font = '600 14px "Satoshi", sans-serif';
@@ -524,7 +525,8 @@
       let clickedLayer: Layer | null = null;
       let minDistance = Infinity;
 
-      for (const l of editorState.crosshair.layers) {
+      const chLayers = Array.isArray(editorState.crosshair?.layers) ? editorState.crosshair.layers : [];
+      for (const l of chLayers) {
         if (!l.visible) continue;
         const lx = centerX + (editorState.crosshair.offsetX + l.offsetX) * zoom;
         const ly = centerY + (editorState.crosshair.offsetY + l.offsetY) * zoom;
@@ -671,7 +673,8 @@
           const centerY = rect.height / 2 + editorState.panY;
           const zoom = editorState.zoom;
 
-          const matched = editorState.crosshair.layers.filter((l) => {
+          const chLayers = Array.isArray(editorState.crosshair?.layers) ? editorState.crosshair.layers : [];
+          const matched = chLayers.filter((l) => {
             const lx = centerX + (editorState.crosshair.offsetX + l.offsetX) * zoom;
             const ly = centerY + (editorState.crosshair.offsetY + l.offsetY) * zoom;
             return lx >= minX && lx <= maxX && ly >= minY && ly <= maxY;

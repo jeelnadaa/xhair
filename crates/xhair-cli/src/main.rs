@@ -214,13 +214,37 @@ fn handle_startup(args: &[String]) -> Result<()> {
     Ok(())
 }
 
+fn handle_storage_reset() -> Result<()> {
+    let data_dir = xhair_library::LibraryEngine::resolve_data_dir();
+    let _ = fs::remove_dir_all(&data_dir);
+    println!("Cleared disk storage directory at {:?}", data_dir);
+
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(parent) = exe_path.parent() {
+            let _ = fs::remove_dir_all(parent.join("xhair.exe.WebView2"));
+            if let Some(target_dir) = parent.parent() {
+                let _ = fs::remove_dir_all(target_dir.join("debug").join("xhair.exe.WebView2"));
+                let _ = fs::remove_dir_all(target_dir.join("release").join("xhair.exe.WebView2"));
+            }
+        }
+    }
+
+    let mut engine = xhair_library::LibraryEngine::new(&data_dir)?;
+    let default_ch = xhair_model::crosshair::Crosshair::new_default();
+    engine.save_crosshair(&default_ch, None)?;
+    println!("Re-initialized clean library with 'Cyan Gap' default crosshair.");
+    println!("Storage reset completed successfully.");
+    Ok(())
+}
+
 fn print_help() {
     println!("xhair-cli v{}", env!("CARGO_PKG_VERSION"));
     println!("High-performance crosshair overlay command-line utility\n");
     println!("USAGE:");
     println!("  xhair-cli render [input.xhair] [OPTIONS]");
     println!("  xhair-cli mcp [--attached|--headless]");
-    println!("  xhair-cli startup [--enable|--disable]\n");
+    println!("  xhair-cli startup [--enable|--disable]");
+    println!("  xhair-cli storage-reset\n");
     println!("OPTIONS:");
     println!("  -i, --input <FILE>    Input .xhair or JSON file path");
     println!("  -p, --preset <NAME>   Built-in template preset (classic, dot, t_shape)");
@@ -249,6 +273,7 @@ fn main() -> Result<()> {
         "mcp-headless" => handle_mcp(&["--headless".to_string()]),
         "mcp-attached" => handle_mcp(&["--attached".to_string()]),
         "startup" => handle_startup(&args[1..]),
+        "storage-reset" | "reset-storage" => handle_storage_reset(),
         other => {
             eprintln!("Unknown command: '{}'", other);
             print_help();
