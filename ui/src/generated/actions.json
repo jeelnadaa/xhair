@@ -35,6 +35,216 @@
     "description": "Creates an exact clone of the target layer"
   },
   {
+    "id": "layer.rename",
+    "name": "Rename Layer",
+    "command": "layer.rename",
+    "mcp_tool": "layer.rename",
+    "description": "Renames a reticle layer"
+  },
+  {
+    "id": "layer.group",
+    "name": "Group Layers",
+    "command": "layer.group",
+    "mcp_tool": "layer.group",
+    "description": "Groups selected layers into a named layer group"
+  },
+  {
+    "id": "layer.ungroup",
+    "name": "Ungroup Layers",
+    "command": "layer.ungroup",
+    "mcp_tool": "layer.ungroup",
+    "description": "Dissolves a layer group back into individual layers"
+  },
+  {
+    "id": "layer.set_position",
+    "name": "Set Layer Position",
+    "command": "layer.set_position",
+    "mcp_tool": "layer.set_position",
+    "description": "Sets exact X/Y position in game pixels (relative or absolute)"
+  },
+  {
+    "id": "layer.recenter",
+    "name": "Recenter Selection",
+    "command": "layer.recenter",
+    "mcp_tool": "layer.recenter",
+    "description": "Moves selected layers back to reticle center (0, 0)"
+  },
+  {
+    "id": "crosshair.recenter",
+    "name": "Recenter Crosshair",
+    "command": "crosshair.recenter",
+    "mcp_tool": "crosshair.recenter",
+    "description": "Resets whole crosshair global offset back to (0, 0)"
+  },
+  {
+    "id": "paint.set",
+    "name": "Set Reticle Color",
+    "command": "paint.set",
+    "mcp_tool": "paint.set",
+    "description": "Sets reticle fill color using hex format (#RRGGBBAA)"
+  },
+  {
+    "id": "selection.set",
+    "name": "Set Selection",
+    "command": "selection.set",
+    "mcp_tool": "selection.set",
+    "description": "Selects specified layers"
+  },
+  {
+    "id": "selection.add",
+    "name": "Add to Selection",
+    "command": "selection.add",
+    "mcp_tool": "selection.add",
+    "description": "Adds layers to active selection"
+  },
+  {
+    "id": "selection.remove",
+    "name": "Remove from Selection",
+    "command": "selection.remove",
+    "mcp_tool": "selection.remove",
+    "description": "Removes layers from active selection"
+  },
+  {
+    "id": "selection.toggle",
+    "name": "Toggle Selection",
+    "command": "selection.toggle",
+    "mcp_tool": "selection.toggle",
+    "description": "Toggles layer selection status"
+  },
+  {
+    "id": "selection.all",
+    "name": "Select All",
+    "command": "selection.all",
+    "mcp_tool": "selection.all",
+    "description": "Selects all layers in the active reticle"
+  },
+  {
+    "id": "selection.clear",
+    "name": "Clear Selection",
+    "command": "selection.clear",
+    "mcp_tool": "selection.clear",
+    "description": "Clears current layer selection"
+  },
+  {
+    "id": "selection.invert",
+    "name": "Invert Selection",
+    "command": "selection.invert",
+    "mcp_tool": "selection.invert",
+    "description": "Inverts current layer selection"
+  },
+  {
+    "id": "group.list",
+    "name": "List Groups",
+    "command": "group.list",
+    "mcp_tool": "group.list",
+    "description": "Lists all crosshair groups and game bindings"
+  },
+  {
+    "id": "group.create",
+    "name": "Create Group",
+    "command": "group.create",
+    "mcp_tool": "group.create",
+    "description": "Creates a new crosshair group collection"
+  },
+  {
+    "id": "group.rename",
+    "name": "Rename Group",
+    "command": "group.rename",
+    "mcp_tool": "group.rename",
+    "description": "Renames a crosshair group"
+  },
+  {
+    "id": "group.delete",
+    "name": "Delete Group",
+    "command": "group.delete",
+    "mcp_tool": "group.delete",
+    "description": "Deletes a crosshair group and manages member crosshairs"
+  },
+  {
+    "id": "group.reorder",
+    "name": "Reorder Groups",
+    "command": "group.reorder",
+    "mcp_tool": "group.reorder",
+    "description": "Reorders library crosshair groups"
+  },
+  {
+    "id": "group.set_icon",
+    "name": "Set Group Icon",
+    "command": "group.set_icon",
+    "mcp_tool": "group.set_icon",
+    "description": "Sets the display icon or color dot for a crosshair group"
+  },
+  {
+    "id": "group.add",
+    "name": "Add to Group",
+    "command": "group.add",
+    "mcp_tool": "group.add",
+    "description": "Adds crosshairs to a group collection"
+  },
+  {
+    "id": "group.remove",
+    "name": "Remove from Group",
+    "command": "group.remove",
+    "mcp_tool": "group.remove",
+    "description": "Removes crosshairs from a group to Ungrouped"
+  },
+  {
+    "id": "group.set_game_binding",
+    "name": "Set Game Binding",
+    "command": "group.set_game_binding",
+    "mcp_tool": "group.set_game_binding",
+    "description": "Links a group to a game executable process name for auto-switch"
+  },
+  {
+    "id": "group.set_resolution_profile",
+    "name": "Set Group Resolution Profile",
+    "command": "group.set_resolution_profile",
+    "mcp_tool": "group.set_resolution_profile",
+    "description": "Assigns a default resolution profile to a group"
+  },
+  {
+    "id": "group.set_active",
+    "name": "Set Group Active Crosshair",
+    "command": "group.set_active",
+    "mcp_tool": "group.set_active",
+    "description": "Remembers the active reticle for a group"
+  },
+  {
+    "id": "group.next",
+    "name": "Next in Group",
+    "command": "group.next",
+    "mcp_tool": "group.next",
+    "description": "Cycles to the next crosshair in the active group"
+  },
+  {
+    "id": "group.previous",
+    "name": "Previous in Group",
+    "command": "group.previous",
+    "mcp_tool": "group.previous",
+    "description": "Cycles to the previous crosshair in the active group"
+  },
+  {
+    "id": "group.activate",
+    "name": "Activate Group",
+    "command": "group.activate",
+    "mcp_tool": "group.activate",
+    "description": "Activates a group and its active crosshair onto the overlay"
+  },
+  {
+    "id": "export.pack",
+    "name": "Export Pack",
+    "command": "export.pack",
+    "mcp_tool": "export.pack",
+    "description": "Exports a group as a .xhairpack bundle archive"
+  },
+  {
+    "id": "import.pack",
+    "name": "Import Pack",
+    "command": "import.pack",
+    "mcp_tool": "import.pack",
+    "description": "Imports a .xhairpack bundle archive into the library"
+  },
+  {
     "id": "global.set",
     "name": "Set Global Transform",
     "command": "global.set",
@@ -243,26 +453,5 @@
     "command": "calibration.set_offset",
     "mcp_tool": "calibration.set_offset",
     "description": "Sets the physical pixel calibration offset in game pixels"
-  },
-  {
-    "id": "gun.list",
-    "name": "List Gun Profiles",
-    "command": "gun.list",
-    "mcp_tool": "gun.list",
-    "description": "Lists gun profiles with custom spread and recoil curves"
-  },
-  {
-    "id": "dynamics.set_enabled",
-    "name": "Set Dynamic Reticle Enabled",
-    "command": "dynamics.set_enabled",
-    "mcp_tool": "dynamics.set_enabled",
-    "description": "Enables or disables reactive dynamic reticle with explicit risk confirmation"
-  },
-  {
-    "id": "dynamics.simulate",
-    "name": "Simulate Spray",
-    "command": "dynamics.simulate",
-    "mcp_tool": "dynamics.simulate",
-    "description": "Simulates continuous spray burst and calculates shot offsets and spread radii"
   }
 ]

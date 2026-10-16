@@ -255,6 +255,361 @@ pub fn list_tools() -> Vec<ToolDefinition> {
                 }
             }),
         },
+        ToolDefinition {
+            name: "layer.rename".to_string(),
+            description: "Renames a layer within a crosshair.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["layer_id", "new_name"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "layer_id": { "type": "string" },
+                    "new_name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "layer.group".to_string(),
+            description: "Groups selected layers into a named layer group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } },
+                    "name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "layer.ungroup".to_string(),
+            description: "Dissolves a layer group back to individual layers.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "group_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "layer.set_position".to_string(),
+            description: "Sets explicit layer position in game pixels (relative or absolute)."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids", "x", "y"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } },
+                    "x": { "type": "number" },
+                    "y": { "type": "number" },
+                    "mode": { "type": "string", "enum": ["relative", "absolute"] }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "layer.recenter".to_string(),
+            description: "Recenters selected layers back to (0, 0).".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "crosshair.recenter".to_string(),
+            description: "Resets the whole crosshair global offset back to (0, 0).".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "crosshair_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "paint.set".to_string(),
+            description: "Sets reticle fill color in hex format (#RGB, #RRGGBB, #RRGGBBAA)."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids", "color"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } },
+                    "color": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.set".to_string(),
+            description: "Sets layer selection to the specified layer IDs.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.add".to_string(),
+            description: "Adds layer IDs to current selection.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.remove".to_string(),
+            description: "Removes layer IDs from current selection.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.toggle".to_string(),
+            description: "Toggles selection status of specified layer IDs.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.all".to_string(),
+            description: "Selects all layers in the active crosshair.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "crosshair_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.clear".to_string(),
+            description: "Clears layer selection.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "crosshair_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "selection.invert".to_string(),
+            description: "Inverts layer selection.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "crosshair_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.list".to_string(),
+            description: "Lists all library crosshair groups with counts, bindings, and status."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "group.create".to_string(),
+            description: "Creates a named crosshair group collection.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": { "type": "string" },
+                    "parent_id": { "type": "string" },
+                    "icon": { "type": "string" },
+                    "color": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.rename".to_string(),
+            description: "Renames a crosshair group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id", "new_name"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "new_name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.delete".to_string(),
+            description: "Deletes a crosshair group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "delete_members": { "type": "boolean" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.reorder".to_string(),
+            description: "Reorders crosshair groups.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_ids"],
+                "properties": {
+                    "group_ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.set_icon".to_string(),
+            description: "Sets the icon or color dot of a crosshair group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "icon": { "type": "string" },
+                    "color": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.add".to_string(),
+            description: "Adds crosshairs to a group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id", "crosshair_ids"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "crosshair_ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.remove".to_string(),
+            description: "Removes crosshairs from a group (unassigns to Ungrouped).".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id", "crosshair_ids"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "crosshair_ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.set_game_binding".to_string(),
+            description: "Binds a crosshair group to a target executable process name.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "process_name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.set_resolution_profile".to_string(),
+            description: "Sets the default resolution profile for a crosshair group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "profile": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.set_active".to_string(),
+            description: "Sets the active crosshair within a group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" },
+                    "crosshair_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.next".to_string(),
+            description: "Cycles to the next crosshair in the active group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.previous".to_string(),
+            description: "Cycles to the previous crosshair in the active group.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "group.activate".to_string(),
+            description: "Activates a group's active crosshair onto the desktop overlay."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "export.pack".to_string(),
+            description: "Exports a crosshair group as a .xhairpack bundle archive.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["group_id"],
+                "properties": {
+                    "group_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "import.pack".to_string(),
+            description: "Imports a .xhairpack bundle archive into the library.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": { "type": "string", "description": "Base64-encoded zip archive" }
+                }
+            }),
+        },
         // Preview & Analysis
         ToolDefinition {
             name: "render.preview".to_string(),
@@ -499,6 +854,24 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
         "crosshair.rename" => library::crosshair_rename(ctx, args),
         "crosshair.set_metadata" => library::crosshair_set_metadata(ctx, args),
 
+        // Groups & Packs
+        "group.list" => library::group_list(ctx, args),
+        "group.create" => library::group_create(ctx, args),
+        "group.rename" => library::group_rename(ctx, args),
+        "group.delete" => library::group_delete(ctx, args),
+        "group.reorder" => library::group_reorder(ctx, args),
+        "group.set_icon" => library::group_set_icon(ctx, args),
+        "group.add" => library::group_add(ctx, args),
+        "group.remove" => library::group_remove(ctx, args),
+        "group.set_game_binding" => library::group_set_game_binding(ctx, args),
+        "group.set_resolution_profile" => library::group_set_resolution_profile(ctx, args),
+        "group.set_active" => library::group_set_active(ctx, args),
+        "group.next" => library::group_next(ctx, args),
+        "group.previous" => library::group_previous(ctx, args),
+        "group.activate" => library::group_activate(ctx, args),
+        "export.pack" => library::export_pack_tool(ctx, args),
+        "import.pack" => library::import_pack_tool(ctx, args),
+
         // Edit
         "edit.batch" => edit::edit_batch(ctx, args),
         "layer.add" => edit::layer_add(ctx, args),
@@ -506,6 +879,20 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
         "layer.remove" => edit::layer_remove(ctx, args),
         "layer.duplicate" => edit::layer_duplicate(ctx, args),
         "layer.reorder" => edit::layer_reorder(ctx, args),
+        "layer.rename" => edit::layer_rename(ctx, args),
+        "layer.group" => edit::layer_group(ctx, args),
+        "layer.ungroup" => edit::layer_ungroup(ctx, args),
+        "layer.set_position" => edit::layer_set_position(ctx, args),
+        "layer.recenter" => edit::layer_recenter(ctx, args),
+        "crosshair.recenter" => edit::crosshair_recenter(ctx, args),
+        "paint.set" => edit::paint_set(ctx, args),
+        "selection.set" => edit::selection_set(ctx, args),
+        "selection.add" => edit::selection_add(ctx, args),
+        "selection.remove" => edit::selection_remove(ctx, args),
+        "selection.toggle" => edit::selection_toggle(ctx, args),
+        "selection.all" => edit::selection_all(ctx, args),
+        "selection.clear" => edit::selection_clear(ctx, args),
+        "selection.invert" => edit::selection_invert(ctx, args),
         "global.set" => edit::global_set(ctx, args),
         "symmetry.set" => edit::symmetry_set(ctx, args),
         "effects.set" => edit::effects_set(ctx, args),

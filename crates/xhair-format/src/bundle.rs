@@ -35,6 +35,15 @@ pub struct PackManifest {
     pub description: String,
     /// Author attribution.
     pub author: String,
+    /// Bound game executable process name.
+    #[serde(default)]
+    pub game_binding: Option<String>,
+    /// Default resolution profile name.
+    #[serde(default)]
+    pub resolution_profile: Option<String>,
+    /// Reticle IDs defining order.
+    #[serde(default)]
+    pub order: Option<Vec<String>>,
     /// Contained crosshair entries.
     pub entries: Vec<PackEntry>,
 }
@@ -45,6 +54,19 @@ pub fn export_pack(
     title: &str,
     description: &str,
     author: &str,
+) -> Result<Vec<u8>, FormatError> {
+    export_group_pack(crosshairs, title, description, author, None, None, None)
+}
+
+/// Exports a crosshair group into a `.xhairpack` ZIP archive preserving binding and order.
+pub fn export_group_pack(
+    crosshairs: &[Crosshair],
+    title: &str,
+    description: &str,
+    author: &str,
+    game_binding: Option<String>,
+    resolution_profile: Option<String>,
+    order: Option<Vec<String>>,
 ) -> Result<Vec<u8>, FormatError> {
     let mut buffer = Vec::new();
     {
@@ -77,6 +99,9 @@ pub fn export_pack(
             title: title.to_string(),
             description: description.to_string(),
             author: author.to_string(),
+            game_binding,
+            resolution_profile,
+            order,
             entries,
         };
 

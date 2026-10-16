@@ -12,7 +12,8 @@ export type ShapeType =
   | 'Chevron'
   | 'TShape'
   | 'Plus'
-  | 'SvgPath';
+  | 'SvgPath'
+  | 'Group';
 
 export type BlendMode = 'Normal' | 'Screen' | 'Multiply' | 'Additive';
 
@@ -50,6 +51,9 @@ export interface ShapeData {
   innerRadius?: number;
   // Custom SVG path
   pathData?: string;
+  // Group container
+  children?: string[];
+  isExpanded?: boolean;
 }
 
 export interface Layer {
@@ -63,6 +67,10 @@ export interface Layer {
   offsetX: number;
   offsetY: number;
   rotation: number;
+  groupId?: string;
+  isGroup?: boolean;
+  children?: string[];
+  isExpanded?: boolean;
   glowRadius?: number;
   glowColor?: string;
   shadowColor?: string;
@@ -70,6 +78,19 @@ export interface Layer {
   shadowOffsetY?: number;
   shadowBlur?: number;
   blurRadius?: number;
+}
+
+export interface CrosshairGroup {
+  id: string;
+  name: string;
+  parent_id?: string;
+  icon?: string;
+  color?: string;
+  collapsed?: boolean;
+  order?: number;
+  game_binding?: string;
+  active_crosshair_id?: string;
+  default_resolution_profile?: string;
 }
 
 export interface Crosshair {
@@ -80,6 +101,7 @@ export interface Crosshair {
   tags: string[];
   favorite: boolean;
   formatVersion: number;
+  groupId?: string;
   offsetX: number;
   offsetY: number;
   scale: number;

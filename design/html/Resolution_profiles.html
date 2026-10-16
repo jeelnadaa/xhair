@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Resolution Profiles — XHAIR Design v2</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090A0D;
+  --s1: #111418;
+  --s2: #181C22;
+  --s3: #21262F;
+  --ln: #282F3A;
+  --ln-subtle: #1C222B;
+  --ln-active: #404A59;
+  --tx: #E5E7EB;
+  --mu: #8E98A8;
+  --dim: #545E6E;
+  --ac: #38BDF8;
+  --ac-dim: #0C2836;
+  --center-guide: #FF4FD8;
+  --warning: #F59E0B;
+  --warning-bg: #261B07;
+  --danger: #EF4444;
+  --danger-bg: #2B1111;
+  --success: #10B981;
+  --success-bg: #0A261C;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+.m { font-family: 'JetBrains Mono', Consolas, monospace; }
+.app-shell {
+  width: 1440px; height: 900px;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+  position: relative;
+}
+.top-bar {
+  height: 52px; flex: none;
+  background: var(--s1);
+  border-bottom: 1px solid var(--ln);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+.brand {
+  font-weight: 900; letter-spacing: 0.14em;
+  color: var(--tx); font-size: 14px;
+}
+.sep { color: var(--dim); margin: 0 4px; }
+.btn {
+  background: var(--s2);
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  padding: 0 12px; height: 32px;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tx); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--s3); border-color: var(--ln-active); }
+.btn-sm { height: 26px; padding: 0 8px; font-size: 11px; }
+.btn-primary { background: var(--tx); color: #000; border-color: var(--tx); font-weight: 700; }
+.btn-primary:hover { background: #fff; border-color: #fff; }
+.btn-accent { background: var(--ac); color: #04110E; border-color: var(--ac); font-weight: 700; }
+.pill {
+  border: 1px solid var(--ln);
+  border-radius: 99px;
+  padding: 4px 10px; font-size: 11px; color: var(--mu);
+  background: var(--s2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.pill.active { color: var(--tx); border-color: var(--ln-active); }
+.dot-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.dot-indicator.on { background: var(--tx); box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+.input {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 6px; height: 32px;
+  padding: 0 10px; color: var(--tx);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.input:focus { outline: none; border-color: var(--ln-active); }
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--ln);
+  border-radius: 8px; padding: 14px; margin-bottom: 12px;
+}
+.panel-h {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--mu); font-weight: 700; margin: 0 0 12px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: var(--s3); color: var(--mu);
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-offset { background: #261D09; color: #FBBF24; border: 1px solid #78350F; }
+.badge-shortcut { background: var(--s3); border: 1px solid var(--ln); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mu); padding: 1px 5px; border-radius: 3px; }
+.row-flex { display: flex; align-items: center; justify-content: space-between; }
+.track { height: 4px; background: var(--ln); border-radius: 2px; margin-top: 6px; position: relative; }
+.track-fill { height: 4px; background: var(--tx); border-radius: 2px; }
+.modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(4, 5, 8, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-window {
+  background: var(--s1);
+  border: 1px solid var(--ln-active);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="top-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="brand">XHAIR</span><span class="sep">/</span><span style="font-weight:600; font-size:14px;">Resolution Profiles</span>
+    </div>
+    <div style="flex:1;"></div>
+    <div class="pill active">Display 1: 2560×1440 @ 240Hz (100% DPI)</div>
+  </header>
+  <div style="display:flex; flex:1; min-height:0;">
+    <aside style="width:320px; background:var(--s1); border-right:1px solid var(--ln); padding:16px; display:flex; flex-direction:column; gap:8px;">
+      <div class="panel-h"><span>Configured Profiles</span><button class="btn btn-sm">+ New</button></div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="padding:10px; border-radius:6px; background:var(--s2); border:1px solid var(--ln);">
+          <div class="row-flex"><strong style="font-size:13px;">1920×1080 (16:9)</strong><span class="badge">Native</span></div>
+          <div style="font-size:11px; color:var(--mu); margin-top:4px;">Desktop System Default</div>
+        </div>
+        <div style="padding:10px; border-radius:6px; background:var(--s2); border:1px solid var(--ac);">
+          <div class="row-flex"><strong style="font-size:13px;">1280×960 (4:3)</strong><span class="badge badge-success">Group Default</span></div>
+          <div style="font-size:11px; color:var(--ac); margin-top:4px;">Default for Valorant Group</div>
+        </div>
+        <div style="padding:10px; border-radius:6px; background:var(--s2); border:1px solid var(--ln);">
+          <div class="row-flex"><strong style="font-size:13px;">1440×1080 (4:3)</strong><span class="badge badge-success">Group Default</span></div>
+          <div style="font-size:11px; color:var(--warning); margin-top:4px;">Default for CS2 Group</div>
+        </div>
+        <div style="padding:10px; border-radius:6px; background:var(--s2); border:1px solid var(--ln);">
+          <div class="row-flex"><strong style="font-size:13px;">1728×1080 (16:10)</strong><span class="badge">Stretched</span></div>
+          <div style="font-size:11px; color:var(--mu); margin-top:4px;">Apex Legends Profile</div>
+        </div>
+      </div>
+    </aside>
+    <main style="flex:1; padding:24px; overflow-y:auto; display:flex; flex-direction:column; gap:20px;">
+      <div class="panel" style="max-width:700px;">
+        <h3 style="margin:0 0 16px 0; font-size:16px;">Profile Settings: 1280×960 (4:3 Stretched)</h3>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <label style="font-size:12px; color:var(--mu); display:block; margin-bottom:4px;">Profile Name</label>
+            <input class="input" value="1280×960 (4:3 Stretched)" style="width:100%;">
+          </div>
+          <div style="background:var(--s2); border:1px solid var(--ln); border-radius:8px; padding:12px;">
+            <label style="font-size:12px; font-weight:700; color:var(--tx); display:block; margin-bottom:4px;">Default Profile for Crosshair Group</label>
+            <div style="font-size:11px; color:var(--mu); margin-bottom:8px;">When a crosshair belonging to this group is activated or its bound game is focused, automatically apply this resolution profile:</div>
+            <select class="input" style="width:100%;">
+              <option selected>Valorant Group (Bound to VALORANT-Win64-Shipping.exe)</option>
+              <option>CS2 Competitive Group</option>
+              <option>Apex Legends Group</option>
+              <option>None (Manual resolution activation)</option>
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+              <label style="font-size:12px; color:var(--mu); display:block; margin-bottom:4px;">In-Game Width (px)</label>
+              <input class="input m" value="1280" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--mu); display:block; margin-bottom:4px;">In-Game Height (px)</label>
+              <input class="input m" value="960" style="width:100%;">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--mu); display:block; margin-bottom:6px;">Scaling & Stretch Mode</label>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm">Native</button>
+              <button class="btn btn-sm btn-primary">4:3 Stretched (Fullscreen)</button>
+              <button class="btn btn-sm">Letterbox</button>
+              <button class="btn btn-sm">Pillarbox</button>
+            </div>
+          </div>
+          <div style="background:#0D1117; border:1px solid #1F2937; border-radius:8px; padding:14px; margin-top:8px;">
+            <div class="row-flex" style="margin-bottom:8px;">
+              <span class="m" style="color:var(--success); font-weight:700;">✓ PROVABLY ACCURATE CENTER (§6.4)</span>
+              <span class="badge badge-success">ZERO ERROR</span>
+            </div>
+            <div class="m" style="font-size:11px; color:var(--mu); line-height:1.6;">
+              Physical Center: X = 1280.00 px, Y = 720.00 px<br>
+              Parity: Even-Width (1280) on Even-Screen (2560) · Snapping offset: 0.00 px<br>
+              Direct DWM Layered Window Alignment: Exact Sub-Pixel Match
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary">Save Profile</button>
+            <button class="btn">Duplicate</button>
+            <button class="btn" style="color:var(--danger); border-color:#5B1D1D;">Delete Profile</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

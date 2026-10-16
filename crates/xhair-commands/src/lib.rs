@@ -165,5 +165,122 @@ mod tests {
         assert!(md.contains("line.length"));
         assert!(md.contains("line.thickness"));
         assert!(md.contains("glow.radius"));
+
+        // Keep ui/src/generated/properties.json in sync
+        let json_str = serde_json::to_string_pretty(&registry).unwrap();
+        let path = std::path::Path::new("../../ui/src/generated/properties.json");
+        if let Ok(mut f) = std::fs::File::create(path) {
+            use std::io::Write;
+            let _ = f.write_all(json_str.as_bytes());
+        }
+    }
+
+    #[test]
+    fn test_v2_commands_dispatch_and_undo() {
+        let mut bus = CommandBus::default();
+        let xhair = Crosshair::new_blank("Old Name");
+        let cid = xhair.id;
+        bus.register_document(xhair);
+
+        // 1. Rename document
+        bus.dispatch(
+            Command::CrosshairRename {
+                crosshair_id: cid,
+                new_name: "New Name".to_string(),
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Rename doc failed");
+        assert_eq!(bus.documents.get(&cid).unwrap().name, "New Name");
+
+        // 2. Add layer at (0, 0)
+        let layer = Layer::new("Arm 1", LayerKind::Line(LineProps::default()));
+        let lid = layer.id;
+        bus.dispatch(
+            Command::LayerAdd {
+                crosshair_id: cid,
+                layer,
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Add layer failed");
+
+        // 3. Set position
+        bus.dispatch(
+            Command::LayerSetPosition {
+                crosshair_id: cid,
+                ids: vec![lid],
+                x: 10.0,
+                y: -5.0,
+                mode: PositionMode::Absolute,
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Set position failed");
+        assert_eq!(
+            bus.documents.get(&cid).unwrap().layers[0]
+                .transform
+                .offset
+                .x,
+            10.0
+        );
+        assert_eq!(
+            bus.documents.get(&cid).unwrap().layers[0]
+                .transform
+                .offset
+                .y,
+            -5.0
+        );
+
+        // 4. Recenter layer
+        bus.dispatch(
+            Command::LayerRecenter {
+                crosshair_id: cid,
+                ids: vec![lid],
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Recenter layer failed");
+        assert_eq!(
+            bus.documents.get(&cid).unwrap().layers[0]
+                .transform
+                .offset
+                .x,
+            0.0
+        );
+        assert_eq!(
+            bus.documents.get(&cid).unwrap().layers[0]
+                .transform
+                .offset
+                .y,
+            0.0
+        );
+
+        // 5. Paint set
+        bus.dispatch(
+            Command::PaintSet {
+                crosshair_id: cid,
+                ids: vec![lid],
+                color: "#FF0000FF".to_string(),
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Paint set failed");
+
+        // 6. Layer group
+        bus.dispatch(
+            Command::LayerGroup {
+                crosshair_id: cid,
+                ids: vec![lid],
+                name: Some("My Group".to_string()),
+            },
+            DispatchOptions::default(),
+        )
+        .expect("Layer group failed");
+        assert_eq!(bus.documents.get(&cid).unwrap().layers.len(), 2);
+
+        // 7. Undo group
+        bus.undo(cid).expect("Undo group failed");
+        assert_eq!(bus.documents.get(&cid).unwrap().layers.len(), 1);
     }
 }

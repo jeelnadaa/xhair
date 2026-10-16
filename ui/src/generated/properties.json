@@ -107,6 +107,90 @@
       "fine_step": 0.01,
       "default_value": 1.0,
       "group": "Appearance"
+    },
+    {
+      "name": "position.x",
+      "label": "X Offset",
+      "tip": "Horizontal position relative to center in game pixels.",
+      "unit": "px",
+      "min": -1024.0,
+      "max": 1024.0,
+      "step": 1.0,
+      "fine_step": 0.1,
+      "default_value": 0.0,
+      "group": "Transform"
+    },
+    {
+      "name": "position.y",
+      "label": "Y Offset",
+      "tip": "Vertical position relative to center in game pixels.",
+      "unit": "px",
+      "min": -1024.0,
+      "max": 1024.0,
+      "step": 1.0,
+      "fine_step": 0.1,
+      "default_value": 0.0,
+      "group": "Transform"
+    },
+    {
+      "name": "position.mode",
+      "label": "Position Mode",
+      "tip": "Relative (delta) or Absolute (from reticle center) coordinates.",
+      "unit": null,
+      "min": null,
+      "max": null,
+      "step": null,
+      "fine_step": null,
+      "default_value": "relative",
+      "group": "Transform"
+    },
+    {
+      "name": "nudge.step",
+      "label": "Nudge Step",
+      "tip": "Movement distance per nudge arrow press in game pixels.",
+      "unit": "px",
+      "min": 0.01,
+      "max": 100.0,
+      "step": 0.5,
+      "fine_step": 0.1,
+      "default_value": 1.0,
+      "group": "Transform"
+    },
+    {
+      "name": "paint.color",
+      "label": "Reticle Color",
+      "tip": "Reticle fill color in hex format (#RGB, #RRGGBB, #RRGGBBAA).",
+      "unit": null,
+      "min": null,
+      "max": null,
+      "step": null,
+      "fine_step": null,
+      "default_value": "#36F2CBFF",
+      "group": "Appearance"
+    },
+    {
+      "name": "recenter.selection",
+      "label": "Recenter Selection",
+      "tip": "Moves selected layers back to exact center (0, 0). Shortcut: Home.",
+      "unit": null,
+      "min": null,
+      "max": null,
+      "step": null,
+      "fine_step": null,
+      "default_value": null,
+      "group": "Transform"
+    },
+    {
+      "name": "recenter.crosshair",
+      "label": "Recenter Crosshair",
+      "tip": "Resets entire crosshair global offset back to (0, 0). Shortcut: Ctrl+Home.",
+      "unit": null,
+      "min": null,
+      "max": null,
+      "step": null,
+      "fine_step": null,
+      "default_value": null,
+      "group": "Transform"
     }
   ]
 }

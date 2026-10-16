@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blank Start Empty State — XHAIR Design v2</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090A0D;
+  --s1: #111418;
+  --s2: #181C22;
+  --s3: #21262F;
+  --ln: #282F3A;
+  --ln-subtle: #1C222B;
+  --ln-active: #404A59;
+  --tx: #E5E7EB;
+  --mu: #8E98A8;
+  --dim: #545E6E;
+  --ac: #38BDF8;
+  --ac-dim: #0C2836;
+  --center-guide: #FF4FD8;
+  --warning: #F59E0B;
+  --warning-bg: #261B07;
+  --danger: #EF4444;
+  --danger-bg: #2B1111;
+  --success: #10B981;
+  --success-bg: #0A261C;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+.m { font-family: 'JetBrains Mono', Consolas, monospace; }
+.app-shell {
+  width: 1440px; height: 900px;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+  position: relative;
+}
+.top-bar {
+  height: 52px; flex: none;
+  background: var(--s1);
+  border-bottom: 1px solid var(--ln);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+.brand {
+  font-weight: 900; letter-spacing: 0.14em;
+  color: var(--tx); font-size: 14px;
+}
+.sep { color: var(--dim); margin: 0 4px; }
+.btn {
+  background: var(--s2);
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  padding: 0 12px; height: 32px;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tx); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--s3); border-color: var(--ln-active); }
+.btn-sm { height: 26px; padding: 0 8px; font-size: 11px; }
+.btn-primary { background: var(--tx); color: #000; border-color: var(--tx); font-weight: 700; }
+.btn-primary:hover { background: #fff; border-color: #fff; }
+.btn-accent { background: var(--ac); color: #04110E; border-color: var(--ac); font-weight: 700; }
+.pill {
+  border: 1px solid var(--ln);
+  border-radius: 99px;
+  padding: 4px 10px; font-size: 11px; color: var(--mu);
+  background: var(--s2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.pill.active { color: var(--tx); border-color: var(--ln-active); }
+.dot-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.dot-indicator.on { background: var(--tx); box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+.input {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 6px; height: 32px;
+  padding: 0 10px; color: var(--tx);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.input:focus { outline: none; border-color: var(--ln-active); }
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--ln);
+  border-radius: 8px; padding: 14px; margin-bottom: 12px;
+}
+.panel-h {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--mu); font-weight: 700; margin: 0 0 12px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: var(--s3); color: var(--mu);
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-offset { background: #261D09; color: #FBBF24; border: 1px solid #78350F; }
+.badge-shortcut { background: var(--s3); border: 1px solid var(--ln); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mu); padding: 1px 5px; border-radius: 3px; }
+.row-flex { display: flex; align-items: center; justify-content: space-between; }
+.track { height: 4px; background: var(--ln); border-radius: 2px; margin-top: 6px; position: relative; }
+.track-fill { height: 4px; background: var(--tx); border-radius: 2px; }
+.modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(4, 5, 8, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-window {
+  background: var(--s1);
+  border: 1px solid var(--ln-active);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="top-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="brand">XHAIR</span><span class="sep">/</span><span style="font-weight:600; font-size:14px;">Untitled Crosshair</span>
+      <span class="badge-shortcut">F2</span>
+    </div>
+    <div style="flex:1;"></div>
+    <div class="pill active">Overlay: Center Marker Only</div>
+  </header>
+  <div style="display:flex; flex:1; min-height:0;">
+    <aside style="width:280px; background:var(--s1); border-right:1px solid var(--ln); padding:16px; display:flex; flex-direction:column;">
+      <div class="panel-h"><span>Layers (0)</span><span class="badge">Blank</span></div>
+      <div style="flex:1; border:1px dashed var(--ln); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; color:var(--mu);">
+        <span style="font-size:24px; margin-bottom:8px;">✦</span>
+        <strong style="color:var(--tx); font-size:12px; margin-bottom:4px;">No Layers Yet</strong>
+        <p style="font-size:11px; margin:0; line-height:1.4;">Add shapes using the tools or buttons. Every part spawns at center (0,0) as its own layer.</p>
+      </div>
+    </aside>
+    <div style="flex:1; position:relative; overflow:hidden; background:#0B0E13; display:flex; align-items:center; justify-content:center;">
+      <svg width="860" height="848" viewBox="0 0 860 848" style="position:absolute; inset:0;">
+        <defs>
+          <pattern id="gridMinorEmpty" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M 16 0 L 0 0 0 16" fill="none" stroke="#161B22" stroke-width="1"/></pattern>
+          <pattern id="gridMajorEmpty" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="url(#gridMinorEmpty)"/><path d="M 80 0 L 0 0 0 80" fill="none" stroke="#222A36" stroke-width="1.5"/></pattern>
+        </defs>
+        <rect width="860" height="848" fill="url(#gridMajorEmpty)"/>
+        <line x1="0" y1="424" x2="860" y2="424" stroke="#FF4FD8" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="430" y1="0" x2="430" y2="848" stroke="#FF4FD8" stroke-width="1" stroke-dasharray="4 4"/>
+        <circle cx="430" cy="424" r="8" fill="none" stroke="#FF4FD8" stroke-width="1.5"/>
+        <circle cx="430" cy="424" r="2" fill="#FF4FD8"/>
+      </svg>
+      <div style="z-index:10; background:var(--s1); border:1px solid var(--ln-active); border-radius:12px; padding:24px; width:440px; box-shadow:0 20px 40px rgba(0,0,0,0.6); text-align:center;">
+        <h3 style="margin:0 0 6px 0; font-size:16px;">Start Blank or Add a Primitive (§2)</h3>
+        <p style="font-size:12px; color:var(--mu); margin:0 0 18px 0;">Every shape added lands at exact center (0,0) and gets its own row in Layers.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+          <button class="btn btn-sm" style="padding:12px; height:auto; flex-direction:column; gap:4px;">
+            <span style="font-size:16px;">┼</span><span style="font-weight:600;">+ Line Arms</span><span class="badge-shortcut">L</span>
+          </button>
+          <button class="btn btn-sm" style="padding:12px; height:auto; flex-direction:column; gap:4px;">
+            <span style="font-size:16px;">•</span><span style="font-weight:600;">+ Center Dot</span><span class="badge-shortcut">D</span>
+          </button>
+          <button class="btn btn-sm" style="padding:12px; height:auto; flex-direction:column; gap:4px;">
+            <span style="font-size:16px;">○</span><span style="font-weight:600;">+ Ring Reticle</span><span class="badge-shortcut">R</span>
+          </button>
+          <button class="btn btn-sm" style="padding:12px; height:auto; flex-direction:column; gap:4px;">
+            <span style="font-size:16px;">★</span><span style="font-weight:600;">+ Polygon / Star</span><span class="badge-shortcut">P</span>
+          </button>
+        </div>
+        <div style="border-top:1px solid var(--ln); padding-top:12px; display:flex; justify-content:center; gap:8px;">
+          <button class="btn btn-sm">Import Valorant Profile</button>
+          <button class="btn btn-sm">Paste Brotli XH1 Code</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -27,3 +27,4 @@ Thumbs.db
 *.env.local
 xhair.portable
 *.exe
+scratch/

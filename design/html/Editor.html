@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editor — XHAIR Design v2</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090A0D;
+  --s1: #111418;
+  --s2: #181C22;
+  --s3: #21262F;
+  --ln: #282F3A;
+  --ln-subtle: #1C222B;
+  --ln-active: #404A59;
+  --tx: #E5E7EB;
+  --mu: #8E98A8;
+  --dim: #545E6E;
+  --ac: #38BDF8;
+  --ac-dim: #0C2836;
+  --center-guide: #FF4FD8;
+  --warning: #F59E0B;
+  --warning-bg: #261B07;
+  --danger: #EF4444;
+  --danger-bg: #2B1111;
+  --success: #10B981;
+  --success-bg: #0A261C;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+.m { font-family: 'JetBrains Mono', Consolas, monospace; }
+.app-shell {
+  width: 1440px; height: 900px;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+  position: relative;
+}
+.top-bar {
+  height: 52px; flex: none;
+  background: var(--s1);
+  border-bottom: 1px solid var(--ln);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+.brand {
+  font-weight: 900; letter-spacing: 0.14em;
+  color: var(--tx); font-size: 14px;
+}
+.sep { color: var(--dim); margin: 0 4px; }
+.btn {
+  background: var(--s2);
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  padding: 0 12px; height: 32px;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tx); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--s3); border-color: var(--ln-active); }
+.btn-sm { height: 26px; padding: 0 8px; font-size: 11px; }
+.btn-primary { background: var(--tx); color: #000; border-color: var(--tx); font-weight: 700; }
+.btn-primary:hover { background: #fff; border-color: #fff; }
+.btn-accent { background: var(--ac); color: #04110E; border-color: var(--ac); font-weight: 700; }
+.pill {
+  border: 1px solid var(--ln);
+  border-radius: 99px;
+  padding: 4px 10px; font-size: 11px; color: var(--mu);
+  background: var(--s2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.pill.active { color: var(--tx); border-color: var(--ln-active); }
+.dot-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.dot-indicator.on { background: var(--tx); box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+.input {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 6px; height: 32px;
+  padding: 0 10px; color: var(--tx);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.input:focus { outline: none; border-color: var(--ln-active); }
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--ln);
+  border-radius: 8px; padding: 14px; margin-bottom: 12px;
+}
+.panel-h {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--mu); font-weight: 700; margin: 0 0 12px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: var(--s3); color: var(--mu);
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-offset { background: #261D09; color: #FBBF24; border: 1px solid #78350F; }
+.badge-shortcut { background: var(--s3); border: 1px solid var(--ln); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mu); padding: 1px 5px; border-radius: 3px; }
+.row-flex { display: flex; align-items: center; justify-content: space-between; }
+.track { height: 4px; background: var(--ln); border-radius: 2px; margin-top: 6px; position: relative; }
+.track-fill { height: 4px; background: var(--tx); border-radius: 2px; }
+.modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(4, 5, 8, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-window {
+  background: var(--s1);
+  border: 1px solid var(--ln-active);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="top-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="brand">XHAIR</span>
+      <span class="sep">/</span>
+      <span style="font-weight:600; font-size:14px;">Cyan Gap</span>
+      <span class="badge-shortcut">F2</span>
+      <button class="btn btn-sm" style="margin-left:8px;">💾 Save <span class="badge-shortcut">Ctrl+S</span></button>
+    </div>
+    <div class="pill badge-offset" style="margin-left:24px;">
+      <span>⚠ Offset: +2.50, −1.00 px</span>
+      <button class="btn btn-sm" style="height:20px; padding:0 6px; font-size:10px; background:#3A270D; border-color:#92400E; color:#FDE68A;">↺ Recenter (Ctrl+Home)</button>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="pill active"><span class="dot-indicator on"></span> Overlay ON <span class="badge-shortcut">Ctrl+Shift+X</span></div>
+      <div class="pill active"><span class="dot-indicator on"></span> MCP ON :4173</div>
+      <div class="pill">1920×1080 · Native (Valorant Default)</div>
+    </div>
+  </header>
+  <div style="display:flex; flex:1; min-height:0;">
+    <aside style="width:250px; background:var(--s1); border-right:1px solid var(--ln); padding:16px; display:flex; flex-direction:column;">
+      <div class="panel-h">
+        <span>Groups & Reticles</span>
+        <span class="badge">Valorant</span>
+      </div>
+      <input class="input" value="Search crosshairs..." style="margin-bottom:12px; height:28px;">
+      <div style="display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto;">
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; background:var(--s2); border:1px solid var(--ac);">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <rect x="13" y="5" width="2" height="6" fill="#38BDF8"/>
+            <rect x="13" y="17" width="2" height="6" fill="#38BDF8"/>
+            <rect x="5" y="13" width="6" height="2" fill="#38BDF8"/>
+            <rect x="17" y="13" width="6" height="2" fill="#38BDF8"/>
+          </svg>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:12px; color:var(--tx);">Cyan Gap</div>
+            <div style="font-size:11px; color:var(--mu);">Slot 1 · Active</div>
+          </div>
+          <span style="color:var(--ac); font-size:12px;">★</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; background:transparent;">
+          <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="2" fill="#E5E7EB"/></svg>
+          <div style="flex:1;">
+            <div style="font-weight:500; font-size:12px; color:var(--tx);">Dot Sniper</div>
+            <div style="font-size:11px; color:var(--mu);">Slot 2</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; background:transparent;">
+          <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="7" fill="none" stroke="#EF4444" stroke-width="2"/></svg>
+          <div style="flex:1;">
+            <div style="font-weight:500; font-size:12px; color:var(--tx);">Circle Red</div>
+            <div style="font-size:11px; color:var(--mu);">Slot 3</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%; margin-top:12px;">+ New Crosshair</button>
+    </aside>
+    <div style="flex:1; position:relative; overflow:hidden; background:#0B0E13;">
+      <svg width="860" height="848" viewBox="0 0 860 848">
+        <defs>
+          <pattern id="gridMinor" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M 16 0 L 0 0 0 16" fill="none" stroke="#161B22" stroke-width="1"/></pattern>
+          <pattern id="gridMajor" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="url(#gridMinor)"/><path d="M 80 0 L 0 0 0 80" fill="none" stroke="#222A36" stroke-width="1.5"/></pattern>
+        </defs>
+        <rect width="860" height="848" fill="url(#gridMajor)"/>
+        <circle cx="432.5" cy="423" r="40" fill="none" stroke="#1E2734" stroke-width="1" stroke-dasharray="2 4"/>
+        <circle cx="432.5" cy="423" r="80" fill="none" stroke="#1E2734" stroke-width="1" stroke-dasharray="2 4"/>
+        <line x1="0" y1="424" x2="860" y2="424" stroke="#FF4FD8" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+        <line x1="430" y1="0" x2="430" y2="848" stroke="#FF4FD8" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+        <circle cx="430" cy="424" r="6" fill="none" stroke="#FF4FD8" stroke-width="1.5"/>
+        <circle cx="430" cy="424" r="1.5" fill="#FF4FD8"/>
+        <g transform="translate(432.5, 423)">
+          <rect x="-1" y="-24" width="2" height="12" fill="#38BDF8"/>
+          <rect x="-1" y="12" width="2" height="12" fill="#38BDF8"/>
+          <rect x="-24" y="-1" width="12" height="2" fill="#38BDF8"/>
+          <rect x="12" y="-1" width="12" height="2" fill="#38BDF8"/>
+          <circle cx="0" cy="0" r="1.5" fill="#38BDF8"/>
+          <rect x="-4" y="-27" width="8" height="18" fill="rgba(56,189,248,0.12)" stroke="#38BDF8" stroke-width="1" stroke-dasharray="3 3"/>
+        </g>
+      </svg>
+      <div style="position:absolute; left:16px; top:16px; display:flex; flex-direction:column; gap:4px; background:var(--s1); border:1px solid var(--ln); border-radius:8px; padding:6px;">
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">V</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">A</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0; background:var(--s3); border-color:var(--tx); font-weight:700;">L</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">D</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">R</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">C</button>
+        <button class="btn btn-sm m" style="width:32px; height:32px; padding:0;">P</button>
+      </div>
+      <div style="position:absolute; left:16px; bottom:16px; display:flex; gap:8px; align-items:center;">
+        <span class="pill m">16× Zoom</span>
+        <span class="pill m active">Grid: ON</span>
+        <span class="pill m active">Rulers: ON</span>
+        <span class="pill m" style="background:#131C26; border-color:#20425E; color:var(--ac);">Layer: Arm Top (X: 0.00, Y: −6.00 px)</span>
+        <span class="pill m" style="color:var(--mu);">Smooth Mode (Sub-pixel active)</span>
+      </div>
+    </div>
+    <aside style="width:330px; background:var(--s1); border-left:1px solid var(--ln); padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
+      <div class="panel">
+        <div class="panel-h">
+          <span>Transform & Position</span>
+          <div class="pill m" style="font-size:10px; padding:2px 6px;">Relative / Absolute</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+          <div>
+            <label style="font-size:11px; color:var(--mu); display:block; margin-bottom:4px;">Position X (px)</label>
+            <input class="input" value="0.00" style="width:100%;">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--mu); display:block; margin-bottom:4px;">Position Y (px)</label>
+            <input class="input" value="-6.00" style="width:100%;">
+          </div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm" style="flex:1;">↺ Recenter Layer <span class="badge-shortcut">Home</span></button>
+          <button class="btn btn-sm" style="flex:1;">⌖ Recenter Whole <span class="badge-shortcut">Ctrl+Home</span></button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h">
+          <span>Arm Geometry (Top Arm)</span>
+          <span class="badge badge-success">ALIGNED</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div><div class="row-flex"><span style="font-size:12px;">Length</span><span class="m" style="color:var(--mu);">6.0 px</span></div><div class="track"><div class="track-fill" style="width:40%;"></div></div></div>
+          <div><div class="row-flex"><span style="font-size:12px;">Thickness</span><span class="m" style="color:var(--mu);">2.0 px</span></div><div class="track"><div class="track-fill" style="width:20%;"></div></div></div>
+          <div><div class="row-flex"><span style="font-size:12px;">Gap</span><span class="m" style="color:var(--mu);">4.0 px</span></div><div class="track"><div class="track-fill" style="width:28%;"></div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h">
+          <span>Layers (5)</span>
+          <button class="btn btn-sm" style="height:20px; padding:0 6px;">+ Add</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:var(--s2); border:1px solid var(--ac);">
+            <div style="display:flex; align-items:center; gap:6px;"><span>👁</span><span style="font-weight:600; font-size:12px;">Arm Top</span></div>
+            <span class="badge badge-success">ALIGNED</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:var(--s2); border:1px solid var(--ln);">
+            <div style="display:flex; align-items:center; gap:6px;"><span>👁</span><span style="font-size:12px;">Arm Bottom</span></div>
+            <span class="badge badge-success">ALIGNED</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:var(--s2); border:1px solid var(--ln);">
+            <div style="display:flex; align-items:center; gap:6px;"><span>👁</span><span style="font-size:12px;">Center Dot (1 px)</span></div>
+            <span class="badge badge-warning">OFF-GRID</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><span>8-Way Nudge Pad</span><span style="font-size:10px; color:var(--mu);">Game Px</span></div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:10px;">
+          <button class="btn" style="height:36px; padding:0;">↖</button><button class="btn" style="height:36px; padding:0;">↑</button><button class="btn" style="height:36px; padding:0;">↗</button>
+          <button class="btn" style="height:36px; padding:0;">←</button><button class="btn" style="height:36px; padding:0; background:var(--s3); font-weight:700;">•</button><button class="btn" style="height:36px; padding:0;">→</button>
+          <button class="btn" style="height:36px; padding:0;">↙</button><button class="btn" style="height:36px; padding:0;">↓</button><button class="btn" style="height:36px; padding:0;">↘</button>
+        </div>
+        <div style="display:flex; gap:4px; margin-bottom:8px;">
+          <button class="btn btn-sm btn-primary" style="flex:1;">Selection</button><button class="btn btn-sm" style="flex:1;">Whole</button><button class="btn btn-sm" style="flex:1;">Arm</button>
+        </div>
+        <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
+          <button class="btn btn-sm m">0.1</button><button class="btn btn-sm m">0.25</button><button class="btn btn-sm m btn-primary">0.5</button><button class="btn btn-sm m">1.0</button><button class="btn btn-sm m">5.0</button><button class="btn btn-sm m">10</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:11px; color:var(--mu);">Custom:</span><input class="input m" value="0.05" style="flex:1; height:24px; font-size:11px;"><span style="font-size:11px; color:var(--mu);">px</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

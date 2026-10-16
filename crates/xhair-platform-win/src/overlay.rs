@@ -87,6 +87,8 @@ pub enum OverlayCommand {
     SetConfig(Box<OverlayConfig>),
     /// Toggle overlay visibility.
     ToggleVisibility,
+    /// Explicitly enable or disable overlay visibility.
+    SetEnabled(bool),
     /// Toggle calibration test pattern overlay.
     ToggleCalibrationPattern,
     /// Nudge crosshair position by delta.
@@ -271,6 +273,16 @@ fn run_overlay_thread(
     // Initial render and display
     render_and_update(hwnd, &crosshair, &profile, &config);
 
+    // Register global hotkeys (§8.4): ID 1: Ctrl+Shift+X (Toggle Overlay), ID 2: Ctrl+Shift+C (Recenter)
+    unsafe {
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            RegisterHotKey, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT,
+        };
+        let _ = RegisterHotKey(hwnd, 1, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, 0x58); // X
+        let _ = RegisterHotKey(hwnd, 2, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, 0x43);
+        // C
+    }
+
     // Set a periodic 200ms timer to check foreground focus and refresh overlay positioning (§8.1)
     unsafe {
         let _ = SetTimer(hwnd, 1, 200, None);
@@ -284,7 +296,29 @@ fn run_overlay_thread(
             break;
         }
 
-        if msg.message == WM_APP_OVERLAY_UPDATE || msg.message == WM_TIMER {
+        if msg.message == windows::Win32::UI::WindowsAndMessaging::WM_HOTKEY {
+            let hotkey_id = msg.wParam.0 as i32;
+            if hotkey_id == 1 {
+                let is_hidden = config.visibility_mode == VisibilityMode::Hidden;
+                config.visibility_mode = if is_hidden {
+                    if config.follow_game_window {
+                        VisibilityMode::OnlyWhenGameForeground
+                    } else {
+                        VisibilityMode::AlwaysShow
+                    }
+                } else {
+                    VisibilityMode::Hidden
+                };
+                tray_status.overlay_enabled = config.visibility_mode != VisibilityMode::Hidden;
+                if let Some(ref mut tray) = tray_icon {
+                    let _ = tray.update_status(&tray_status);
+                }
+                render_and_update(hwnd, &crosshair, &profile, &config);
+            } else if hotkey_id == 2 {
+                config.calibration_offset = Vec2::ZERO;
+                render_and_update(hwnd, &crosshair, &profile, &config);
+            }
+        } else if msg.message == WM_APP_OVERLAY_UPDATE || msg.message == WM_TIMER {
             while let Ok(cmd) = cmd_rx.try_recv() {
                 match cmd {
                     OverlayCommand::SetCrosshair(new_xhair) => {
@@ -306,12 +340,33 @@ fn run_overlay_thread(
                         }
                     }
                     OverlayCommand::ToggleVisibility => {
-                        config.visibility_mode = match config.visibility_mode {
-                            VisibilityMode::Hidden => VisibilityMode::OnlyWhenGameForeground,
-                            _ => VisibilityMode::Hidden,
+                        let is_hidden = config.visibility_mode == VisibilityMode::Hidden;
+                        config.visibility_mode = if is_hidden {
+                            if config.follow_game_window {
+                                VisibilityMode::OnlyWhenGameForeground
+                            } else {
+                                VisibilityMode::AlwaysShow
+                            }
+                        } else {
+                            VisibilityMode::Hidden
                         };
                         tray_status.overlay_enabled =
                             config.visibility_mode != VisibilityMode::Hidden;
+                        if let Some(ref mut tray) = tray_icon {
+                            let _ = tray.update_status(&tray_status);
+                        }
+                    }
+                    OverlayCommand::SetEnabled(enabled) => {
+                        config.visibility_mode = if enabled {
+                            if config.follow_game_window {
+                                VisibilityMode::OnlyWhenGameForeground
+                            } else {
+                                VisibilityMode::AlwaysShow
+                            }
+                        } else {
+                            VisibilityMode::Hidden
+                        };
+                        tray_status.overlay_enabled = enabled;
                         if let Some(ref mut tray) = tray_icon {
                             let _ = tray.update_status(&tray_status);
                         }
@@ -324,6 +379,9 @@ fn run_overlay_thread(
                     }
                     OverlayCommand::Quit => {
                         unsafe {
+                            use windows::Win32::UI::Input::KeyboardAndMouse::UnregisterHotKey;
+                            let _ = UnregisterHotKey(hwnd, 1);
+                            let _ = UnregisterHotKey(hwnd, 2);
                             let _ = KillTimer(hwnd, 1);
                             let _ = DestroyWindow(hwnd);
                             PostQuitMessage(0);

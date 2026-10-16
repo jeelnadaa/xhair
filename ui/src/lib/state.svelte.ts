@@ -14,6 +14,7 @@ import type {
   AnimTrack,
   GunProfile,
   DynamicBinding,
+  CrosshairGroup,
 } from './types';
 import propertiesData from '../generated/properties.json';
 
@@ -353,7 +354,17 @@ export class EditorState {
   library = $state<Crosshair[]>(JSON.parse(JSON.stringify(loadSavedLibrary())));
   saveStatus = $state<'idle' | 'saving' | 'saved'>('idle');
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
-  selectedLayerId = $state<string>('layer-arms-1');
+  selectedLayerIds = $state<string[]>(['layer-arms-1']);
+  get selectedLayerId(): string {
+    return this.selectedLayerIds[0] ?? '';
+  }
+  set selectedLayerId(id: string) {
+    if (id) {
+      this.selectedLayerIds = [id];
+    } else {
+      this.selectedLayerIds = [];
+    }
+  }
   selectedArmIndex = $state<number>(0);
   activeTool = $state<ToolType>('select');
 
@@ -372,11 +383,62 @@ export class EditorState {
   importExportModalOpen = $state<boolean>(false);
   importExportTab = $state<'import' | 'export'>('import');
   resolutionModalOpen = $state<boolean>(false);
+  groupSettingsModalOpen = $state<boolean>(false);
+  editingGroupId = $state<string | null>(null);
+  shortcutsDialogOpen = $state<boolean>(false);
+  colorPickerOpen = $state<boolean>(false);
 
-  // Nudge Control
+  // Position & Nudge Control (§5, §6)
+  positionMode = $state<'relative' | 'absolute'>('relative');
   nudgeStep = $state<number>(0.5);
+  customNudgeStep = $state<number>(0.5);
   nudgeTarget = $state<NudgeTarget>('layer');
   nudgeFrame = $state<NudgeFrame>('screen');
+
+  // Crosshair Groups (§8)
+  groups = $state<CrosshairGroup[]>([
+    {
+      id: 'grp-val',
+      name: 'Valorant',
+      game_binding: 'VALORANT-Win64-Shipping.exe',
+      color: '#10B981',
+      order: 0,
+      collapsed: false,
+      active_crosshair_id: 'ch-cyan-gap-001',
+      default_resolution_profile: '4-3-stretched',
+    },
+    {
+      id: 'grp-cs',
+      name: 'CS2 Competitive',
+      game_binding: 'cs2.exe',
+      color: '#F59E0B',
+      order: 1,
+      collapsed: false,
+      active_crosshair_id: 'ch-tight-plus-002',
+      default_resolution_profile: '4-3-stretched',
+    },
+    {
+      id: 'grp-apex',
+      name: 'Apex Legends',
+      game_binding: 'r5apex.exe',
+      color: '#38BDF8',
+      order: 2,
+      collapsed: false,
+      active_crosshair_id: 'ch-cyan-gap-001',
+      default_resolution_profile: '1080p-native',
+    },
+  ]);
+  activeGroupId = $state<string>('grp-val');
+  savedSwatches = $state<string[]>([
+    '#36F2CB',
+    '#FFFFFF',
+    '#FF3B30',
+    '#FFCC00',
+    '#34C759',
+    '#AF52DE',
+    '#00D4FF',
+    '#FF3366',
+  ]);
 
   // Active Profile & System Flags
   activeProfile = $state<ResolutionProfile>(RESOLUTION_PROFILES[0]);
@@ -440,9 +502,17 @@ export class EditorState {
   undoStack = $state<string[]>([]);
   redoStack = $state<string[]>([]);
 
-  // Derived selected layer
+  // Derived selected layer(s)
   selectedLayer = $derived(
-    this.crosshair.layers.find((l) => l.id === this.selectedLayerId) || this.crosshair.layers[0]
+    this.crosshair.layers.find((l) => this.selectedLayerIds.includes(l.id)) || this.crosshair.layers[0]
+  );
+
+  selectedLayers = $derived(
+    this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id))
+  );
+
+  isMovedFromCenter = $derived(
+    Math.abs(this.crosshair.offsetX) > 0.001 || Math.abs(this.crosshair.offsetY) > 0.001
   );
 
   // Alignment Diagnostic
@@ -669,6 +739,29 @@ export class EditorState {
     }
   }
 
+  toggleOverlay() {
+    this.overlayEnabled = !this.overlayEnabled;
+    this.sendIpcCommand({ action: 'set_overlay_enabled', enabled: this.overlayEnabled });
+  }
+
+  sendIpcCommand(cmd: Record<string, unknown> | string) {
+    try {
+      const payload = typeof cmd === 'string' ? cmd : JSON.stringify(cmd);
+      if (typeof window !== 'undefined') {
+        const wryIpc = (window as unknown as { ipc?: { postMessage: (msg: string) => void } }).ipc;
+        if (wryIpc && typeof wryIpc.postMessage === 'function') {
+          try {
+            wryIpc.postMessage(payload);
+          } catch (e) {
+            console.warn('IPC postMessage failed:', e);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('sendIpcCommand error:', e);
+    }
+  }
+
   // Crosshair Selection & CRUD
   saveCurrentProfile() {
     this.saveStatus = 'saving';
@@ -725,55 +818,98 @@ export class EditorState {
     }
   }
 
-  newCrosshair() {
+  // Selection Model (§3)
+  selectLayer(id: string, isCtrl: boolean = false, isShift: boolean = false) {
+    if (isCtrl) {
+      if (this.selectedLayerIds.includes(id)) {
+        this.selectedLayerIds = this.selectedLayerIds.filter((x) => x !== id);
+      } else {
+        this.selectedLayerIds = [...this.selectedLayerIds, id];
+      }
+    } else if (isShift) {
+      const idxA = this.crosshair.layers.findIndex((l) => this.selectedLayerIds.includes(l.id));
+      const idxB = this.crosshair.layers.findIndex((l) => l.id === id);
+      if (idxA !== -1 && idxB !== -1) {
+        const min = Math.min(idxA, idxB);
+        const max = Math.max(idxA, idxB);
+        this.selectedLayerIds = this.crosshair.layers.slice(min, max + 1).map((l) => l.id);
+      } else {
+        this.selectedLayerIds = [id];
+      }
+    } else {
+      this.selectedLayerIds = [id];
+    }
+  }
+
+  selectAllLayers() {
+    this.selectedLayerIds = this.crosshair.layers.map((l) => l.id);
+  }
+
+  clearSelection() {
+    this.selectedLayerIds = [];
+  }
+
+  invertSelection() {
+    const current = new Set(this.selectedLayerIds);
+    this.selectedLayerIds = this.crosshair.layers.map((l) => l.id).filter((id) => !current.has(id));
+  }
+
+  // Crosshair Creation (§2: blank start by default)
+  newCrosshair(template: 'blank' | 'classic' = 'blank') {
     this.pushUndo();
     const newId = uniqueId('ch');
+    const isBlank = template === 'blank';
     const created: Crosshair = {
       id: newId,
-      name: `New Crosshair ${this.library.length + 1}`,
-      description: 'Custom created crosshair',
+      name: isBlank ? `Blank Crosshair ${this.library.length + 1}` : `New Crosshair ${this.library.length + 1}`,
+      description: isBlank ? 'Zero-layer blank canvas' : 'Classic 4-arm rifle crosshair',
       author: 'User',
       tags: ['Custom'],
       favorite: false,
       formatVersion: 1,
+      groupId: this.activeGroupId,
       offsetX: 0,
       offsetY: 0,
       scale: 1.0,
       opacity: 1.0,
-      layers: [
-        {
-          id: uniqueId('layer'),
-          name: 'Arms ×4',
-          visible: true,
-          locked: false,
-          shape: { type: 'LineArms', length: 5, thickness: 2, gap: 3, armCount: 4 },
-          color: '#36F2CB',
-          opacity: 1.0,
-          offsetX: 0,
-          offsetY: 0,
-          rotation: 0,
-        },
-      ],
+      layers: isBlank
+        ? []
+        : [
+            {
+              id: uniqueId('layer'),
+              name: 'Arms ×4',
+              visible: true,
+              locked: false,
+              shape: { type: 'LineArms', length: 5, thickness: 2, gap: 3, armCount: 4 },
+              color: '#38BDF8',
+              opacity: 1.0,
+              offsetX: 0,
+              offsetY: 0,
+              rotation: 0,
+            },
+          ],
     };
     this.library.push(created);
     this.crosshair = JSON.parse(JSON.stringify(created));
-    this.selectedLayerId = created.layers[0].id;
+    this.selectedLayerIds = created.layers[0]?.id ? [created.layers[0].id] : [];
     this.saveCurrentProfile();
   }
 
-  // Nudge in 8 directions with atomic element precision (§9.4)
-  nudge(dx: number, dy: number) {
+  // Nudge in 8 directions with atomic element precision (§5)
+  nudge(dx: number, dy: number, multiplier: number = 1.0, isWholeCrosshair: boolean = false) {
     this.pushUndo();
-    const stepX = dx * this.nudgeStep;
-    const stepY = dy * this.nudgeStep;
+    const step = this.nudgeStep * multiplier;
+    const stepX = dx * step;
+    const stepY = dy * step;
 
-    if (this.nudgeTarget === 'all') {
+    if (isWholeCrosshair || this.nudgeTarget === 'all') {
       this.crosshair.offsetX = Math.round((this.crosshair.offsetX + stepX) * 100) / 100;
       this.crosshair.offsetY = Math.round((this.crosshair.offsetY + stepY) * 100) / 100;
-    } else if (this.nudgeTarget === 'layer' && this.selectedLayer) {
-      this.selectedLayer.offsetX = Math.round((this.selectedLayer.offsetX + stepX) * 100) / 100;
-      this.selectedLayer.offsetY = Math.round((this.selectedLayer.offsetY + stepY) * 100) / 100;
-    } else if (this.nudgeTarget === 'arm' && this.selectedLayer) {
+      this.syncWithOverlay();
+      return;
+    }
+
+    if (this.nudgeTarget === 'arm' && this.selectedLayer) {
       const armCount = this.selectedLayer.shape.armCount || 4;
       if (!this.selectedLayer.shape.armOffsets || this.selectedLayer.shape.armOffsets.length < armCount) {
         this.selectedLayer.shape.armOffsets = Array.from({ length: armCount }, () => ({ x: 0, y: 0 }));
@@ -782,7 +918,26 @@ export class EditorState {
       const arm = this.selectedLayer.shape.armOffsets[armIdx];
       arm.x = Math.round((arm.x + stepX) * 100) / 100;
       arm.y = Math.round((arm.y + stepY) * 100) / 100;
+      this.syncWithOverlay();
+      return;
     }
+
+    // Default: Nudge all selected layers (or layer groups)
+    const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
+    for (const l of targets) {
+      l.offsetX = Math.round((l.offsetX + stepX) * 100) / 100;
+      l.offsetY = Math.round((l.offsetY + stepY) * 100) / 100;
+      if (l.isGroup && l.children) {
+        for (const childId of l.children) {
+          const child = this.crosshair.layers.find((c) => c.id === childId);
+          if (child && !this.selectedLayerIds.includes(child.id)) {
+            child.offsetX = Math.round((child.offsetX + stepX) * 100) / 100;
+            child.offsetY = Math.round((child.offsetY + stepY) * 100) / 100;
+          }
+        }
+      }
+    }
+    this.syncWithOverlay();
   }
 
   resetNudge() {
@@ -790,14 +945,205 @@ export class EditorState {
     if (this.nudgeTarget === 'all') {
       this.crosshair.offsetX = 0;
       this.crosshair.offsetY = 0;
-    } else if (this.nudgeTarget === 'layer' && this.selectedLayer) {
-      this.selectedLayer.offsetX = 0;
-      this.selectedLayer.offsetY = 0;
+    } else if (this.nudgeTarget === 'layer') {
+      const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
+      for (const l of targets) {
+        l.offsetX = 0;
+        l.offsetY = 0;
+      }
     } else if (this.nudgeTarget === 'arm' && this.selectedLayer && this.selectedLayer.shape.armOffsets) {
       if (this.selectedLayer.shape.armOffsets[this.selectedArmIndex]) {
         this.selectedLayer.shape.armOffsets[this.selectedArmIndex] = { x: 0, y: 0 };
       }
     }
+    this.syncWithOverlay();
+  }
+
+  // Recenter selection & whole crosshair (§6)
+  recenterSelection() {
+    this.pushUndo();
+    const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
+    for (const l of targets) {
+      l.offsetX = 0;
+      l.offsetY = 0;
+      if (l.isGroup && l.children) {
+        for (const childId of l.children) {
+          const child = this.crosshair.layers.find((c) => c.id === childId);
+          if (child) {
+            child.offsetX = 0;
+            child.offsetY = 0;
+          }
+        }
+      }
+    }
+    this.syncWithOverlay();
+  }
+
+  recenterCrosshair() {
+    this.pushUndo();
+    this.crosshair.offsetX = 0;
+    this.crosshair.offsetY = 0;
+    this.syncWithOverlay();
+    this.sendIpcCommand({ action: 'recenter' });
+  }
+
+  setSelectionPosition(x: number, y: number, mode: 'relative' | 'absolute' = 'relative') {
+    this.pushUndo();
+    const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
+    for (const l of targets) {
+      if (mode === 'relative') {
+        l.offsetX = Math.round((l.offsetX + x) * 100) / 100;
+        l.offsetY = Math.round((l.offsetY + y) * 100) / 100;
+      } else {
+        l.offsetX = Math.round(x * 100) / 100;
+        l.offsetY = Math.round(y * 100) / 100;
+      }
+    }
+    this.syncWithOverlay();
+  }
+
+  // Layer Grouping inside crosshair (§4)
+  groupSelectedLayers(name?: string) {
+    if (this.selectedLayerIds.length === 0) return;
+    this.pushUndo();
+    const groupId = uniqueId('group');
+    const groupName = name || `Group (${this.selectedLayerIds.length} layers)`;
+    const newGroupLayer: Layer = {
+      id: groupId,
+      name: groupName,
+      visible: true,
+      locked: false,
+      isGroup: true,
+      children: [...this.selectedLayerIds],
+      isExpanded: true,
+      shape: { type: 'Group', children: [...this.selectedLayerIds] },
+      color: '#38BDF8',
+      opacity: 1.0,
+      offsetX: 0,
+      offsetY: 0,
+      rotation: 0,
+    };
+    for (const id of this.selectedLayerIds) {
+      const layer = this.crosshair.layers.find((l) => l.id === id);
+      if (layer) {
+        layer.groupId = groupId;
+      }
+    }
+    this.crosshair.layers.unshift(newGroupLayer);
+    this.selectedLayerIds = [groupId];
+  }
+
+  ungroupLayer(groupId: string) {
+    const idx = this.crosshair.layers.findIndex((l) => l.id === groupId);
+    if (idx === -1) return;
+    this.pushUndo();
+    const grp = this.crosshair.layers[idx];
+    if (grp.children) {
+      for (const childId of grp.children) {
+        const child = this.crosshair.layers.find((c) => c.id === childId);
+        if (child) {
+          child.groupId = undefined;
+        }
+      }
+    }
+    this.crosshair.layers.splice(idx, 1);
+    this.selectedLayerIds = grp.children ?? [];
+  }
+
+  // Crosshair Groups (library level) (§8)
+  createCrosshairGroup(name: string, game_binding?: string) {
+    const id = uniqueId('grp');
+    const newGroup: CrosshairGroup = {
+      id,
+      name: name.trim(),
+      game_binding: game_binding?.trim(),
+      order: this.groups.length,
+      collapsed: false,
+    };
+    this.groups.push(newGroup);
+    this.activeGroupId = id;
+  }
+
+  renameCrosshairGroup(id: string, name: string) {
+    const g = this.groups.find((grp) => grp.id === id);
+    if (g && name.trim()) {
+      g.name = name.trim();
+    }
+  }
+
+  deleteCrosshairGroup(id: string, moveToTrash: boolean = false) {
+    const idx = this.groups.findIndex((g) => g.id === id);
+    if (idx !== -1) {
+      if (moveToTrash) {
+        this.library = this.library.filter((c) => c.groupId !== id);
+      } else {
+        for (const c of this.library) {
+          if (c.groupId === id) {
+            c.groupId = undefined;
+          }
+        }
+      }
+      this.groups.splice(idx, 1);
+      if (this.activeGroupId === id) {
+        this.activeGroupId = this.groups[0]?.id ?? '';
+      }
+    }
+  }
+
+  setGroupGameBinding(groupId: string, binding: string) {
+    const g = this.groups.find((grp) => grp.id === groupId);
+    if (g) {
+      g.game_binding = binding.trim() || undefined;
+    }
+  }
+
+  setGroupResolutionProfile(groupId: string, profileId: string) {
+    const g = this.groups.find((grp) => grp.id === groupId);
+    if (g) {
+      g.default_resolution_profile = profileId;
+    }
+  }
+
+  activateGroup(groupId: string) {
+    this.activeGroupId = groupId;
+    const g = this.groups.find((grp) => grp.id === groupId);
+    if (g?.active_crosshair_id) {
+      this.selectCrosshair(g.active_crosshair_id);
+    } else {
+      const firstInGroup = this.library.find((c) => c.groupId === groupId);
+      if (firstInGroup) {
+        this.selectCrosshair(firstInGroup.id);
+      }
+    }
+  }
+
+  nextInGroup() {
+    const groupItems = this.library.filter((c) => c.groupId === this.activeGroupId);
+    if (groupItems.length <= 1) return;
+    const currIdx = groupItems.findIndex((c) => c.id === this.crosshair.id);
+    const nextIdx = (currIdx + 1) % groupItems.length;
+    this.selectCrosshair(groupItems[nextIdx].id);
+  }
+
+  prevInGroup() {
+    const groupItems = this.library.filter((c) => c.groupId === this.activeGroupId);
+    if (groupItems.length <= 1) return;
+    const currIdx = groupItems.findIndex((c) => c.id === this.crosshair.id);
+    const prevIdx = (currIdx - 1 + groupItems.length) % groupItems.length;
+    this.selectCrosshair(groupItems[prevIdx].id);
+  }
+
+  moveCrosshairsToGroup(crosshairIds: string[], targetGroupId?: string) {
+    for (const chId of crosshairIds) {
+      const ch = this.library.find((c) => c.id === chId);
+      if (ch) {
+        ch.groupId = targetGroupId;
+      }
+      if (this.crosshair.id === chId) {
+        this.crosshair.groupId = targetGroupId;
+      }
+    }
+    this.saveCurrentProfile();
   }
 
   selectArm(armIndex: number) {
@@ -1017,9 +1363,23 @@ export class EditorState {
   }
 
   setLayerColor(color: string) {
-    if (!this.selectedLayer) return;
     this.pushUndo();
-    this.selectedLayer.color = color;
+    const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
+    if (targets.length === 0 && this.selectedLayer) {
+      targets.push(this.selectedLayer);
+    }
+    for (const l of targets) {
+      l.color = color;
+      if (l.isGroup && l.children) {
+        for (const childId of l.children) {
+          const child = this.crosshair.layers.find((c) => c.id === childId);
+          if (child) {
+            child.color = color;
+          }
+        }
+      }
+    }
+    this.syncWithOverlay();
   }
 
   setShapePathData(pathData: string) {

@@ -52,6 +52,8 @@ pub struct ServerState {
     pub activity_log: Vec<ActivityEntry>,
     /// Permitted directories for file import/export.
     pub allowed_directories: Vec<PathBuf>,
+    /// In-memory crosshair groups fallback when no disk library is attached.
+    pub in_memory_groups: Vec<xhair_library::Folder>,
 }
 
 impl Default for ServerContext {
@@ -80,6 +82,7 @@ impl ServerContext {
             dynamics_confirmed: false,
             activity_log: Vec::new(),
             allowed_directories: vec![std::env::temp_dir()],
+            in_memory_groups: Vec::new(),
         };
 
         Self {

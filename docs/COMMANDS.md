@@ -35,24 +35,60 @@ DispatchOptions {
 | `CrosshairSetSymmetry { id, symmetry }` | Document | Yes | Updates radial count (2, 3, 4, 6, 8) and axis mirroring. |
 | `CrosshairSetEffects { id, effects }` | Document | Yes | Configures bloom, glow radius/color, and drop shadow. |
 
-### Layer Operations
+### Layer Operations (v2 updates)
 | Command Variant | Scope | Undoable | Description |
 |---|---|---|---|
-| `LayerAdd { crosshair_id, layer }` | Document | Yes | Appends a new shape layer (`Line`, `Dot`, `Ring`, `Polygon`, `TShaped`, `Chevron`) to the layer stack. |
+| `LayerAdd { crosshair_id, layer }` | Document | Yes | Appends a new shape layer (`Line`, `Dot`, `Ring`, `Polygon`, `TShaped`, `Chevron`) to the layer stack. Default placed at (0, 0) center. |
 | `LayerUpdate { crosshair_id, layer_id, payload }` | Document | Yes | Mutates shape-specific properties, stroke width, color, or transforms. |
+| `LayerRename { crosshair_id, layer_id, new_name }` | Document | Yes | Renames a specific layer in the layer stack. |
+| `LayerGroup { crosshair_id, ids, name }` | Document | Yes | Groups selected layers into a named expandable group row. |
+| `LayerUngroup { crosshair_id, group_id }` | Document | Yes | Dissolves a layer group container, retaining child layers. |
+| `LayerSetPosition { crosshair_id, ids, x, y, mode }` | Document | Yes | Sets selection position relative to center (`Relative` or `Absolute`). |
+| `LayerRecenter { crosshair_id, ids }` | Document | Yes | Resets offset of selected layers back to (0, 0). |
+| `CrosshairRecenter { id }` | Document | Yes | Resets master crosshair coordinate offset back to (0, 0). |
+| `PaintSet { crosshair_id, ids, color }` | Document | Yes | Sets hex color (`#RGB`, `#RRGGBB`, `#RRGGBBAA`) for target layers. |
 | `LayerRemove { crosshair_id, layer_id }` | Document | Yes | Deletes a layer from the stack. Inverse restores the exact layer. |
 | `LayerDuplicate { crosshair_id, layer_id }` | Document | Yes | Clones a layer and inserts it above the original. |
 | `LayerReorder { crosshair_id, layer_id, new_index }` | Document | Yes | Changes the z-order position of a layer in the render stack. |
 
-### Precision Positioning
+### Precision Positioning & Nudge (§5)
 | Command Variant | Scope | Undoable | Description |
 |---|---|---|---|
 | `Nudge { crosshair_id, target, dx, dy, frame }` | Document | Yes | Performs subpixel or game-pixel fine displacement. Target can be `WholeCrosshair`, a specific `Layer`, or an individual `Arm`. |
 
+### Non-Destructive Selection Query & Control (§3)
+| Command Variant | Scope | Undoable | Description |
+|---|---|---|---|
+| `SelectionSet { crosshair_id, ids }` | Editor | No | Sets active layer selection. |
+| `SelectionAdd { crosshair_id, ids }` | Editor | No | Adds layers to active selection (Ctrl+Click / Shift range). |
+| `SelectionRemove { crosshair_id, ids }` | Editor | No | Removes layers from active selection. |
+| `SelectionToggle { crosshair_id, ids }` | Editor | No | Toggles selection state of specified layers. |
+| `SelectionAll { crosshair_id }` | Editor | No | Selects all layers in the document (Ctrl+A). |
+| `SelectionClear { crosshair_id }` | Editor | No | Clears layer selection (Esc). |
+| `SelectionInvert { crosshair_id }` | Editor | No | Inverts selection across all document layers (Ctrl+Shift+I). |
+
+### Crosshair Groups (Library Level) (§8)
+| Command Variant | Scope | Undoable | Description |
+|---|---|---|---|
+| `GroupCreate { name, game_binding }` | Library | Yes | Creates a named collection of crosshairs with optional executable process binding. |
+| `GroupRename { group_id, new_name }` | Library | Yes | Renames a crosshair group. |
+| `GroupDelete { group_id, move_to_trash }` | Library | Yes | Deletes a crosshair group, moving children to Ungrouped or Trash. |
+| `GroupReorder { group_ids }` | Library | Yes | Updates display sorting order of library groups. |
+| `GroupSetIcon { group_id, icon, color }` | Library | Yes | Configures icon or color dot indicator. |
+| `GroupAdd { group_id, crosshair_ids }` | Library | Yes | Assigns crosshairs to a group. |
+| `GroupRemove { group_id, crosshair_ids }` | Library | Yes | Moves crosshairs back to Ungrouped. |
+| `GroupSetGameBinding { group_id, process_name }` | Library | Yes | Binds group to focused game window executable process name. |
+| `GroupSetResolutionProfile { group_id, profile_id }` | Library | Yes | Sets default resolution profile for the group. |
+| `GroupSetActive { group_id, crosshair_id }` | Library | Yes | Remembers active crosshair slot within group. |
+| `GroupNext` / `GroupPrevious` | Library | No | Cycles crosshairs within active group. |
+| `GroupActivate { group_id }` | Library | No | Switches active group in library and overlay. |
+| `ExportPack { group_id }` | Library | No | Exports entire group and metadata into a single `.xhairpack`. |
+| `ImportPack { data_base64 }` | Library | Yes | Imports a `.xhairpack` bundle archive. |
+
 ### Overlay & Runtime Control
 | Command Variant | Scope | Undoable | Description |
 |---|---|---|---|
-| `OverlaySetVisibility { visible }` | Overlay | No | Toggles transparent overlay visibility on the Desktop Window Manager. |
+| `OverlaySetVisibility { visible }` | Overlay | No | Toggles transparent overlay visibility on the Desktop Window Manager (Ctrl+Shift+X). |
 | `OverlaySetSlot { slot }` | Overlay | No | Selects active crosshair slot (1–9). |
 | `OverlayNextSlot` / `OverlayPrevSlot` | Overlay | No | Cycles through active crosshair slots sequentially. |
 | `CalibrationSetOffset { profile_id, dx, dy }` | Settings | Yes | Stores subpixel centering calibration offset for a screen profile. |

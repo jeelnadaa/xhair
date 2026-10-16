@@ -292,6 +292,317 @@ fn apply_command_pure(
     doc.updated_at = Utc::now();
 
     match command {
+        Command::CrosshairRename {
+            crosshair_id,
+            new_name,
+        } => {
+            let old_name = doc.name.clone();
+            doc.name = new_name.clone();
+            let mut diff = CommandDiff::new(format!("Renamed crosshair to '{}'", new_name));
+            diff.add_patch(PatchOp::Replace {
+                path: "/name".to_string(),
+                value: serde_json::Value::String(new_name.clone()),
+            });
+            let inverse = Command::CrosshairRename {
+                crosshair_id: *crosshair_id,
+                new_name: old_name,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::LayerRename {
+            crosshair_id,
+            layer_id,
+            new_name,
+        } => {
+            let layer = doc
+                .layers
+                .iter_mut()
+                .find(|l| l.id == *layer_id)
+                .ok_or_else(|| XhairError::NotFound {
+                    entity_type: "layer".to_string(),
+                    id: layer_id.0.to_string(),
+                })?;
+            let old_name = layer.name.clone();
+            layer.name = new_name.clone();
+            let mut diff = CommandDiff::new(format!("Renamed layer to '{}'", new_name));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/layers/id:{}/name", layer_id.0),
+                value: serde_json::Value::String(new_name.clone()),
+            });
+            let inverse = Command::LayerRename {
+                crosshair_id: *crosshair_id,
+                layer_id: *layer_id,
+                new_name: old_name,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::LayerGroup {
+            crosshair_id,
+            ids,
+            name,
+        } => {
+            let group_name = name
+                .clone()
+                .unwrap_or_else(|| format!("Group ({})", ids.len()));
+            let group_layer = xhair_model::layer::Layer {
+                id: xhair_model::units::LayerId::new_v7(),
+                name: group_name.clone(),
+                kind: xhair_model::shapes::LayerKind::Group(xhair_model::shapes::GroupProps {
+                    children: ids.clone(),
+                }),
+                ..Default::default()
+            };
+            let group_id = group_layer.id;
+            doc.layers.push(group_layer.clone());
+
+            let mut diff = CommandDiff::new(format!("Created layer group '{}'", group_name));
+            diff.add_patch(PatchOp::Add {
+                path: format!("/layers/id:{}", group_id.0),
+                value: serde_json::to_value(&group_layer)
+                    .map_err(|e| XhairError::Serialization(e.to_string()))?,
+            });
+            let inverse = Command::LayerUngroup {
+                crosshair_id: *crosshair_id,
+                group_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::LayerUngroup {
+            crosshair_id,
+            group_id,
+        } => {
+            let pos = doc
+                .layers
+                .iter()
+                .position(|l| l.id == *group_id)
+                .ok_or_else(|| XhairError::NotFound {
+                    entity_type: "layer".to_string(),
+                    id: group_id.0.to_string(),
+                })?;
+            let removed = doc.layers.remove(pos);
+            let children = match &removed.kind {
+                xhair_model::shapes::LayerKind::Group(g) => g.children.clone(),
+                _ => Vec::new(),
+            };
+            let mut diff = CommandDiff::new(format!("Ungrouped '{}'", removed.name));
+            diff.add_patch(PatchOp::Remove {
+                path: format!("/layers/id:{}", group_id.0),
+            });
+            let inverse = Command::LayerGroup {
+                crosshair_id: *crosshair_id,
+                ids: children,
+                name: Some(removed.name),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::LayerSetPosition {
+            crosshair_id,
+            ids,
+            x,
+            y,
+            mode,
+        } => {
+            let mut diff = CommandDiff::new(format!("Set position mode={:?} x={x} y={y}", mode));
+            let mut old_positions = Vec::new();
+            for id in ids {
+                if let Some(layer) = doc.layers.iter_mut().find(|l| l.id == *id) {
+                    old_positions.push((*id, layer.transform.offset));
+                    match mode {
+                        crate::command::PositionMode::Relative => {
+                            layer.transform.offset.x += x;
+                            layer.transform.offset.y += y;
+                        }
+                        crate::command::PositionMode::Absolute => {
+                            layer.transform.offset.x = *x;
+                            layer.transform.offset.y = *y;
+                        }
+                    }
+                    diff.add_patch(PatchOp::Replace {
+                        path: format!("/layers/id:{}/transform/offset", id.0),
+                        value: serde_json::to_value(layer.transform.offset)
+                            .map_err(|e| XhairError::Serialization(e.to_string()))?,
+                    });
+                }
+            }
+            let inverse = match mode {
+                crate::command::PositionMode::Relative => Command::LayerSetPosition {
+                    crosshair_id: *crosshair_id,
+                    ids: ids.clone(),
+                    x: -x,
+                    y: -y,
+                    mode: *mode,
+                },
+                crate::command::PositionMode::Absolute => {
+                    let batch_cmds = old_positions
+                        .into_iter()
+                        .map(|(id, old_pos)| Command::LayerSetPosition {
+                            crosshair_id: *crosshair_id,
+                            ids: vec![id],
+                            x: old_pos.x,
+                            y: old_pos.y,
+                            mode: crate::command::PositionMode::Absolute,
+                        })
+                        .collect();
+                    Command::Batch {
+                        commands: batch_cmds,
+                    }
+                }
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::LayerRecenter { crosshair_id, ids } => {
+            let mut diff = CommandDiff::new("Recentered selection");
+            let mut old_offsets = Vec::new();
+            for id in ids {
+                if let Some(layer) = doc.layers.iter_mut().find(|l| l.id == *id) {
+                    old_offsets.push((*id, layer.transform.offset));
+                    layer.transform.offset = xhair_model::units::Vec2::ZERO;
+                    diff.add_patch(PatchOp::Replace {
+                        path: format!("/layers/id:{}/transform/offset", id.0),
+                        value: serde_json::to_value(layer.transform.offset)
+                            .map_err(|e| XhairError::Serialization(e.to_string()))?,
+                    });
+                }
+            }
+            let batch_cmds = old_offsets
+                .into_iter()
+                .map(|(id, old_pos)| Command::LayerSetPosition {
+                    crosshair_id: *crosshair_id,
+                    ids: vec![id],
+                    x: old_pos.x,
+                    y: old_pos.y,
+                    mode: crate::command::PositionMode::Absolute,
+                })
+                .collect();
+            let inverse = Command::Batch {
+                commands: batch_cmds,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::CrosshairRecenter { crosshair_id } => {
+            let old_offset = doc.global.offset;
+            doc.global.offset = xhair_model::units::Vec2::ZERO;
+            let mut diff = CommandDiff::new("Recentered crosshair");
+            diff.add_patch(PatchOp::Replace {
+                path: "/global/offset".to_string(),
+                value: serde_json::to_value(doc.global.offset)
+                    .map_err(|e| XhairError::Serialization(e.to_string()))?,
+            });
+            let inverse = Command::Nudge {
+                crosshair_id: *crosshair_id,
+                target: NudgeTarget::WholeCrosshair,
+                dx: old_offset.x,
+                dy: old_offset.y,
+                frame: crate::command::NudgeFrame::Screen,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::PaintSet {
+            crosshair_id,
+            ids,
+            color,
+        } => {
+            let rgba =
+                parse_hex_color(color).unwrap_or(xhair_model::units::Rgba::new(54, 242, 203, 1.0));
+            let new_paint = xhair_model::paint::Paint::Solid { color: rgba };
+            let mut diff = CommandDiff::new(format!("Set paint to '{color}'"));
+            let mut old_paints = Vec::new();
+
+            for id in ids {
+                if let Some(layer) = doc.layers.iter_mut().find(|l| l.id == *id) {
+                    old_paints.push((*id, layer.fill.clone()));
+                    layer.fill = new_paint.clone();
+                    diff.add_patch(PatchOp::Replace {
+                        path: format!("/layers/id:{}/fill", id.0),
+                        value: serde_json::to_value(&layer.fill)
+                            .map_err(|e| XhairError::Serialization(e.to_string()))?,
+                    });
+                }
+            }
+
+            let batch_cmds = old_paints
+                .into_iter()
+                .map(|(id, old_paint)| Command::LayerUpdate {
+                    crosshair_id: *crosshair_id,
+                    layer_id: id,
+                    payload: LayerUpdatePayload {
+                        fill: Some(old_paint),
+                        ..Default::default()
+                    },
+                })
+                .collect();
+            let inverse = Command::Batch {
+                commands: batch_cmds,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionSet { crosshair_id, ids } => {
+            let diff = CommandDiff::new(format!("Selection set to {} items", ids.len()));
+            let inverse = Command::SelectionClear {
+                crosshair_id: *crosshair_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionAdd { crosshair_id, ids } => {
+            let diff = CommandDiff::new(format!("Selection added {} items", ids.len()));
+            let inverse = Command::SelectionRemove {
+                crosshair_id: *crosshair_id,
+                ids: ids.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionRemove { crosshair_id, ids } => {
+            let diff = CommandDiff::new(format!("Selection removed {} items", ids.len()));
+            let inverse = Command::SelectionAdd {
+                crosshair_id: *crosshair_id,
+                ids: ids.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionToggle { crosshair_id, ids } => {
+            let diff = CommandDiff::new(format!("Selection toggled {} items", ids.len()));
+            let inverse = Command::SelectionToggle {
+                crosshair_id: *crosshair_id,
+                ids: ids.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionAll { crosshair_id } => {
+            let diff = CommandDiff::new("Selected all layers");
+            let inverse = Command::SelectionClear {
+                crosshair_id: *crosshair_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionClear { crosshair_id } => {
+            let diff = CommandDiff::new("Cleared selection");
+            let inverse = Command::SelectionAll {
+                crosshair_id: *crosshair_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::SelectionInvert { crosshair_id } => {
+            let diff = CommandDiff::new("Inverted selection");
+            let inverse = Command::SelectionInvert {
+                crosshair_id: *crosshair_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
         Command::LayerAdd {
             crosshair_id,
             layer,
@@ -658,5 +969,39 @@ fn apply_command_pure(
             let inverse = Command::Batch { commands: inverses };
             Ok((batch_diff, inverse, None))
         }
+    }
+}
+
+/// Parses a hex color string (#RGB, #RGBA, #RRGGBB, #RRGGBBAA) into an RGBA color.
+fn parse_hex_color(hex: &str) -> Option<xhair_model::units::Rgba> {
+    let s = hex.trim().trim_start_matches('#');
+    match s.len() {
+        3 => {
+            let r = u8::from_str_radix(&s[0..1], 16).ok()? * 17;
+            let g = u8::from_str_radix(&s[1..2], 16).ok()? * 17;
+            let b = u8::from_str_radix(&s[2..3], 16).ok()? * 17;
+            Some(xhair_model::units::Rgba::new(r, g, b, 1.0))
+        }
+        4 => {
+            let r = u8::from_str_radix(&s[0..1], 16).ok()? * 17;
+            let g = u8::from_str_radix(&s[1..2], 16).ok()? * 17;
+            let b = u8::from_str_radix(&s[2..3], 16).ok()? * 17;
+            let a = u8::from_str_radix(&s[3..4], 16).ok()? * 17;
+            Some(xhair_model::units::Rgba::new(r, g, b, (a as f32) / 255.0))
+        }
+        6 => {
+            let r = u8::from_str_radix(&s[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&s[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&s[4..6], 16).ok()?;
+            Some(xhair_model::units::Rgba::new(r, g, b, 1.0))
+        }
+        8 => {
+            let r = u8::from_str_radix(&s[0..2], 16).ok()?;
+            let g = u8::from_str_radix(&s[2..4], 16).ok()?;
+            let b = u8::from_str_radix(&s[4..6], 16).ok()?;
+            let a = u8::from_str_radix(&s[6..8], 16).ok()?;
+            Some(xhair_model::units::Rgba::new(r, g, b, (a as f32) / 255.0))
+        }
+        _ => None,
     }
 }

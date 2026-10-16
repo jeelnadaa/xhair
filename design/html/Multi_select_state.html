@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multi-Select State — XHAIR Design v2</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090A0D;
+  --s1: #111418;
+  --s2: #181C22;
+  --s3: #21262F;
+  --ln: #282F3A;
+  --ln-subtle: #1C222B;
+  --ln-active: #404A59;
+  --tx: #E5E7EB;
+  --mu: #8E98A8;
+  --dim: #545E6E;
+  --ac: #38BDF8;
+  --ac-dim: #0C2836;
+  --center-guide: #FF4FD8;
+  --warning: #F59E0B;
+  --warning-bg: #261B07;
+  --danger: #EF4444;
+  --danger-bg: #2B1111;
+  --success: #10B981;
+  --success-bg: #0A261C;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+.m { font-family: 'JetBrains Mono', Consolas, monospace; }
+.app-shell {
+  width: 1440px; height: 900px;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+  position: relative;
+}
+.top-bar {
+  height: 52px; flex: none;
+  background: var(--s1);
+  border-bottom: 1px solid var(--ln);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+.brand {
+  font-weight: 900; letter-spacing: 0.14em;
+  color: var(--tx); font-size: 14px;
+}
+.sep { color: var(--dim); margin: 0 4px; }
+.btn {
+  background: var(--s2);
+  border: 1px solid var(--ln);
+  border-radius: 6px;
+  padding: 0 12px; height: 32px;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--tx); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--s3); border-color: var(--ln-active); }
+.btn-sm { height: 26px; padding: 0 8px; font-size: 11px; }
+.btn-primary { background: var(--tx); color: #000; border-color: var(--tx); font-weight: 700; }
+.btn-primary:hover { background: #fff; border-color: #fff; }
+.btn-accent { background: var(--ac); color: #04110E; border-color: var(--ac); font-weight: 700; }
+.pill {
+  border: 1px solid var(--ln);
+  border-radius: 99px;
+  padding: 4px 10px; font-size: 11px; color: var(--mu);
+  background: var(--s2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.pill.active { color: var(--tx); border-color: var(--ln-active); }
+.dot-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.dot-indicator.on { background: var(--tx); box-shadow: 0 0 6px rgba(255,255,255,0.4); }
+.input {
+  background: var(--bg);
+  border: 1px solid var(--ln);
+  border-radius: 6px; height: 32px;
+  padding: 0 10px; color: var(--tx);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.input:focus { outline: none; border-color: var(--ln-active); }
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--ln);
+  border-radius: 8px; padding: 14px; margin-bottom: 12px;
+}
+.panel-h {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--mu); font-weight: 700; margin: 0 0 12px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: var(--s3); color: var(--mu);
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-offset { background: #261D09; color: #FBBF24; border: 1px solid #78350F; }
+.badge-shortcut { background: var(--s3); border: 1px solid var(--ln); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mu); padding: 1px 5px; border-radius: 3px; }
+.row-flex { display: flex; align-items: center; justify-content: space-between; }
+.track { height: 4px; background: var(--ln); border-radius: 2px; margin-top: 6px; position: relative; }
+.track-fill { height: 4px; background: var(--tx); border-radius: 2px; }
+.modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(4, 5, 8, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-window {
+  background: var(--s1);
+  border: 1px solid var(--ln-active);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <header class="top-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="brand">XHAIR</span><span class="sep">/</span><span style="font-weight:600; font-size:14px;">Cyan Gap</span>
+      <span class="badge">Multi-Select Active</span>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="display:flex; gap:6px;">
+      <button class="btn btn-sm">Group Selection <span class="badge-shortcut">Ctrl+G</span></button>
+      <button class="btn btn-sm">Duplicate <span class="badge-shortcut">Ctrl+D</span></button>
+      <button class="btn btn-sm">Recenter Selection <span class="badge-shortcut">Home</span></button>
+      <button class="btn btn-sm" style="color:var(--danger);">Delete <span class="badge-shortcut">Del</span></button>
+    </div>
+  </header>
+  <div style="display:flex; flex:1; min-height:0;">
+    <aside style="width:260px; background:var(--s1); border-right:1px solid var(--ln); padding:16px;">
+      <div class="panel-h"><span>Layers (4 Selected)</span><span class="badge-shortcut">Ctrl+A</span></div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:#0E2232; border:1px solid var(--ac);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" checked style="accent-color:var(--ac);">
+            <span style="font-weight:600; font-size:12px; color:var(--tx);">Arm Top</span>
+          </div>
+          <span class="m" style="font-size:10px; color:var(--ac);">0, −6</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:#0E2232; border:1px solid var(--ac);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" checked style="accent-color:var(--ac);">
+            <span style="font-weight:600; font-size:12px; color:var(--tx);">Arm Bottom</span>
+          </div>
+          <span class="m" style="font-size:10px; color:var(--ac);">0, +6</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:#0E2232; border:1px solid var(--ac);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" checked style="accent-color:var(--ac);">
+            <span style="font-weight:600; font-size:12px; color:var(--tx);">Arm Left</span>
+          </div>
+          <span class="m" style="font-size:10px; color:var(--ac);">−6, 0</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:#0E2232; border:1px solid var(--ac);">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" checked style="accent-color:var(--ac);">
+            <span style="font-weight:600; font-size:12px; color:var(--tx);">Arm Right</span>
+          </div>
+          <span class="m" style="font-size:10px; color:var(--ac);">+6, 0</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:6px; background:var(--s2); border:1px solid var(--ln); opacity:0.6;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" style="accent-color:var(--ac);">
+            <span style="font-size:12px; color:var(--mu);">Center Dot (1 px)</span>
+          </div>
+          <span class="m" style="font-size:10px; color:var(--mu);">0, 0</span>
+        </div>
+      </div>
+    </aside>
+    <div style="flex:1; position:relative; overflow:hidden; background:#0B0E13;">
+      <svg width="860" height="848" viewBox="0 0 860 848">
+        <defs>
+          <pattern id="gridMinorMulti" width="16" height="16" patternUnits="userSpaceOnUse"><path d="M 16 0 L 0 0 0 16" fill="none" stroke="#161B22" stroke-width="1"/></pattern>
+        </defs>
+        <rect width="860" height="848" fill="#0B0E13"/>
+        <rect width="860" height="848" fill="url(#gridMinorMulti)"/>
+        <circle cx="430" cy="424" r="6" fill="none" stroke="#FF4FD8" stroke-width="1"/>
+        <g transform="translate(430, 424)">
+          <rect x="-1" y="-24" width="2" height="12" fill="#38BDF8"/>
+          <rect x="-1" y="12" width="2" height="12" fill="#38BDF8"/>
+          <rect x="-24" y="-1" width="12" height="2" fill="#38BDF8"/>
+          <rect x="12" y="-1" width="12" height="2" fill="#38BDF8"/>
+          <circle cx="0" cy="0" r="1.5" fill="#38BDF8"/>
+          <rect x="-28" y="-28" width="56" height="56" fill="rgba(56,189,248,0.08)" stroke="#38BDF8" stroke-width="1" stroke-dasharray="4 4"/>
+          <rect x="-30" y="-30" width="4" height="4" fill="#38BDF8"/>
+          <rect x="26" y="-30" width="4" height="4" fill="#38BDF8"/>
+          <rect x="-30" y="26" width="4" height="4" fill="#38BDF8"/>
+          <rect x="26" y="26" width="4" height="4" fill="#38BDF8"/>
+          <circle cx="0" cy="0" r="2" fill="none" stroke="#38BDF8"/>
+        </g>
+        <rect x="360" y="350" width="160" height="150" fill="rgba(56,189,248,0.06)" stroke="#38BDF8" stroke-width="1" stroke-dasharray="2 2"/>
+      </svg>
+      <div style="position:absolute; left:20px; bottom:20px;">
+        <span class="pill m active">Marquee Active: Drag on empty canvas to select</span>
+      </div>
+    </div>
+    <aside style="width:320px; background:var(--s1); border-left:1px solid var(--ln); padding:16px;">
+      <div class="panel">
+        <div class="panel-h">
+          <span>Multi-Selection (4 Layers)</span>
+          <span class="badge badge-success">SYNCED</span>
+        </div>
+        <div style="font-size:12px; color:var(--mu); margin-bottom:12px;">Bounding-Box Geometric Center:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div><label style="font-size:11px; color:var(--mu); display:block; margin-bottom:4px;">Center X (px)</label><input class="input m" value="0.00" style="width:100%;"></div>
+          <div><label style="font-size:11px; color:var(--mu); display:block; margin-bottom:4px;">Center Y (px)</label><input class="input m" value="0.00" style="width:100%;"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button class="btn btn-primary" style="width:100%;">📁 Group into Layer Group (Ctrl+G)</button>
+          <button class="btn" style="width:100%;">↺ Recenter Selection (Home)</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</body>
+</html>

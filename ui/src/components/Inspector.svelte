@@ -125,9 +125,31 @@
         </div>
       </div>
 
-      <!-- Section: Transform & Position (2D Movement) -->
+      <!-- Section: Transform & Position (2D Movement) (§5) -->
       <div class="prop-section">
-        <span class="section-title">Position & Transform</span>
+        <div class="row" style="margin-bottom: 6px;">
+          <span class="section-title">Position & Transform (§5)</span>
+          <div class="segmented-control mini-segmented">
+            <button
+              class="btn seg-btn {editorState.positionMode === 'relative' ? 'btn-selected' : ''}"
+              onclick={() => (editorState.positionMode = 'relative')}
+            >
+              Rel
+            </button>
+            <button
+              class="btn seg-btn {editorState.positionMode === 'absolute' ? 'btn-selected' : ''}"
+              onclick={() => (editorState.positionMode = 'absolute')}
+            >
+              Abs
+            </button>
+          </div>
+        </div>
+
+        {#if editorState.selectedLayers.length > 1}
+          <div class="multi-select-hint mono">
+            {editorState.selectedLayers.length} layers selected · Bounding box center
+          </div>
+        {/if}
 
         <!-- Position X -->
         <div class="property-row">
@@ -146,6 +168,12 @@
                 step="0.5"
                 value={layer.offsetX}
                 oninput={(e) => handleNumberChange('layer.offset_x', e)}
+                onwheel={(e) => {
+                  e.preventDefault();
+                  const dir = e.deltaY < 0 ? 1 : -1;
+                  const step = e.altKey ? 0.1 : e.shiftKey ? 2 : 0.5;
+                  editorState.nudge(dir * step, 0);
+                }}
                 aria-label="Position X"
               />
               <span class="unit-label">px</span>
@@ -183,6 +211,12 @@
                 step="0.5"
                 value={layer.offsetY}
                 oninput={(e) => handleNumberChange('layer.offset_y', e)}
+                onwheel={(e) => {
+                  e.preventDefault();
+                  const dir = e.deltaY < 0 ? -1 : 1;
+                  const step = e.altKey ? 0.1 : e.shiftKey ? 2 : 0.5;
+                  editorState.nudge(0, dir * step);
+                }}
                 aria-label="Position Y"
               />
               <span class="unit-label">px</span>
@@ -201,6 +235,16 @@
             />
             <div class="slider-fill-visual" style="width: {((layer.offsetY + 50) / 100) * 100}%;"></div>
           </div>
+        </div>
+
+        <!-- Recenter Action Buttons (§6) -->
+        <div class="recenter-row">
+          <button class="btn btn-sm btn-recenter-inspector" onclick={() => editorState.recenterSelection()}>
+            Recenter selection (Home)
+          </button>
+          <button class="btn btn-sm btn-recenter-inspector" onclick={() => editorState.recenterCrosshair()}>
+            Recenter crosshair (Ctrl+Home)
+          </button>
         </div>
 
         <!-- Rotation -->

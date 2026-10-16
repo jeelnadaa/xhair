@@ -3,7 +3,7 @@
   import Tooltip from './Tooltip.svelte';
 
   function toggleOverlay() {
-    editorState.overlayEnabled = !editorState.overlayEnabled;
+    editorState.toggleOverlay();
   }
 
   function cycleProfile() {
@@ -23,8 +23,19 @@
       bind:value={editorState.crosshair.name}
       onchange={() => editorState.saveCurrentProfile()}
       aria-label="Crosshair Profile Name"
-      title="Click to edit profile name"
+      title="Click or press F2 to edit profile name"
     />
+    {#if editorState.isMovedFromCenter}
+      <Tooltip
+        title="Moved From Center"
+        description="Whole crosshair is offset from screen center. Click to reset to (0, 0)"
+        shortcut="Ctrl+Home"
+      >
+        <button class="badge badge-offset" onclick={() => editorState.recenterCrosshair()}>
+          ⚠ Offset ({editorState.crosshair.offsetX > 0 ? `+${editorState.crosshair.offsetX}` : editorState.crosshair.offsetX}, {editorState.crosshair.offsetY > 0 ? `+${editorState.crosshair.offsetY}` : editorState.crosshair.offsetY} px)
+        </button>
+      </Tooltip>
+    {/if}
     <Tooltip
       title="Save Profile"
       description="Save current crosshair changes to library and local storage"
@@ -66,6 +77,20 @@
         aria-label="Redo"
       >
         ↷
+      </button>
+    </Tooltip>
+
+    <Tooltip
+      title="Keyboard Shortcuts"
+      description="View full shortcuts cheat sheet (§3)"
+      shortcut="Ctrl+/"
+    >
+      <button
+        class="btn btn-icon"
+        onclick={() => (editorState.shortcutsDialogOpen = true)}
+        aria-label="Keyboard Shortcuts"
+      >
+        ⌨
       </button>
     </Tooltip>
 
@@ -222,6 +247,24 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .badge-offset {
+    background: #261D09;
+    color: #FBBF24;
+    border: 1px solid #78350F;
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .badge-offset:hover {
+    background: #38280D;
+    border-color: #FBBF24;
   }
 
   .brand {

@@ -411,10 +411,18 @@ impl LibraryEngine {
             }
         }
 
+        let order = self.index.folders.len();
         let folder = Folder {
             id: Uuid::now_v7().to_string(),
             name: name.to_string(),
             parent_id,
+            icon: None,
+            color: None,
+            collapsed: false,
+            order,
+            game_binding: None,
+            active_crosshair_id: None,
+            default_resolution_profile: None,
         };
 
         self.index.folders.push(folder.clone());
@@ -422,7 +430,26 @@ impl LibraryEngine {
         Ok(folder)
     }
 
-    /// Renames an existing folder.
+    /// Creates a new crosshair group with optional icon and color dot.
+    pub fn create_group(
+        &mut self,
+        name: &str,
+        parent_id: Option<String>,
+        icon: Option<String>,
+        color: Option<String>,
+    ) -> Result<Folder, LibraryError> {
+        let mut folder = self.create_folder(name, parent_id)?;
+        folder.icon = icon;
+        folder.color = color;
+        if let Some(f) = self.index.folders.iter_mut().find(|f| f.id == folder.id) {
+            f.icon = folder.icon.clone();
+            f.color = folder.color.clone();
+        }
+        self.save_index()?;
+        Ok(folder)
+    }
+
+    /// Renames an existing folder or group.
     pub fn rename_folder(&mut self, id: &str, new_name: &str) -> Result<(), LibraryError> {
         let folder = self
             .index
@@ -434,6 +461,199 @@ impl LibraryEngine {
         folder.name = new_name.to_string();
         self.save_index()?;
         Ok(())
+    }
+
+    /// Reorders folders/groups according to an ordered list of IDs.
+    pub fn reorder_folders(&mut self, ordered_ids: &[String]) -> Result<(), LibraryError> {
+        for (idx, id) in ordered_ids.iter().enumerate() {
+            if let Some(f) = self.index.folders.iter_mut().find(|f| f.id == *id) {
+                f.order = idx;
+            }
+        }
+        self.index.folders.sort_by_key(|f| f.order);
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Sets the icon and color dot for a group.
+    pub fn set_folder_icon(
+        &mut self,
+        id: &str,
+        icon: Option<String>,
+        color: Option<String>,
+    ) -> Result<(), LibraryError> {
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| LibraryError::FolderNotFound(id.to_string()))?;
+        folder.icon = icon;
+        folder.color = color;
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Binds a group to a target game executable process name.
+    pub fn set_folder_game_binding(
+        &mut self,
+        id: &str,
+        binding: Option<String>,
+    ) -> Result<(), LibraryError> {
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| LibraryError::FolderNotFound(id.to_string()))?;
+        folder.game_binding = binding;
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Sets the default resolution profile for a group.
+    pub fn set_folder_resolution_profile(
+        &mut self,
+        id: &str,
+        profile: Option<String>,
+    ) -> Result<(), LibraryError> {
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| LibraryError::FolderNotFound(id.to_string()))?;
+        folder.default_resolution_profile = profile;
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Sets the active crosshair ID for a group.
+    pub fn set_folder_active(
+        &mut self,
+        id: &str,
+        crosshair_id: Option<CrosshairId>,
+    ) -> Result<(), LibraryError> {
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == id)
+            .ok_or_else(|| LibraryError::FolderNotFound(id.to_string()))?;
+        folder.active_crosshair_id = crosshair_id;
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Adds multiple crosshairs to a group.
+    pub fn add_to_folder(
+        &mut self,
+        folder_id: &str,
+        crosshair_ids: &[CrosshairId],
+    ) -> Result<(), LibraryError> {
+        if !self.index.folders.iter().any(|f| f.id == folder_id) {
+            return Err(LibraryError::FolderNotFound(folder_id.to_string()));
+        }
+        for ch in self.index.crosshairs.iter_mut() {
+            if crosshair_ids.contains(&ch.id) {
+                ch.folder_id = Some(folder_id.to_string());
+                ch.updated_at = Utc::now();
+            }
+        }
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Removes crosshairs from a group (unassigns to Ungrouped).
+    pub fn remove_from_folder(
+        &mut self,
+        folder_id: &str,
+        crosshair_ids: &[CrosshairId],
+    ) -> Result<(), LibraryError> {
+        for ch in self.index.crosshairs.iter_mut() {
+            if crosshair_ids.contains(&ch.id) && ch.folder_id.as_deref() == Some(folder_id) {
+                ch.folder_id = None;
+                ch.updated_at = Utc::now();
+            }
+        }
+        self.save_index()?;
+        Ok(())
+    }
+
+    /// Cycles to the next crosshair within the specified group.
+    pub fn next_folder_crosshair(
+        &mut self,
+        folder_id: &str,
+    ) -> Result<Option<CrosshairId>, LibraryError> {
+        let members: Vec<CrosshairId> = self
+            .index
+            .crosshairs
+            .iter()
+            .filter(|c| c.folder_id.as_deref() == Some(folder_id))
+            .map(|c| c.id)
+            .collect();
+
+        if members.is_empty() {
+            return Ok(None);
+        }
+
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == folder_id)
+            .ok_or_else(|| LibraryError::FolderNotFound(folder_id.to_string()))?;
+
+        let current_pos = folder
+            .active_crosshair_id
+            .and_then(|id| members.iter().position(|&m| m == id))
+            .unwrap_or(0);
+
+        let next_pos = (current_pos + 1) % members.len();
+        let next_id = members[next_pos];
+        folder.active_crosshair_id = Some(next_id);
+        self.save_index()?;
+        Ok(Some(next_id))
+    }
+
+    /// Cycles to the previous crosshair within the specified group.
+    pub fn previous_folder_crosshair(
+        &mut self,
+        folder_id: &str,
+    ) -> Result<Option<CrosshairId>, LibraryError> {
+        let members: Vec<CrosshairId> = self
+            .index
+            .crosshairs
+            .iter()
+            .filter(|c| c.folder_id.as_deref() == Some(folder_id))
+            .map(|c| c.id)
+            .collect();
+
+        if members.is_empty() {
+            return Ok(None);
+        }
+
+        let folder = self
+            .index
+            .folders
+            .iter_mut()
+            .find(|f| f.id == folder_id)
+            .ok_or_else(|| LibraryError::FolderNotFound(folder_id.to_string()))?;
+
+        let current_pos = folder
+            .active_crosshair_id
+            .and_then(|id| members.iter().position(|&m| m == id))
+            .unwrap_or(0);
+
+        let prev_pos = if current_pos == 0 {
+            members.len() - 1
+        } else {
+            current_pos - 1
+        };
+        let prev_id = members[prev_pos];
+        folder.active_crosshair_id = Some(prev_id);
+        self.save_index()?;
+        Ok(Some(prev_id))
     }
 
     /// Deletes a folder. If `delete_contents` is false, child crosshairs and folders

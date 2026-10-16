@@ -68,7 +68,32 @@ pub fn run() -> anyhow::Result<()> {
                 .with_url(&url)
                 .with_devtools(true)
                 .with_ipc_handler(move |msg| {
-                    if let Ok(ch) = bridge::parse_ui_crosshair(msg.body()) {
+                    let text = msg.body();
+                    if text == "toggle_overlay" {
+                        let _ = ipc_sender.send(OverlayCommand::ToggleVisibility);
+                    } else if let Ok(val) = serde_json::from_str::<serde_json::Value>(text) {
+                        if let Some(action) = val.get("action").and_then(|a| a.as_str()) {
+                            match action {
+                                "toggle_overlay" => {
+                                    let _ = ipc_sender.send(OverlayCommand::ToggleVisibility);
+                                }
+                                "set_overlay_enabled" => {
+                                    let enabled = val
+                                        .get("enabled")
+                                        .and_then(|e| e.as_bool())
+                                        .unwrap_or(true);
+                                    let _ = ipc_sender.send(OverlayCommand::SetEnabled(enabled));
+                                }
+                                "recenter" => {
+                                    let _ = ipc_sender
+                                        .send(OverlayCommand::Nudge(xhair_model::Vec2::ZERO));
+                                }
+                                _ => {}
+                            }
+                        } else if let Ok(ch) = bridge::parse_ui_crosshair(text) {
+                            let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
+                        }
+                    } else if let Ok(ch) = bridge::parse_ui_crosshair(text) {
                         let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
                     }
                 })

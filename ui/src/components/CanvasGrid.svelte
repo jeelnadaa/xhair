@@ -351,6 +351,77 @@
       ctx.restore();
     }
 
+    // 4b. Blank-Start Empty State (§2, §12)
+    if (ch.layers.length === 0) {
+      ctx.save();
+      ctx.fillStyle = '#8E98A8';
+      ctx.font = '600 14px "Satoshi", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Blank Canvas — 0 Layers (§2)', centerX, centerY - 36);
+      ctx.font = '12px "Satoshi", sans-serif';
+      ctx.fillStyle = '#545E6E';
+      ctx.fillText('Add a shape from the toolbar. All parts place at (0, 0) center marker.', centerX, centerY - 16);
+      ctx.restore();
+    }
+
+    // 4c. Multi-Selection Bounding Box & Outlines (§3, §12)
+    if (editorState.selectedLayers.length > 0) {
+      ctx.save();
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const selLayer of editorState.selectedLayers) {
+        const lx = centerX + (ch.offsetX + selLayer.offsetX) * zoom;
+        const ly = centerY + (ch.offsetY + selLayer.offsetY) * zoom;
+        const boundRadius = 14 * zoom;
+        minX = Math.min(minX, lx - boundRadius);
+        maxX = Math.max(maxX, lx + boundRadius);
+        minY = Math.min(minY, ly - boundRadius);
+        maxY = Math.max(maxY, ly + boundRadius);
+
+        // Individual selection outline
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(lx - 12, ly - 12, 24, 24);
+      }
+
+      if (editorState.selectedLayers.length > 1 && isFinite(minX)) {
+        // Multi-select bounding box (§3, §12)
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+        ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+        ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+
+        // Bounding box center marker
+        const bbCenterX = (minX + maxX) / 2;
+        const bbCenterY = (minY + maxY) / 2;
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#38BDF8';
+        ctx.beginPath();
+        ctx.arc(bbCenterX, bbCenterY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 4d. Marquee Selection Box (§3, §12)
+    if (isMarquee) {
+      ctx.save();
+      const mx = Math.min(marqueeStartX, marqueeEndX);
+      const my = Math.min(marqueeStartY, marqueeEndY);
+      const mw = Math.abs(marqueeEndX - marqueeStartX);
+      const mh = Math.abs(marqueeEndY - marqueeStartY);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+      ctx.strokeStyle = '#38BDF8';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.restore();
+    }
+
     // 5. Center Guides & Alignment Indicator (§6.8)
     if (editorState.showGuides) {
       // Magenta #FF4FD8 center dashed lines
@@ -421,6 +492,11 @@
   }
 
   let isDraggingTarget = $state(false);
+  let isMarquee = $state(false);
+  let marqueeStartX = $state(0);
+  let marqueeStartY = $state(0);
+  let marqueeEndX = $state(0);
+  let marqueeEndY = $state(0);
   let dragStartClientX = $state(0);
   let dragStartClientY = $state(0);
   let initialTargetX = $state(0);
@@ -436,7 +512,18 @@
     }
 
     if (e.button === 0) {
-      // Left click dragging target element (layer, arm, or all)
+      if (!canvasEl) return;
+      const rect = canvasEl.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Start marquee selection drag
+      isMarquee = true;
+      marqueeStartX = mouseX;
+      marqueeStartY = mouseY;
+      marqueeEndX = mouseX;
+      marqueeEndY = mouseY;
+
       isDraggingTarget = true;
       dragStartClientX = e.clientX;
       dragStartClientY = e.clientY;
@@ -474,7 +561,13 @@
       return;
     }
 
-    if (isDraggingTarget) {
+    if (isMarquee) {
+      marqueeEndX = mouseX;
+      marqueeEndY = mouseY;
+      renderCanvas();
+    }
+
+    if (isDraggingTarget && !isMarquee) {
       const zoom = editorState.zoom;
       const deltaX = (e.clientX - dragStartClientX) / zoom;
       const deltaY = (e.clientY - dragStartClientY) / zoom;
@@ -509,7 +602,35 @@
     hoverPixelJ = Math.floor(profileH / 2 + hoverGameY);
   }
 
-  function handleMouseUp() {
+  function handleMouseUp(e: MouseEvent) {
+    if (isMarquee) {
+      const minX = Math.min(marqueeStartX, marqueeEndX);
+      const maxX = Math.max(marqueeStartX, marqueeEndX);
+      const minY = Math.min(marqueeStartY, marqueeEndY);
+      const maxY = Math.max(marqueeStartY, marqueeEndY);
+
+      if (Math.abs(maxX - minX) > 8 || Math.abs(maxY - minY) > 8) {
+        if (canvasEl) {
+          const rect = canvasEl.getBoundingClientRect();
+          const centerX = rect.width / 2 + editorState.panX;
+          const centerY = rect.height / 2 + editorState.panY;
+          const zoom = editorState.zoom;
+
+          const matched = editorState.crosshair.layers.filter((l) => {
+            const lx = centerX + (editorState.crosshair.offsetX + l.offsetX) * zoom;
+            const ly = centerY + (editorState.crosshair.offsetY + l.offsetY) * zoom;
+            return lx >= minX && lx <= maxX && ly >= minY && ly <= maxY;
+          });
+
+          if (matched.length > 0) {
+            editorState.selectedLayerIds = matched.map((m) => m.id);
+          }
+        }
+      }
+      isMarquee = false;
+      renderCanvas();
+    }
+
     if (isDraggingTarget) {
       editorState.pushUndo();
       isDraggingTarget = false;

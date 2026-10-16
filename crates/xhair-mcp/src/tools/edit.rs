@@ -436,3 +436,394 @@ pub fn redo(ctx: &ServerContext, args: Value) -> CallToolResult {
         Err(e) => CallToolResult::error(e.to_string()),
     })
 }
+
+/// Renames a layer.
+pub fn layer_rename(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let lid_str = match args.get("layer_id").and_then(|v| v.as_str()) {
+        Some(s) => s,
+        None => return CallToolResult::error("Missing required parameter: layer_id"),
+    };
+    let lid = match lid_str.parse::<LayerId>() {
+        Ok(id) => id,
+        Err(_) => return CallToolResult::error(format!("Invalid layer_id: {}", lid_str)),
+    };
+    let new_name = match args.get("new_name").and_then(|v| v.as_str()) {
+        Some(s) => s.to_string(),
+        None => return CallToolResult::error("Missing required parameter: new_name"),
+    };
+
+    let cmd = Command::LayerRename {
+        crosshair_id: cid,
+        layer_id: lid,
+        new_name,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "layer_renamed", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Groups selected layers into a named layer group.
+pub fn layer_group(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let name = args.get("name").and_then(|v| v.as_str()).map(String::from);
+
+    let cmd = Command::LayerGroup {
+        crosshair_id: cid,
+        ids,
+        name,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "layer_grouped", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Ungroups a layer group.
+pub fn layer_ungroup(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let gid_str = match args.get("group_id").and_then(|v| v.as_str()) {
+        Some(s) => s,
+        None => return CallToolResult::error("Missing required parameter: group_id"),
+    };
+    let group_id = match gid_str.parse::<LayerId>() {
+        Ok(id) => id,
+        Err(_) => return CallToolResult::error(format!("Invalid group_id: {}", gid_str)),
+    };
+
+    let cmd = Command::LayerUngroup {
+        crosshair_id: cid,
+        group_id,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "layer_ungrouped", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Sets layer position explicitly.
+pub fn layer_set_position(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let x = args.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+    let y = args.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+    let mode = match args.get("mode").and_then(|v| v.as_str()) {
+        Some("absolute") => xhair_commands::command::PositionMode::Absolute,
+        _ => xhair_commands::command::PositionMode::Relative,
+    };
+
+    let cmd = Command::LayerSetPosition {
+        crosshair_id: cid,
+        ids,
+        x,
+        y,
+        mode,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => {
+                CallToolResult::json(&serde_json::json!({ "status": "position_set", "diff": diff }))
+            }
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Recenters specified layers to (0, 0).
+pub fn layer_recenter(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let cmd = Command::LayerRecenter {
+        crosshair_id: cid,
+        ids,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "layer_recentered", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Recenters entire crosshair global offset to (0, 0).
+pub fn crosshair_recenter(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+
+    let cmd = Command::CrosshairRecenter { crosshair_id: cid };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "crosshair_recentered", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Sets reticle fill color in hex.
+pub fn paint_set(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let color = match args.get("color").and_then(|v| v.as_str()) {
+        Some(s) => s.to_string(),
+        None => return CallToolResult::error("Missing required parameter: color"),
+    };
+
+    let cmd = Command::PaintSet {
+        crosshair_id: cid,
+        ids,
+        color,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => {
+                CallToolResult::json(&serde_json::json!({ "status": "paint_set", "diff": diff }))
+            }
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Sets selection to specified layers.
+pub fn selection_set(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let cmd = Command::SelectionSet {
+        crosshair_id: cid,
+        ids,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_set", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Adds layers to selection.
+pub fn selection_add(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let cmd = Command::SelectionAdd {
+        crosshair_id: cid,
+        ids,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_added", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Removes layers from selection.
+pub fn selection_remove(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let cmd = Command::SelectionRemove {
+        crosshair_id: cid,
+        ids,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_removed", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Toggles layer selection state.
+pub fn selection_toggle(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+    let ids: Vec<LayerId> = args
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().and_then(|s| s.parse().ok()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let cmd = Command::SelectionToggle {
+        crosshair_id: cid,
+        ids,
+    };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_toggled", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Selects all layers.
+pub fn selection_all(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+
+    let cmd = Command::SelectionAll { crosshair_id: cid };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => {
+                CallToolResult::json(&serde_json::json!({ "status": "selected_all", "diff": diff }))
+            }
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Clears selection.
+pub fn selection_clear(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+
+    let cmd = Command::SelectionClear { crosshair_id: cid };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_cleared", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}
+
+/// Inverts selection.
+pub fn selection_invert(ctx: &ServerContext, args: Value) -> CallToolResult {
+    let cid = match ctx.resolve_crosshair_id(&args) {
+        Ok(id) => id,
+        Err(e) => return CallToolResult::error(e),
+    };
+
+    let cmd = Command::SelectionInvert { crosshair_id: cid };
+    ctx.with_state(
+        |state| match state.bus.dispatch(cmd, agent_dispatch_opts()) {
+            Ok(diff) => CallToolResult::json(
+                &serde_json::json!({ "status": "selection_inverted", "diff": diff }),
+            ),
+            Err(e) => CallToolResult::error(e.to_string()),
+        },
+    )
+}

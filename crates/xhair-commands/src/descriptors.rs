@@ -161,6 +161,98 @@ impl PropertyRegistry {
             group: "Appearance".into(),
         });
 
+        reg.add(PropertyDescriptor {
+            name: "position.x".into(),
+            label: "X Offset".into(),
+            tip: "Horizontal position relative to center in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(-1024.0),
+            max: Some(1024.0),
+            step: Some(1.0),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(0.0),
+            group: "Transform".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "position.y".into(),
+            label: "Y Offset".into(),
+            tip: "Vertical position relative to center in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(-1024.0),
+            max: Some(1024.0),
+            step: Some(1.0),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(0.0),
+            group: "Transform".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "position.mode".into(),
+            label: "Position Mode".into(),
+            tip: "Relative (delta) or Absolute (from reticle center) coordinates.".into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::json!("relative"),
+            group: "Transform".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "nudge.step".into(),
+            label: "Nudge Step".into(),
+            tip: "Movement distance per nudge arrow press in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(0.01),
+            max: Some(100.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(1.0),
+            group: "Transform".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "paint.color".into(),
+            label: "Reticle Color".into(),
+            tip: "Reticle fill color in hex format (#RGB, #RRGGBB, #RRGGBBAA).".into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::json!("#36F2CBFF"),
+            group: "Appearance".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "recenter.selection".into(),
+            label: "Recenter Selection".into(),
+            tip: "Moves selected layers back to exact center (0, 0). Shortcut: Home.".into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::Value::Null,
+            group: "Transform".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "recenter.crosshair".into(),
+            label: "Recenter Crosshair".into(),
+            tip: "Resets entire crosshair global offset back to (0, 0). Shortcut: Ctrl+Home."
+                .into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::Value::Null,
+            group: "Transform".into(),
+        });
+
         reg
     }
 

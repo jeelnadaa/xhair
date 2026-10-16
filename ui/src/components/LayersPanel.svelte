@@ -1,24 +1,11 @@
 <script lang="ts">
   import { editorState } from '../lib/state.svelte';
+  import type { Layer } from '../lib/types';
   import Tooltip from './Tooltip.svelte';
 
-  function isLayerAligned(layerId: string): boolean {
-    const layer = editorState.crosshair.layers.find((l) => l.id === layerId);
-    if (!layer) return true;
-    // Check if layer offsets or arm geometry align to whole game pixels
-    const wholeOffset = Number.isInteger(layer.offsetX) && Number.isInteger(layer.offsetY);
-    if (layer.shape.type === 'LineArms') {
-      const wholeLength = Number.isInteger(layer.shape.length ?? 0);
-      const wholeThickness = Number.isInteger(layer.shape.thickness ?? 0);
-      return wholeOffset && wholeLength && wholeThickness;
-    }
-    if (layer.shape.type === 'Dot') {
-      const wholeDiameter = Number.isInteger(layer.shape.diameter ?? 0);
-      return wholeOffset && wholeDiameter;
-    }
-    return wholeOffset;
-  }
   let showAddMenu = $state(false);
+  let editingLayerId = $state<string | null>(null);
+  let editingLayerName = $state<string>('');
 
   const availableShapes: { type: import('../lib/types').ShapeType; label: string; icon: string; desc: string }[] = [
     { type: 'LineArms', label: 'Line Arms', icon: '┼', desc: 'Standard 4-arm competitive crosshair' },
@@ -39,14 +26,92 @@
     editorState.addLayer(type, label);
     showAddMenu = false;
   }
+
+  function startRename(layer: Layer) {
+    editingLayerId = layer.id;
+    editingLayerName = layer.name;
+  }
+
+  function finishRename(layer: Layer) {
+    if (editingLayerName.trim()) {
+      layer.name = editingLayerName.trim();
+      editorState.saveCurrentProfile();
+    }
+    editingLayerId = null;
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      if (e.key === 'Enter' && editingLayerId) {
+        const l = editorState.crosshair.layers.find((x) => x.id === editingLayerId);
+        if (l) finishRename(l);
+      }
+      return;
+    }
+
+    if (e.key === 'F2') {
+      e.preventDefault();
+      const first = editorState.selectedLayers[0];
+      if (first) startRename(first);
+    } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'g') {
+      e.preventDefault();
+      const grp = editorState.selectedLayers.find((l) => l.isGroup);
+      if (grp) editorState.ungroupLayer(grp.id);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+      e.preventDefault();
+      editorState.groupSelectedLayers();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      editorState.selectAllLayers();
+    } else if (e.key === 'Escape') {
+      editorState.clearSelection();
+    } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      editorState.invertSelection();
+    }
+  }
+
+  // Top-level layers (not nested inside a group)
+  let topLevelLayers = $derived(
+    editorState.crosshair.layers.filter((l) => !l.groupId)
+  );
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="panel">
   <div class="panel-header">
-    <span>Layers</span>
-    <span class="mono" style="color: var(--text-muted); font-size: 11px;">
-      {editorState.crosshair.layers.length} layers
-    </span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span>Layers (§4)</span>
+      <span class="mono" style="color: var(--text-muted); font-size: 11px;">
+        {editorState.crosshair.layers.length} layers
+      </span>
+    </div>
+    <div class="group-header-actions">
+      {#if editorState.selectedLayers.some((l) => l.isGroup)}
+        <Tooltip title="Ungroup Layers" description="Dissolve group into separate layers" shortcut="Ctrl+Shift+G">
+          <button
+            class="btn btn-sm btn-group-action"
+            onclick={() => {
+              const grp = editorState.selectedLayers.find((l) => l.isGroup);
+              if (grp) editorState.ungroupLayer(grp.id);
+            }}
+          >
+            Ungroup
+          </button>
+        </Tooltip>
+      {:else}
+        <Tooltip title="Group Layers" description="Group selected layers together" shortcut="Ctrl+G">
+          <button
+            class="btn btn-sm btn-group-action"
+            disabled={editorState.selectedLayerIds.length < 2}
+            onclick={() => editorState.groupSelectedLayers()}
+          >
+            + Group
+          </button>
+        </Tooltip>
+      {/if}
+    </div>
   </div>
 
   <!-- Add Custom Shape Bar -->
@@ -79,102 +144,240 @@
   </div>
 
   <div class="layers-list">
-    {#each editorState.crosshair.layers as layer, index (layer.id)}
+    {#each topLevelLayers as layer (layer.id)}
+      {@const isSelected = editorState.selectedLayerIds.includes(layer.id)}
       {@const issue = editorState.alignmentIssues.find((i) => i.layer_id === layer.id)}
-      <div
-        class="layer-row {layer.id === editorState.selectedLayerId ? 'active' : ''}"
-        onclick={() => (editorState.selectedLayerId = layer.id)}
-        role="button"
-        tabindex="0"
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            editorState.selectedLayerId = layer.id;
-          }
-        }}
-      >
-        <div class="layer-main">
-          <!-- Visibility Toggle -->
-          <Tooltip title="Toggle Visibility" description="Hide or show this layer on the canvas">
-            <button
-              class="icon-action {layer.visible ? '' : 'dimmed'}"
-              onclick={(e) => {
-                e.stopPropagation();
-                editorState.toggleLayerVisibility(layer.id);
-              }}
-              aria-label="Toggle layer visibility"
-            >
-              {layer.visible ? '👁' : '✕'}
-            </button>
-          </Tooltip>
 
-          <!-- Lock Toggle -->
-          <Tooltip title="Toggle Lock" description="Prevent accidental mutation or dragging">
-            <button
-              class="icon-action {layer.locked ? 'locked' : 'dimmed'}"
-              onclick={(e) => {
-                e.stopPropagation();
-                editorState.toggleLayerLock(layer.id);
-              }}
-              aria-label="Toggle layer lock"
-            >
-              {layer.locked ? '🔒' : '🔓'}
-            </button>
-          </Tooltip>
-
-          <span class="layer-name">{layer.name}</span>
-        </div>
-
-        <div class="layer-actions">
-          <!-- Alignment Badge / 1-Click Fix -->
-          {#if issue}
-            <Tooltip
-              title="Off-Grid Edge Detected"
-              description="Click to automatically apply 1-click fix to {issue.suggested_fix.new_thickness}px"
-            >
+      {#if layer.isGroup}
+        <!-- Layer Group Container Row (§4) -->
+        <div class="layer-group-card {isSelected ? 'active' : ''}">
+          <div
+            class="group-header-row"
+            onclick={(e) => editorState.selectLayer(layer.id, e.ctrlKey || e.metaKey, e.shiftKey)}
+            role="button"
+            tabindex="0"
+            onkeydown={(e) => { if (e.key === 'Enter') editorState.selectLayer(layer.id); }}
+          >
+            <div class="layer-main">
               <button
-                class="badge badge-warning"
+                class="icon-action expand-toggle"
                 onclick={(e) => {
                   e.stopPropagation();
-                  editorState.apply1ClickAlignmentFix(issue);
+                  layer.isExpanded = !layer.isExpanded;
                 }}
+                aria-label="Expand group"
               >
-                ⚠ FIX ({issue.suggested_fix.new_thickness}px)
+                {layer.isExpanded !== false ? '▾' : '▸'}
+              </button>
+              <span class="group-folder-icon">📁</span>
+              {#if editingLayerId === layer.id}
+                <!-- svelte-ignore a11y_autofocus -->
+                <input
+                  type="text"
+                  class="input-rename mono"
+                  bind:value={editingLayerName}
+                  onblur={() => finishRename(layer)}
+                  onclick={(e) => e.stopPropagation()}
+                  autofocus
+                />
+              {:else}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span
+                  class="layer-name"
+                  ondblclick={(e) => { e.stopPropagation(); startRename(layer); }}
+                >
+                  {layer.name}
+                </span>
+              {/if}
+            </div>
+
+            <div class="layer-actions">
+              <span class="badge badge-child-count">
+                {layer.children?.length ?? 0}
+              </span>
+              <Tooltip title="Ungroup" description="Ungroup layers" shortcut="Ctrl+Shift+G">
+                <button
+                  class="icon-action"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    editorState.ungroupLayer(layer.id);
+                  }}
+                  aria-label="Ungroup"
+                >
+                  ✕
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+
+          <!-- Group Children (Indented) -->
+          {#if layer.isExpanded !== false && layer.children}
+            <div class="group-children-list">
+              {#each layer.children as childId (childId)}
+                {@const child = editorState.crosshair.layers.find((l) => l.id === childId)}
+                {#if child}
+                  {@const isChildSelected = editorState.selectedLayerIds.includes(child.id)}
+                  <div
+                    class="child-layer-row {isChildSelected ? 'active' : ''}"
+                    onclick={(e) => editorState.selectLayer(child.id, e.ctrlKey || e.metaKey, e.shiftKey)}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={(e) => { if (e.key === 'Enter') editorState.selectLayer(child.id); }}
+                  >
+                    <div class="layer-main">
+                      <span class="child-indent">↳</span>
+                      {#if editingLayerId === child.id}
+                        <!-- svelte-ignore a11y_autofocus -->
+                        <input
+                          type="text"
+                          class="input-rename mono"
+                          bind:value={editingLayerName}
+                          onblur={() => finishRename(child)}
+                          onclick={(e) => e.stopPropagation()}
+                          autofocus
+                        />
+                      {:else}
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <span
+                          class="layer-name"
+                          ondblclick={(e) => { e.stopPropagation(); startRename(child); }}
+                        >
+                          {child.name}
+                        </span>
+                      {/if}
+                    </div>
+
+                    <div class="layer-actions">
+                      <button
+                        class="icon-action {child.visible ? '' : 'dimmed'}"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          editorState.toggleLayerVisibility(child.id);
+                        }}
+                      >
+                        {child.visible ? '👁' : '✕'}
+                      </button>
+                    </div>
+                  </div>
+                {/if}
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {:else}
+        <!-- Regular Single Layer Row -->
+        <div
+          class="layer-row {isSelected ? 'active' : ''}"
+          onclick={(e) => editorState.selectLayer(layer.id, e.ctrlKey || e.metaKey, e.shiftKey)}
+          role="button"
+          tabindex="0"
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              editorState.selectLayer(layer.id);
+            }
+          }}
+        >
+          <div class="layer-main">
+            <!-- Visibility Toggle -->
+            <Tooltip title="Toggle Visibility" description="Hide or show this layer" shortcut="Ctrl+H">
+              <button
+                class="icon-action {layer.visible ? '' : 'dimmed'}"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.toggleLayerVisibility(layer.id);
+                }}
+                aria-label="Toggle layer visibility"
+              >
+                {layer.visible ? '👁' : '✕'}
               </button>
             </Tooltip>
-          {:else}
-            <span class="badge">ALIGNED</span>
-          {/if}
 
-          <!-- Duplicate -->
-          <Tooltip title="Duplicate Layer" description="Clone this layer" shortcut="Ctrl+D">
-            <button
-              class="icon-action"
-              onclick={(e) => {
-                e.stopPropagation();
-                editorState.duplicateLayer(layer.id);
-              }}
-              aria-label="Duplicate layer"
-            >
-              ⧉
-            </button>
-          </Tooltip>
+            <!-- Lock Toggle -->
+            <Tooltip title="Toggle Lock" description="Lock layer from modification" shortcut="Ctrl+L">
+              <button
+                class="icon-action {layer.locked ? 'locked' : 'dimmed'}"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.toggleLayerLock(layer.id);
+                }}
+                aria-label="Toggle layer lock"
+              >
+                {layer.locked ? '🔒' : '🔓'}
+              </button>
+            </Tooltip>
 
-          <!-- Delete -->
-          <Tooltip title="Delete Layer" description="Delete this layer" shortcut="Del">
-            <button
-              class="icon-action delete"
-              disabled={editorState.crosshair.layers.length <= 1}
-              onclick={(e) => {
-                e.stopPropagation();
-                editorState.deleteLayer(layer.id);
-              }}
-              aria-label="Delete layer"
-            >
-              🗑
-            </button>
-          </Tooltip>
+            {#if editingLayerId === layer.id}
+              <!-- svelte-ignore a11y_autofocus -->
+              <input
+                type="text"
+                class="input-rename mono"
+                bind:value={editingLayerName}
+                onblur={() => finishRename(layer)}
+                onclick={(e) => e.stopPropagation()}
+                autofocus
+              />
+            {:else}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <span
+                class="layer-name"
+                ondblclick={(e) => { e.stopPropagation(); startRename(layer); }}
+              >
+                {layer.name}
+              </span>
+            {/if}
+          </div>
+
+          <div class="layer-actions">
+            {#if issue}
+              <Tooltip
+                title="Off-Grid Edge Detected"
+                description="Click to automatically apply 1-click fix to {issue.suggested_fix.new_thickness}px"
+              >
+                <button
+                  class="badge badge-warning"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    editorState.apply1ClickAlignmentFix(issue);
+                  }}
+                >
+                  ⚠ FIX ({issue.suggested_fix.new_thickness}px)
+                </button>
+              </Tooltip>
+            {:else}
+              <span class="badge">ALIGNED</span>
+            {/if}
+
+            <!-- Duplicate -->
+            <Tooltip title="Duplicate Layer" description="Clone this layer" shortcut="Ctrl+D">
+              <button
+                class="icon-action"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.duplicateLayer(layer.id);
+                }}
+                aria-label="Duplicate layer"
+              >
+                ⧉
+              </button>
+            </Tooltip>
+
+            <!-- Delete -->
+            <Tooltip title="Delete Layer" description="Delete this layer" shortcut="Del">
+              <button
+                class="icon-action delete"
+                disabled={editorState.crosshair.layers.length <= 1}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  editorState.deleteLayer(layer.id);
+                }}
+                aria-label="Delete layer"
+              >
+                🗑
+              </button>
+            </Tooltip>
+          </div>
         </div>
-      </div>
+      {/if}
     {/each}
   </div>
 </div>
@@ -205,6 +408,99 @@
   .layer-row.active {
     border-color: var(--accent);
     background: var(--accent-dim);
+  }
+
+  .group-header-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .btn-group-action {
+    height: 22px;
+    padding: 0 8px;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-group-action:hover:not(:disabled) {
+    background: var(--surface3);
+    border-color: var(--border-active);
+  }
+
+  .layer-group-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: border-color 100ms ease;
+  }
+
+  .layer-group-card.active {
+    border-color: var(--accent);
+  }
+
+  .group-header-row {
+    padding: 7px 10px;
+    background: var(--surface3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .group-children-list {
+    padding: 4px 6px 6px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--surface2);
+  }
+
+  .child-layer-row {
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--surface1);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .child-layer-row:hover {
+    background: #202730;
+  }
+
+  .child-layer-row.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .child-indent {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .group-folder-icon {
+    font-size: 13px;
+  }
+
+  .badge-child-count {
+    background: var(--surface1);
+    color: var(--text-muted);
+    font-size: 10px;
+  }
+
+  .input-rename {
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-xs);
+    color: var(--text);
+    font-size: 12px;
+    padding: 1px 4px;
+    width: 130px;
   }
 
   .layer-main {

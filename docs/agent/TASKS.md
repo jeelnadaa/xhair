@@ -72,3 +72,9 @@
 | **M10-004** | M10 Release | Complete documentation deliverables (§15.2) | done | §15.2 | All 14 docs created/updated including worked 5-step example in CONTRIBUTING.md |
 | **M10-005** | M10 Release | Memory & performance budget verification | done | §15.3 | Enforced in tests, zero-CPU static loop, memory gate, and criterion benches |
 | **M10-006** | M10 Release | Clean-machine install verification and final release | done | §18 | Packaging validated, release artifacts verified, SBOM and checksums generated |
+| **V2-001** | Spec v2 | Phase 0 Design Update & Tokens | done | v2 §12 | 12 screens rendered in design/screens/, tokens.json updated to monochromatic gray ramp |
+| **V2-002** | Spec v2 | Command Registry & Bus Inverse Mutations | done | v2 §1, §4–§7 | Layer/Crosshair/Group rename, groups, position/recenter, paint, selection commands |
+| **V2-003** | Spec v2 | MCP Tools Suite & Parity Test | done | v2 §0, §10 | 30 v2 tools across edit/library, 100% human/agent parity test verified |
+| **V2-004** | Spec v2 | Overlay Window Toggle & IPC Bridge | done | Bug Fix | Win32 SW_HIDE / SW_SHOWNOACTIVATE, Ctrl+Shift+X hotkey, wry IPC toggle handler |
+| **V2-005** | Spec v2 | Frontend UI Components & Runes State | done | v2 §1–§9 | Multi-select, NudgePad 8-dir+chips, Layer groups, ColorPicker, Group modal, Shortcuts dialog |
+

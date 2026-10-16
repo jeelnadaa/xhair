@@ -8,7 +8,7 @@ use xhair_model::units::CrosshairId;
 /// Number of quick-selection slots (§10.3).
 pub const MAX_SLOTS: usize = 20;
 
-/// Organizational folder entity.
+/// Organizational folder/group entity.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Folder {
     /// Unique folder UUID.
@@ -16,7 +16,29 @@ pub struct Folder {
     /// Human-facing display name.
     pub name: String,
     /// Parent folder UUID for nested hierarchies.
+    #[serde(default)]
     pub parent_id: Option<String>,
+    /// Optional icon or symbol name.
+    #[serde(default)]
+    pub icon: Option<String>,
+    /// Optional color dot hex code (e.g. "#EF4444").
+    #[serde(default)]
+    pub color: Option<String>,
+    /// Collapsed toggle in library tree.
+    #[serde(default)]
+    pub collapsed: bool,
+    /// Display sort order.
+    #[serde(default)]
+    pub order: usize,
+    /// Bound game executable process name (e.g. "VALORANT-Win64-Shipping.exe").
+    #[serde(default)]
+    pub game_binding: Option<String>,
+    /// Active crosshair ID within this group.
+    #[serde(default)]
+    pub active_crosshair_id: Option<CrosshairId>,
+    /// Default resolution profile name for this group.
+    #[serde(default)]
+    pub default_resolution_profile: Option<String>,
 }
 
 /// Lightweight metadata summary of an on-disk crosshair document.

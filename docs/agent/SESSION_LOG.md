@@ -452,5 +452,47 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph query --summary`: memory graph verified.
 
-
-
+## 2026-10-16 — Session 18
+- **Goal:** Implement "XHAIR — Design & Spec Update v2 (complete)" amending `CROSSHAIR_OVERLAY_SPEC.md` across Phase 0 (design approval) and Phase 1 (command registry, parity, MCP tools, UI components), and resolve the overlay toggle bug ("overlay off and on doesnt work(it is just on)").
+- **Completed:**
+  1. **Phase 0 Design Update & Tokens:**
+     - Updated `design/tokens.json` to monochromatic neutral gray ramp (`--surface1: #111418`, `--surface2: #181C22`, `--surface3: #21262F`, `--border: #282F3A`, `--border-active: #404A59`) with typography updated to Satoshi from Fontshare (fallback system sans).
+     - Rendered and exported 1x and 2x screen designs for all 12 v2 screens in `design/screens/`: `Editor`, `Library`, `Resolution_profiles`, `Hotkeys`, `MCP_settings`, `Color_picker_popover`, `Group_settings_popover`, `Blank_start_empty_state`, `Multi_select_state`, `Layer_groups_in_layers_panel`, `Keyboard_shortcuts_dialog`.
+     - Created design review artifact and verified approval.
+  2. **Win32 Overlay Toggle Bug Resolution:**
+     - Root cause: `OverlayCommand::SetVisible(bool)` was not issuing native Win32 window state changes and lacked direct IPC bridge from UI topbar.
+     - Implemented `OverlayCommand::SetEnabled(bool)` in `crates/xhair-platform-win/src/overlay.rs` issuing `ShowWindow(hwnd, SW_HIDE)` when false and `ShowWindow(hwnd, SW_SHOWNOACTIVATE)` when true.
+     - Registered Windows global hotkeys `Ctrl+Shift+X` (Toggle Overlay) and `Ctrl+Shift+C` (Recenter Reticle).
+     - Wired native `wry` IPC handlers in `crates/xhair-app/src/lib.rs` for `set_overlay_enabled`, `toggle_overlay`, and `recenter`.
+     - Hooked toggle switch in `ui/src/components/TopBar.svelte` to post IPC message and synchronize state.
+  3. **Command Bus, Descriptors & Domain Extension:**
+     - Extended `Folder` in `xhair-library` with `icon`, `color`, `collapsed`, `order`, `game_binding`, `active_crosshair_id`, and `default_resolution_profile`.
+     - Extended `xhair-format::bundle` with `export_group_pack` and `PackManifest` with group metadata for `.xhairpack` archives.
+     - Registered all v2 commands in `crates/xhair-commands`: `LayerRename`, `LayerGroup`, `LayerUngroup`, `LayerSetPosition`, `LayerRecenter`, `CrosshairRecenter`, `PaintSet`, `SelectionSet`, `SelectionAdd`, `SelectionRemove`, `SelectionToggle`, `SelectionAll`, `SelectionClear`, `SelectionInvert`, plus all `Group*` and `*Pack` commands, each with exact pure inverse mutations for undo/redo.
+     - Registered property descriptors for position coordinates, nudge steps, paint, and recentering.
+  4. **MCP Tools Suite & Human/Agent Parity Enforcement (P4):**
+     - Implemented all 30 v2 MCP tools across `crates/xhair-mcp/src/tools/` (`edit.rs`, `library.rs`, `mod.rs`).
+     - Added comprehensive parity test in `crates/xhair-mcp/tests/parity.rs` mapping 35 required tools and 25 commands.
+     - Updated `docs/MCP.md` and `docs/COMMANDS.md` with complete documentation and worked example session (§10).
+  5. **Frontend UI Components & Runes State:**
+     - `ui/src/lib/types.ts`: Extended `Layer` (with `groupId`, `isGroup`, `children`, `isExpanded`) and `CrosshairGroup`.
+     - `ui/src/lib/state.svelte.ts`: Implemented multi-selection, positioning (relative vs absolute), layer grouping/ungrouping, group lifecycle, blank start creation, and color assignment.
+     - `TopBar.svelte`: Inline renaming (`F2` / click), "Moved from center" warning badge with 1-click recenter, overlay toggle, and shortcuts button.
+     - `NudgePad.svelte`: 8-directional nudge with chips `0.1 | 0.25 | 0.5 | 1 | 5 | 10` + custom input, `Shift+Arrow` (10×), `Alt+Arrow` (0.1), `Ctrl+Arrow` (whole crosshair), Crisp mode sub-pixel warning, Target & Frame selectors, Recenter selection & whole crosshair buttons.
+     - `Inspector.svelte`: Relative / Absolute coordinate toggle, scrub-drag and wheel handling, multi-select bounding box center indicator, and recenter buttons.
+     - `LayersPanel.svelte`: Hierarchical layer groups with expandable folder rows, child indentation, group/ungroup buttons, inline renaming (`F2` or double-click), multi-select toggle and range select.
+     - `ColorPicker.svelte`: Interactive SV square with draggable cursor, hue slider (0-360), alpha slider over checkerboard, hex input, RGB/HSL readouts, eyedropper, custom swatches, and colorblind-safe palette.
+     - `GroupSettingsModal.svelte`: Modal for game process binding (`VALORANT-Win64-Shipping.exe`), group name, color indicator, default resolution profile, and hotkeys.
+     - `ShortcutsDialog.svelte`: Modal cheat sheet displaying full shortcut catalog from Section 3.
+     - `LibrarySidebar.svelte`: Group tree with counts, color dots, process binding display, settings trigger, and `+ Blank crosshair (§2)` button.
+     - `CanvasGrid.svelte`: Blank-start empty state prompt, multi-select outlines in `#38BDF8`, bounding box with center marker, and interactive marquee drag selection.
+  6. **Release Binaries Recompiled:**
+     - Recompiled `cargo build --release --bin xhair` with latest embedded UI assets.
+     - Recompiled `cargo build --release --bin xhair-cli`.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 87 Rust tests passing across all 12 workspace crates (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui build`: Built in ~800ms with 0 warnings.
+  - `cargo clippy --workspace -- -D warnings`: Clean, 0 warnings.
+  - `cargo fmt --check`: Clean, 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.

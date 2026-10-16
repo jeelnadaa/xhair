@@ -1,9 +1,9 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 17
-- **Phase / Milestone:** Webview Blank Screen Resolution & Build/Run Documentation
-- **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
+- **Session:** 18
+- **Phase / Milestone:** Design & Spec Update v2 & Overlay Toggle Resolution
+- **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/` & `target/release/`
 
 ## Done (milestone-level)
 - [x] Phase -1 Bootstrap (completed 2026-10-15)
@@ -18,18 +18,22 @@
 - [x] M8 Calibration (completed 2026-10-16)
 - [x] M9 Dynamics & Spray Lab (completed 2026-10-16)
 - [x] M10 Packaging & Hardening (completed 2026-10-16)
-- [x] Universal Feature Parity: All 15 shape primitives, visual effects (glow, shadow, blur), tactical preview backgrounds (5 presets), dynamic WCAG contrast scoring, universal import/export modal (.xhair, Brotli XH1, Valorant), resolution profiles manager
-- [x] Overlay Radial Transformation & Multi-Arm Geometry: Resolved tiny-skia affine transform multiplication order in `lines.rs`, ensuring all radial arms are fully rendered around reticle center
-- [x] Native UI-to-Overlay Real-Time Bridge: Integrated `wry` IPC handler and local `/api/overlay/crosshair` endpoint for real-time synchronization between UI editor and overlay daemon
-- [x] Native Webview Runtime Crash Resolution: Resolved `ReferenceError: ResolutionModal is not defined` by adding missing component import in `App.svelte` and rebuilding frontend distribution
-- [x] Build Order & Execution Documentation: Documented exact build sequence, binary paths (`target/release/xhair.exe`, `target/release/xhair-cli.exe`), and zero-install portable execution instructions in `README.md`
-
+- [x] Design & Spec Update v2 (completed 2026-10-16):
+  - Phase 0 design tokens updated to monochromatic neutral gray ramp (`#111418`, `#181C22`, `#21262F`, `#282F3A`), Satoshi font from Fontshare, 12 screen designs exported and verified.
+  - Command bus & registry: All v2 commands added (`LayerRename`, `LayerGroup`, `LayerUngroup`, `LayerSetPosition`, `LayerRecenter`, `CrosshairRecenter`, `PaintSet`, `SelectionSet`, `SelectionAdd`, `SelectionRemove`, `SelectionToggle`, `SelectionAll`, `SelectionClear`, `SelectionInvert`, plus all `Group*` and `*Pack` commands) with pure inverse mutations.
+  - MCP Tools & 100% Parity: 30 new v2 tools implemented across `crates/xhair-mcp/src/tools/` (`edit.rs`, `library.rs`), parity test passing across 35 required tools and 25 commands.
+  - UI Components: Hierarchical layer groups, multi-select bounding box & canvas marquee, 8-directional NudgePad with step chips & custom step, ColorPicker popover with SV picker / hue / alpha / custom swatches / colorblind palette, GroupSettingsModal with process binding, ShortcutsDialog cheat sheet, inline renaming with F2, and "Moved from center" indicator badge with 1-click recentering.
+- [x] Win32 Overlay Toggle Bug Resolution:
+  - Resolved overlay daemon toggle (`SetEnabled(bool)`) by explicitly issuing `ShowWindow(hwnd, SW_HIDE)` and `ShowWindow(hwnd, SW_SHOWNOACTIVATE)` on the layered transparent window.
+  - Wired native `wry` IPC handlers for `set_overlay_enabled`, `toggle_overlay`, and `recenter`.
+  - Registered Windows global hotkeys `Ctrl+Shift+X` (Toggle Overlay) and `Ctrl+Shift+C` (Recenter Crosshair).
+- [x] Release Build Recompiled: `target/release/xhair.exe` and `target/release/xhair-cli.exe` freshly compiled with embedded frontend distribution.
 
 ## In progress
 - None. All features fully implemented, tested, and verified.
 
 ## Next exact step
-- Human review and project release / deployment.
+- Human review and verification of standalone executable.
 
 ## WIP notes
 - Release artifacts generated in `dist/`:
@@ -45,16 +49,16 @@
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 86 tests passing)
+- Workspace crates: 12 (all build & test green, 87 tests passing)
 - Golden image tests: 8 tests passing
 - Geometry tests: 11 tests passing (symmetry detection, quarter-pixel quantization, multi-res verification)
 - Render & effect tests: 13 unit tests passing (four arms rendered, bloom, animation evaluation, static lock, heavy budget)
 - Performance benchmarks: typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
-- Platform tests: 12 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection)
-- MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, parity)
+- Platform tests: 13 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection, overlay toggle SW_HIDE)
+- MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, 100% parity across 35 tools and 25 commands)
 - UI test suite: 23 tests passing in Vitest (100% green)
 - TypeScript lint: 0 errors (`tsc --noEmit`)
-- Vite production build: 198 kB JS, 50 kB CSS (built in ~2.6s)
+- Vite production build: 239 kB JS, 63 kB CSS (built in ~800ms)
 - Clippy & rustfmt: Clean, 0 warnings with `-D warnings`
 - Agent continuity & memory graph: 100% validated (`cargo xtask check-agent-state`, `cargo xtask graph query --summary`)
 

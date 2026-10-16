@@ -5,13 +5,13 @@
 
   const stepOptions = [0.1, 0.25, 0.5, 1, 5, 10];
   const targetOptions: { id: NudgeTarget; label: string }[] = [
+    { id: 'layer', label: 'Selection' },
+    { id: 'all', label: 'Crosshair' },
     { id: 'arm', label: 'Arm' },
-    { id: 'layer', label: 'Layer' },
-    { id: 'all', label: 'All' },
   ];
   const frameOptions: { id: NudgeFrame; label: string }[] = [
     { id: 'screen', label: 'Screen axes' },
-    { id: 'local', label: 'Layer-local axes' },
+    { id: 'local', label: 'Layer-local' },
   ];
 
   function handleKeydown(e: KeyboardEvent) {
@@ -21,30 +21,29 @@
 
     let multiplier = 1;
     if (e.shiftKey) multiplier = 10;
-    if (e.altKey) multiplier = 0.2; // fine step
+    if (e.altKey) multiplier = 0.1 / editorState.nudgeStep; // exact 0.1 px
 
     const isCtrl = e.ctrlKey || e.metaKey;
-    const oldTarget = editorState.nudgeTarget;
-    if (isCtrl) {
-      editorState.nudgeTarget = 'all';
-    }
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      editorState.nudge(0, -multiplier);
+      editorState.nudge(0, -1, multiplier, isCtrl);
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      editorState.nudge(0, multiplier);
+      editorState.nudge(0, 1, multiplier, isCtrl);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      editorState.nudge(-multiplier, 0);
+      editorState.nudge(-1, 0, multiplier, isCtrl);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      editorState.nudge(multiplier, 0);
-    }
-
-    if (isCtrl) {
-      editorState.nudgeTarget = oldTarget;
+      editorState.nudge(1, 0, multiplier, isCtrl);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      if (isCtrl) {
+        editorState.recenterCrosshair();
+      } else {
+        editorState.recenterSelection();
+      }
     }
   }
 </script>
@@ -53,7 +52,7 @@
 
 <div class="panel">
   <div class="panel-header">
-    <span>Nudge pad</span>
+    <span>Nudge pad (§5)</span>
     <span class="mono" style="color: var(--text-muted); font-size: 11px;">
       {editorState.nudgeStep} px step
     </span>
@@ -87,8 +86,8 @@
       </button>
     </Tooltip>
 
-    <Tooltip title="Reset Offset" description="Reset current target offset to (0, 0)">
-      <button class="btn btn-nudge btn-reset" onclick={() => editorState.resetNudge()} aria-label="Reset offset">
+    <Tooltip title="Recenter Selection" description="Reset selected layers to (0, 0)" shortcut="Home">
+      <button class="btn btn-nudge btn-reset" onclick={() => editorState.recenterSelection()} aria-label="Reset offset">
         •
       </button>
     </Tooltip>
@@ -119,19 +118,38 @@
     </Tooltip>
   </div>
 
-  <!-- Step Chips -->
-  <div class="step-chips mono">
-    {#each stepOptions as s}
-      <button
-        class="btn btn-step {editorState.nudgeStep === s ? 'btn-selected' : ''}"
-        onclick={() => (editorState.nudgeStep = s)}
-      >
-        {s}
-      </button>
-    {/each}
+  <!-- Step Chips & Custom Typed Step -->
+  <div class="step-chips-row mono">
+    <div class="step-chips">
+      {#each stepOptions as s}
+        <button
+          class="btn btn-step {editorState.nudgeStep === s ? 'btn-selected' : ''}"
+          onclick={() => (editorState.nudgeStep = s)}
+        >
+          {s}
+        </button>
+      {/each}
+    </div>
+    <Tooltip title="Custom Step" description="Type custom nudge step (min 0.01 px)">
+      <input
+        type="number"
+        class="input-step mono"
+        bind:value={editorState.nudgeStep}
+        min="0.01"
+        step="0.01"
+        aria-label="Custom nudge step"
+      />
+    </Tooltip>
   </div>
 
-  <!-- Target Selector (Arm | Layer | All) -->
+  <!-- Crisp vs Smooth hint (§5) -->
+  {#if editorState.nudgeStep < 1}
+    <div class="subpixel-hint mono">
+      ℹ Sub-pixel nudges require Smooth mode for sub-pixel anti-aliasing.
+    </div>
+  {/if}
+
+  <!-- Target Selector (Selection | Crosshair | Arm) -->
   <div class="segmented-control">
     {#each targetOptions as t}
       <button
@@ -141,6 +159,28 @@
         {t.label}
       </button>
     {/each}
+  </div>
+
+  <!-- Frame Selector (Screen | Local) -->
+  <div class="frame-selector mono">
+    {#each frameOptions as f}
+      <button
+        class="btn btn-frame {editorState.nudgeFrame === f.id ? 'btn-selected' : ''}"
+        onclick={() => (editorState.nudgeFrame = f.id)}
+      >
+        {f.label}
+      </button>
+    {/each}
+  </div>
+
+  <!-- Recenter Action Buttons (§6) -->
+  <div class="recenter-actions">
+    <button class="btn btn-recenter" onclick={() => editorState.recenterSelection()}>
+      Recenter selection
+    </button>
+    <button class="btn btn-recenter" onclick={() => editorState.recenterCrosshair()}>
+      Recenter whole crosshair
+    </button>
   </div>
 
   <!-- Arm Selection Sub-bar when Arm target is active -->
@@ -172,7 +212,7 @@
         X {editorState.crosshair.offsetX >= 0 ? `+${editorState.crosshair.offsetX}` : editorState.crosshair.offsetX} · Y {editorState.crosshair.offsetY >= 0 ? `+${editorState.crosshair.offsetY}` : editorState.crosshair.offsetY} px
       </span>
     {:else if editorState.nudgeTarget === 'layer'}
-      <span class="status-lbl">{editorState.selectedLayer?.name || 'Layer'}:</span>
+      <span class="status-lbl">{editorState.selectedLayers.length > 1 ? `${editorState.selectedLayers.length} Layers` : (editorState.selectedLayer?.name || 'Layer')}:</span>
       <span class="offset-val">
         X {(editorState.selectedLayer?.offsetX ?? 0) >= 0 ? `+${editorState.selectedLayer?.offsetX ?? 0}` : editorState.selectedLayer?.offsetX} · Y {(editorState.selectedLayer?.offsetY ?? 0) >= 0 ? `+${editorState.selectedLayer?.offsetY ?? 0}` : editorState.selectedLayer?.offsetY} px
       </span>
@@ -188,7 +228,7 @@
 
   <!-- Frame Footnote -->
   <p class="frame-hint">
-    Frame: Screen axes · step in game px · Hold Shift (10×) / Alt (0.1×)
+    Arrow keys = nudge · Shift = 10× · Alt = 0.1 px · Ctrl = Whole crosshair
   </p>
 </div>
 
@@ -213,16 +253,44 @@
     color: var(--accent);
   }
 
+  .step-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
   .step-chips {
     display: flex;
     gap: 4px;
-    margin-bottom: 12px;
+    flex: 1;
     overflow-x: auto;
+  }
+
+  .input-step {
+    width: 52px;
+    height: 26px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .subpixel-hint {
+    font-size: 10px;
+    color: var(--warning);
+    background: var(--warning-dim);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    line-height: 1.3;
   }
 
   .btn-step {
     height: 26px;
-    padding: 0 8px;
+    padding: 0 6px;
     font-size: 11px;
     flex: 1;
   }
@@ -230,6 +298,42 @@
   .segmented-control {
     display: flex;
     gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .frame-selector {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .btn-frame {
+    flex: 1;
+    height: 24px;
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .recenter-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .btn-recenter {
+    height: 26px;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-recenter:hover {
+    background: var(--surface3);
+    border-color: var(--border-active);
   }
 
   .seg-btn {

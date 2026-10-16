@@ -15,6 +15,8 @@
   import CompliancePanel from './components/CompliancePanel.svelte';
   import ImportExportModal from './components/ImportExportModal.svelte';
   import ResolutionModal from './components/ResolutionModal.svelte';
+  import GroupSettingsModal from './components/GroupSettingsModal.svelte';
+  import ShortcutsDialog from './components/ShortcutsDialog.svelte';
   import { onMount } from 'svelte';
   import { editorState } from './lib/state.svelte';
 
@@ -67,6 +69,8 @@
   <CompliancePanel />
   <ImportExportModal />
   <ResolutionModal />
+  <GroupSettingsModal />
+  <ShortcutsDialog />
 </div>
 
 <style>
