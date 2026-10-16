@@ -394,3 +394,15 @@
   - `cargo run --package xtask -- check-agent-state`: 100% validated.
   - `cargo run --package xtask -- graph --summary`: 100% validated.
 
+## 2026-10-16 — Session 15
+- **Goal:** Fix blank screen in native desktop window.
+- **Root Cause & Solution:**
+  1. **WebView Controller Lifetime:** `_webview` was previously not moved into `event_loop.run` closure, causing Rust's closure disjoint capture to skip it and drop the WebView2 controller upon starting the event loop, unbinding the browser engine. Fixed by explicitly moving and capturing `webview` inside the event loop closure for the lifetime of the application.
+  2. **Compile-Time Asset Embedding (`rust-embed`):** `find_ui_dist_dir()` previously depended on relative filesystem paths which resolved to `None` when running `target/debug/xhair.exe` or standalone binaries outside the workspace root. Integrated `rust-embed` (8.13) into `crates/xhair-app` so all compiled UI assets (`index.html`, bundled JS, CSS, SVG) are embedded directly into the executable binary and served in-memory instantly with proper MIME headers.
+  3. **DevTools Support:** Enabled `features = ["devtools"]` on `wry` and `.with_devtools(true)` for inspecting webview rendering.
+- **Tests & Quality:**
+  - `cargo test --package xhair-app`: 4 tests passing (including `test_embedded_dist_has_index`, `test_guess_mime`, `test_ui_server_and_dist`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+

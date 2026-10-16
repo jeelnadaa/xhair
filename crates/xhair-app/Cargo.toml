@@ -19,7 +19,8 @@ xhair-render = { path = "../xhair-render" }
 xhair-platform-win = { path = "../xhair-platform-win" }
 xhair-mcp = { path = "../xhair-mcp" }
 xhair-library = { path = "../xhair-library" }
-wry = "0.56"
+wry = { version = "0.56", features = ["devtools"] }
 tao = "0.36"
 anyhow.workspace = true
 tracing.workspace = true
+rust-embed = "8.13.0"

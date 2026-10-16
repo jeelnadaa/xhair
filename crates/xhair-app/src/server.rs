@@ -1,12 +1,16 @@
-//! Embedded local HTTP server to serve the Svelte 5 editor UI.
-
+use rust_embed::RustEmbed;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::thread;
 
-/// Finds the directory containing ui/dist assets.
+/// Compile-time embedded UI assets from ui/dist.
+#[derive(RustEmbed)]
+#[folder = "../../ui/dist/"]
+pub struct EmbeddedDist;
+
+/// Finds the directory containing ui/dist assets on disk (optional override).
 pub fn find_ui_dist_dir() -> Option<PathBuf> {
     // 1. Current working directory
     let cwd_dist = PathBuf::from("ui/dist");
@@ -14,7 +18,13 @@ pub fn find_ui_dist_dir() -> Option<PathBuf> {
         return Some(cwd_dist);
     }
 
-    // 2. Beside executable
+    // 2. Relative to workspace root if running from a crate dir
+    let crate_dist = PathBuf::from("../../ui/dist");
+    if crate_dist.join("index.html").exists() {
+        return Some(crate_dist);
+    }
+
+    // 3. Beside executable
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
             let exe_dist = exe_dir.join("ui").join("dist");
@@ -25,10 +35,19 @@ pub fn find_ui_dist_dir() -> Option<PathBuf> {
             if flat_dist.join("index.html").exists() {
                 return Some(flat_dist);
             }
+            // If running inside target/debug or target/release
+            if let Some(target_dir) = exe_dir.parent() {
+                if let Some(ws_dir) = target_dir.parent() {
+                    let ws_dist = ws_dir.join("ui").join("dist");
+                    if ws_dist.join("index.html").exists() {
+                        return Some(ws_dist);
+                    }
+                }
+            }
         }
     }
 
-    // 3. APPDATA/xhair/ui
+    // 4. APPDATA/xhair/ui
     if let Ok(appdata) = std::env::var("APPDATA") {
         let appdata_dist = PathBuf::from(appdata).join("xhair").join("ui");
         if appdata_dist.join("index.html").exists() {
@@ -61,6 +80,30 @@ pub fn start_ui_server() -> Option<u16> {
     Some(port)
 }
 
+fn guess_mime(name: &str) -> &'static str {
+    if name.ends_with(".js") {
+        "application/javascript; charset=utf-8"
+    } else if name.ends_with(".css") {
+        "text/css; charset=utf-8"
+    } else if name.ends_with(".html") {
+        "text/html; charset=utf-8"
+    } else if name.ends_with(".svg") {
+        "image/svg+xml"
+    } else if name.ends_with(".png") {
+        "image/png"
+    } else if name.ends_with(".woff2") {
+        "font/woff2"
+    } else if name.ends_with(".woff") {
+        "font/woff"
+    } else if name.ends_with(".ttf") {
+        "font/ttf"
+    } else if name.ends_with(".json") {
+        "application/json"
+    } else {
+        "application/octet-stream"
+    }
+}
+
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0u8; 2048];
     let n = match stream.read(&mut buffer) {
@@ -82,45 +125,40 @@ fn handle_connection(mut stream: TcpStream) {
 
     let dist_dir = find_ui_dist_dir();
     let path = raw_path.split('?').next().unwrap_or("/");
+    let trimmed = path.trim_start_matches('/');
+    let target_file = if trimmed.is_empty() || trimmed == "index.html" {
+        "index.html"
+    } else {
+        trimmed
+    };
 
     let (content_type, body): (&str, Vec<u8>) = if let Some(ref dist) = dist_dir {
-        let file_path = if path == "/" || path == "/index.html" {
-            dist.join("index.html")
-        } else {
-            let trimmed = path.trim_start_matches('/');
-            dist.join(trimmed)
-        };
-
+        let file_path = dist.join(target_file);
         if file_path.exists() && file_path.is_file() {
-            let mime = if file_path.extension().and_then(|s| s.to_str()) == Some("js") {
-                "application/javascript; charset=utf-8"
-            } else if file_path.extension().and_then(|s| s.to_str()) == Some("css") {
-                "text/css; charset=utf-8"
-            } else if file_path.extension().and_then(|s| s.to_str()) == Some("svg") {
-                "image/svg+xml"
-            } else if file_path.extension().and_then(|s| s.to_str()) == Some("html") {
-                "text/html; charset=utf-8"
-            } else {
-                "application/octet-stream"
-            };
+            let mime = guess_mime(target_file);
             let data = fs::read(&file_path).unwrap_or_default();
             (mime, data)
+        } else if let Some(file) = EmbeddedDist::get(target_file) {
+            let mime = guess_mime(target_file);
+            (mime, file.data.to_vec())
         } else {
             // SPA fallback: return index.html
-            let index_path = dist.join("index.html");
-            let data = fs::read(index_path).unwrap_or_default();
-            ("text/html; charset=utf-8", data)
+            let index_data = fs::read(dist.join("index.html"))
+                .ok()
+                .or_else(|| EmbeddedDist::get("index.html").map(|f| f.data.to_vec()))
+                .unwrap_or_default();
+            ("text/html; charset=utf-8", index_data)
         }
+    } else if let Some(file) = EmbeddedDist::get(target_file) {
+        let mime = guess_mime(target_file);
+        (mime, file.data.to_vec())
+    } else if let Some(index) = EmbeddedDist::get("index.html") {
+        ("text/html; charset=utf-8", index.data.to_vec())
     } else {
-        // Fallback info page if ui/dist was not found
-        let fallback = "<!DOCTYPE html><html><head><title>XHAIR Editor</title></head>\
-             <body style='background:#0B0D10;color:#EEF2F6;font-family:sans-serif;text-align:center;padding:50px;'>\
-             <h1>XHAIR Overlay is Active</h1>\
-             <p>The overlay is currently rendering on your desktop.</p>\
-             <p>To use the web editor, run <code>pnpm -C ui dev</code> and open <a href='http://localhost:5173' style='color:#36F2CB;'>http://localhost:5173</a></p>\
-             <p>Hotkeys: <b>Ctrl+Shift+X</b> (Toggle Overlay), <b>Ctrl+Shift+1..9</b> (Switch Slot)</p>\
-             </body></html>".to_string();
-        ("text/html; charset=utf-8", fallback.into_bytes())
+        (
+            "text/html; charset=utf-8",
+            b"<!DOCTYPE html><html><body><h1>XHAIR UI</h1></body></html>".to_vec(),
+        )
     };
 
     let header = format!(
@@ -132,5 +170,28 @@ fn handle_connection(mut stream: TcpStream) {
     let _ = stream.write_all(header.as_bytes());
     if method == "GET" {
         let _ = stream.write_all(&body);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_embedded_dist_has_index() {
+        let index = EmbeddedDist::get("index.html").expect("EmbeddedDist must contain index.html");
+        let content = String::from_utf8_lossy(&index.data);
+        assert!(content.contains("XHAIR"));
+    }
+
+    #[test]
+    fn test_guess_mime() {
+        assert_eq!(guess_mime("index.html"), "text/html; charset=utf-8");
+        assert_eq!(
+            guess_mime("app.js"),
+            "application/javascript; charset=utf-8"
+        );
+        assert_eq!(guess_mime("style.css"), "text/css; charset=utf-8");
+        assert_eq!(guess_mime("icon.svg"), "image/svg+xml");
     }
 }

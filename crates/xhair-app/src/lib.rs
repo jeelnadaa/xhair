@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+/// Local HTTP server and embedded asset delivery.
 pub mod server;
 
 use xhair_geometry::ResolutionProfile;
@@ -59,12 +60,14 @@ pub fn run() -> anyhow::Result<()> {
                 .build(&event_loop)
                 .map_err(|e| anyhow::anyhow!("Failed to create window: {}", e))?;
 
-            let _webview = wry::WebViewBuilder::new()
+            let webview = wry::WebViewBuilder::new()
                 .with_url(&url)
+                .with_devtools(true)
                 .build(&window)
                 .map_err(|e| anyhow::anyhow!("Failed to create webview: {}", e))?;
 
             event_loop.run(move |event, _, control_flow| {
+                let _ = &webview;
                 *control_flow = tao::event_loop::ControlFlow::Wait;
                 if let tao::event::Event::WindowEvent {
                     event: tao::event::WindowEvent::CloseRequested,
@@ -90,5 +93,27 @@ mod tests {
     #[test]
     fn test_app_title() {
         assert_eq!(APP_TITLE, "XHAIR");
+    }
+
+    #[test]
+    fn test_ui_server_and_dist() {
+        let dist = server::find_ui_dist_dir();
+        println!("find_ui_dist_dir returned: {:?}", dist);
+        let port = server::start_ui_server().expect("failed to start server");
+        println!("start_ui_server returned: {}", port);
+
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
+
+        let mut stream = TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream
+            .write_all(b"GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            .unwrap();
+        let mut resp = Vec::new();
+        stream.read_to_end(&mut resp).unwrap();
+        let resp_str = String::from_utf8_lossy(&resp);
+        assert!(resp_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_str.contains("XHAIR — Crosshair Overlay & Editor"));
+        assert!(resp_str.contains("<div id=\"app\"></div>"));
     }
 }
