@@ -124,5 +124,22 @@ mod tests {
         assert!(resp_str.contains("HTTP/1.1 200 OK"));
         assert!(resp_str.contains("XHAIR — Crosshair Overlay & Editor"));
         assert!(resp_str.contains("<div id=\"app\"></div>"));
+
+        // Test fetching JS asset dynamically from embedded assets
+        let js_file = crate::server::EmbeddedDist::iter()
+            .find(|f| f.ends_with(".js"))
+            .map(|f| f.into_owned())
+            .expect("should find a .js asset in EmbeddedDist");
+
+        let mut stream_js =
+            TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect js failed");
+        stream_js
+            .write_all(format!("GET /{} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n", js_file).as_bytes())
+            .unwrap();
+        let mut resp_js = Vec::new();
+        stream_js.read_to_end(&mut resp_js).unwrap();
+        let resp_js_str = String::from_utf8_lossy(&resp_js);
+        assert!(resp_js_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_js_str.contains("Content-Type: application/javascript"));
     }
 }

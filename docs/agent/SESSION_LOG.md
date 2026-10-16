@@ -426,4 +426,31 @@
   - `cargo fmt --check`: 0 diffs.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
 
+## 2026-10-16 — Session 17
+- **Goal:** Resolve desktop window blank screen runtime error, update documentation on build order, executable locations, and running normally without building.
+- **Root Cause & Solution:**
+  1. **Webview Runtime Crash Diagnosed & Resolved:**
+     - `ui/src/App.svelte` included `<ResolutionModal />` on line 68, but `import ResolutionModal from './components/ResolutionModal.svelte';` was missing from the script block.
+     - When Vite compiled the application, referencing an undeclared component emitted a runtime `ReferenceError: ResolutionModal is not defined` inside the WebView2 engine during `mount(App, ...)`. This stopped JavaScript execution prior to DOM tree construction, leaving the window on the dark `#0B0D10` body background.
+     - Fixed by adding the missing import to `ui/src/App.svelte` and recompiling the frontend bundle with `pnpm.cmd -C ui build` (0.74 kB HTML, 52.93 kB CSS, 204.11 kB JS).
+  2. **Dynamic Asset Test in `xhair-app`:**
+     - Updated `tests::test_ui_server_and_dist` in `crates/xhair-app/src/lib.rs` to dynamically find the `.js` asset filename via `EmbeddedDist::iter()` rather than expecting a hardcoded hash string.
+  3. **Release Binaries Recompiled & Repackaged:**
+     - Recompiled `cargo build --release --bin xhair` with fresh `ui/dist` embedded via `rust-embed`.
+     - Recompiled `cargo build --release --bin xhair-cli`.
+     - Repackaged release artifacts via `cargo run --package xtask -- package --version 0.1.0`.
+  4. **Comprehensive Documentation Updates in `README.md`:**
+     - Documented how to run normally without building (zero-install portable bundle in `dist/xhair-0.1.0-x64-portable.zip`, double-clicking `xhair.exe`, hotkeys `Ctrl+Shift+X` and `Ctrl+Shift+C`, tray icon interaction).
+     - Documented step-by-step build instructions (`pnpm -C ui install`, `pnpm -C ui build` first, then `cargo build --release --workspace`).
+     - Added dedicated "Where to Find the Binaries" table with exact paths: `target\release\xhair.exe`, `target\release\xhair-cli.exe`, `dist\xhair-0.1.0-x64-portable.zip`, `dist\xhair-cli-0.1.0-x64.zip`, `dist\installer.nsi`.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 86 Rust tests passing across all 12 crates (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph query --summary`: memory graph verified.
+
+
 

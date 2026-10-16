@@ -15,14 +15,15 @@
 
 ## Table of Contents
 1. [Key Features](#key-features)
-2. [Quick Start & Running Locally](#quick-start--running-locally)
+2. [Quick Start & How to Run](#quick-start--how-to-run)
 3. [How to Use the UI (Editor Walkthrough)](#how-to-use-the-ui-editor-walkthrough)
 4. [How to Connect MCP (AI Agent Automation)](#how-to-connect-mcp-ai-agent-automation)
 5. [In-Game Overlay & Hotkeys](#in-game-overlay--hotkeys)
 6. [CLI & Startup Settings](#cli--startup-settings)
 7. [Architecture & Technical Docs](#architecture--technical-docs)
 8. [Building from Source](#building-from-source)
-9. [Anti-Cheat Compliance](#anti-cheat-compliance)
+9. [Where to Find the Binaries](#where-to-find-the-binaries-after-building)
+10. [Anti-Cheat Compliance](#anti-cheat-compliance)
 
 ---
 
@@ -38,23 +39,45 @@
 
 ---
 
-## Quick Start & Running Locally
+## Quick Start & How to Run
 
-### Option 1: Launch the Web UI Editor (Quickest Visual Access)
-You can launch the Svelte 5 editor in your browser immediately using Vite:
-```bash
-# Navigate to the ui folder and start dev server
+### 1. Running Normally (Zero Build / Pre-Built Standalone)
+If you just want to run XHAIR as a regular application without compiling anything:
+1. **Locate or Download the Portable Release:**
+   - Grab `xhair-0.1.0-x64-portable.zip` from [Releases](https://github.com/jeelnadaa/xhair/releases) or find it locally in `dist/xhair-0.1.0-x64-portable.zip`.
+2. **Extract Anywhere:**
+   - Extract the contents to any folder (e.g. `C:\Games\xhair` or your Desktop).
+3. **Double-click `xhair.exe`:**
+   - **Crosshair Overlay:** Appears immediately at the exact center of your primary monitor. It is a hardware-accelerated transparent Win32 layered window that is fully click-through (`WS_EX_TRANSPARENT`), so mouse clicks pass straight through to your games without interference.
+   - **Desktop Editor Window:** The dark-mode Svelte 5 editor opens automatically. Modify shapes, colors, arm lengths, gaps, center dots, or import Valorant crosshairs — every edit synchronizes to the screen overlay in real time!
+   - **System Tray Icon:** XHAIR stays resident in your Windows taskbar tray:
+     - Right-click tray icon: Toggle Overlay (`Ctrl+Shift+X`), Recenter Reticle (`Ctrl+Shift+C`), Open Editor, or Exit.
+     - Double-click tray icon: Restores the editor window if minimized.
+4. **Using the CLI (`xhair-cli.exe`):**
+   - The portable bundle also contains `xhair-cli.exe`. Open PowerShell / Command Prompt in the extracted folder:
+     ```powershell
+     # Render a crosshair to PNG image
+     .\xhair-cli.exe render -p classic -o my_crosshair.png -s 64
+
+     # Enable launching on Windows startup
+     .\xhair-cli.exe startup --enable
+
+     # Launch Model Context Protocol (MCP) stdio server for AI agents
+     .\xhair-cli.exe mcp
+     ```
+
+### 2. Running from Source in Development
+```powershell
+# Run the native desktop application via Cargo
+cargo run --release --bin xhair
+
+# Or run Vite dev server in parallel for live frontend HMR:
+# Terminal 1:
 pnpm -C ui dev
-```
-Open **`http://localhost:5173`** in Chrome, Edge, or Firefox. The full editor is interactive with the canvas grid, layers panel, inspector, nudge pad, and Spray Lab!
 
-### Option 2: Run the Compiled Windows Application
-To run the native Windows application shell with system tray and layered overlay:
-```bash
-# Run the native app binary via Cargo
+# Terminal 2:
 cargo run --bin xhair
 ```
-Or from the packaged portable zip (`dist/xhair-0.1.0-x64-portable.zip`), extract and double-click **`xhair.exe`**.
 
 ---
 
@@ -235,30 +258,61 @@ Full architectural specifications and worked technical examples:
 ## Building from Source
 
 ### Prerequisites
-- Windows 10 or 11 (x64)
-- Rust toolchain $\ge 1.80$ (`rustup default stable`)
-- Node.js $\ge 20$ and `pnpm` $\ge 9$
+- **Operating System:** Windows 10 or 11 (64-bit)
+- **Rust Toolchain:** Stable $\ge 1.80$ (`rustup default stable`)
+- **Node.js & pnpm:** Node.js $\ge 20$ and `pnpm` $\ge 9$ (`npm install -g pnpm`)
 
-### Build Commands
-```bash
-# Clone the repository
+### Step-by-Step Build Commands
+Follow this sequence to ensure the web UI bundle is compiled first and embedded directly into the native Windows binary:
+
+```powershell
+# 1. Clone the repository
 git clone https://github.com/jeelnadaa/xhair.git
 cd xhair
 
-# Build all Rust crates
-cargo build --workspace
-
-# Build the Svelte 5 frontend
+# 2. Build the Svelte 5 frontend FIRST
+# (Crucial: Generates ui/dist/ which is baked into the native binary via compile-time embedding)
 pnpm -C ui install
 pnpm -C ui build
 
-# Run all tests
+# 3. Build all native Rust binaries in release mode
+cargo build --release --workspace
+
+# 4. (Optional) Run the complete verification test suite
 cargo test --workspace
 pnpm -C ui test
 
-# Package release artifacts (portable zip, CLI, installer script, SBOM, checksums)
+# 5. (Optional) Package standalone portable release bundles and installer
 cargo run --package xtask -- package --version 0.1.0
 ```
+
+---
+
+## Where to Find the Binaries (After Building)
+
+Once the build commands finish, your executables and distribution packages are located in the following directories:
+
+| Component / Artifact | File Path | Description |
+|---|---|---|
+| **Desktop App (Overlay + Editor)** | `target\release\xhair.exe` | **The main Windows application.** Contains the native layered overlay engine, Win32 system tray, and embedded Svelte 5 editor. Double-click to launch! |
+| **Command-Line Interface (CLI)** | `target\release\xhair-cli.exe` | **CLI utility.** Use for headless reticle rendering to PNG, format conversion, Windows startup registration, and stdio MCP server. |
+| **Portable Distribution ZIP** | `dist\xhair-0.1.0-x64-portable.zip` | **Zero-install portable release.** Contains `xhair.exe`, `xhair-cli.exe`, licenses, and documentation. Can be copied to any PC and run without needing Rust or Node.js. |
+| **CLI Distribution ZIP** | `dist\xhair-cli-0.1.0-x64.zip` | Standalone CLI zip archive. |
+| **NSIS Installer Script** | `dist\installer.nsi` | Windows installer script (can be compiled with NSIS to generate `xhair-setup.exe`). |
+| **SHA256 Checksums** | `dist\SHA256SUMS.txt` | Cryptographic SHA-256 hashes for all packaged release artifacts. |
+
+---
+
+## How to Run Normally (No Build Required)
+
+If you don't want to build from source:
+1. Navigate to `dist\` and extract `xhair-0.1.0-x64-portable.zip` (or grab it from GitHub Releases).
+2. Inside the unzipped folder, simply double-click **`xhair.exe`**.
+3. The crosshair overlay will immediately display on your screen center, and the full editor window will open.
+4. Close or minimize the editor whenever you want — the overlay and system tray icon remain active in the background with zero CPU usage!
+5. Hotkeys:
+   - `Ctrl + Shift + X` — Toggle overlay visibility on/off anytime (even while playing).
+   - `Ctrl + Shift + C` — Recenter crosshair or open calibration wizard.
 
 ---
 

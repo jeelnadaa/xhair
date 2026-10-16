@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 16
-- **Phase / Milestone:** Overlay Full Geometry Rendering & Native IPC Bridge Sync
+- **Session:** 17
+- **Phase / Milestone:** Webview Blank Screen Resolution & Build/Run Documentation
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/`
 
 ## Done (milestone-level)
@@ -21,6 +21,9 @@
 - [x] Universal Feature Parity: All 15 shape primitives, visual effects (glow, shadow, blur), tactical preview backgrounds (5 presets), dynamic WCAG contrast scoring, universal import/export modal (.xhair, Brotli XH1, Valorant), resolution profiles manager
 - [x] Overlay Radial Transformation & Multi-Arm Geometry: Resolved tiny-skia affine transform multiplication order in `lines.rs`, ensuring all radial arms are fully rendered around reticle center
 - [x] Native UI-to-Overlay Real-Time Bridge: Integrated `wry` IPC handler and local `/api/overlay/crosshair` endpoint for real-time synchronization between UI editor and overlay daemon
+- [x] Native Webview Runtime Crash Resolution: Resolved `ReferenceError: ResolutionModal is not defined` by adding missing component import in `App.svelte` and rebuilding frontend distribution
+- [x] Build Order & Execution Documentation: Documented exact build sequence, binary paths (`target/release/xhair.exe`, `target/release/xhair-cli.exe`), and zero-install portable execution instructions in `README.md`
+
 
 ## In progress
 - None. All features fully implemented, tested, and verified.

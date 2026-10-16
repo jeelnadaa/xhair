@@ -14,6 +14,7 @@
   import DynamicOptInModal from './components/DynamicOptInModal.svelte';
   import CompliancePanel from './components/CompliancePanel.svelte';
   import ImportExportModal from './components/ImportExportModal.svelte';
+  import ResolutionModal from './components/ResolutionModal.svelte';
   import { onMount } from 'svelte';
   import { editorState } from './lib/state.svelte';
 
