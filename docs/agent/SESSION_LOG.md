@@ -669,11 +669,18 @@
        - How to Build (prerequisites, UI build, release build, package task).
        - Where to Find (binary locations in `target/release/` and distribution archives in `dist/`).
        - How to Connect MCP (Claude Desktop, Cursor, Antigravity IDE configuration snippet and dual-mode runtime behavior).
+  4. **Removed Temporary Scratch Scripts, Dead Components & Folders:**
+     - Deleted `scratch/` directory (temporary node scripts: `generate_screens_v2.cjs`, `generate_all_v2_screens.cjs`, `build_and_capture_v2_screens.cjs`, `sync_actions.cjs`, `check_tokens_v5.cjs`, `generate_v5_design_screens.cjs`).
+     - Deleted `design/` folder completely (`design/tokens.json` was unused).
+     - Deleted redundant `ui/package-lock.json` (pnpm is the package manager).
+     - Deleted unused dead Svelte components superseded by Phase 3 studio redesign: `DockSystem.svelte`, `TimelineDock.svelte`, `NudgePad.svelte`, `LayersPanel.svelte`, and `ColorPicker.svelte`.
 - **Tests & Quality:**
   - `cargo test --workspace`: 90 tests passing (100% green).
   - `pnpm -C ui test`: 24 tests passing (100% green).
   - `pnpm -C ui lint`: 0 errors.
   - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo run -p xtask -- package --version 1.0.0`: verified clean packaging with 0 errors.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
 
 
