@@ -94,4 +94,9 @@
 | **PR-008** | Phase 2 | Physical Win32 Overlay Controls for MCP | done | PR §2.3 | OverlayController trait wired to OverlaySender for overlay, calibration, display tools |
 | **PR-009** | Phase 2 | Disk Storage Integration (xhair-library) | done | PR §2.4 | LibraryEngine in app, REST endpoints /api/library/*, UI syncs with disk |
 | **PR-010** | Phase 2 | Real-Time UI Event Streaming for MCP | done | PR §2.5 | /api/mcp/activity polling, agent editing banner in TopBar & McpModal activity log |
+| **PR-011** | Phase 3 | 3-Column Studio Layout Architecture | done | PR §3.1 | 260px LeftRail, CenterStage canvas, 320px Inspector, responsive 1024x640 to 4K |
+| **PR-012** | Phase 3 | Unified Contextual Inspector | done | PR §3.2 | Collapsible accordions for Transform, Geometry, Fill/Stroke, Effects, Presets |
+| **PR-013** | Phase 3 | Figma-Style Drag-to-Scrub Numerical Inputs | done | PR §3.3 | ScrubInput.svelte with horizontal label drag, Alt=0.1x, Shift=10x, direct type |
+| **PR-014** | Phase 3 | Clean In-Place Modal & Group Creation | done | PR §3.4 | Inline group creation & renaming (no window.prompt), desktop context menus |
+| **PR-015** | Phase 3 | Collapsible Diagnostics & Labs Bottom Drawer | done | PR §3.5 | BottomDock.svelte with Timeline, Spray Lab, Calibration, and MCP Live Stream |
 

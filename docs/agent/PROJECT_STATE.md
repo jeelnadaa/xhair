@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 21
-- **Phase / Milestone:** Production Readiness — Phase 2 Unified Backend & Real-Time MCP Bridge Complete
+- **Session:** 22
+- **Phase / Milestone:** Production Readiness — Phase 3 World-Class UI/UX Studio Redesign Complete
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/` & `target/release/`
 
 ## Done (milestone-level)
@@ -35,12 +35,18 @@
   - `OverlayController` trait wiring `overlay.*`, `calibration.*`, `display.list`, and document mutations directly to physical Win32 `OverlayCommand`.
   - `LibraryEngine` integrated into app runtime with `/api/library` REST endpoints and UI disk storage sync.
   - Real-time MCP event activity polling and pulsing neon "Agent is editing" UI banner.
+- [x] Production Readiness Phase 3: World-Class UI/UX Studio Redesign (completed 2026-10-16):
+  - 3-column studio layout architecture: 260px LeftRail, center stage viewport, 320px contextual inspector.
+  - Unified contextual inspector eliminating 11-tab dock, featuring collapsible accordion cards: Transform, Shape Geometry, Fill & Stroke, Visual Effects, Style Presets.
+  - Figma-style `ScrubInput.svelte` numerical scrubbing with horizontal drag, step multipliers (Alt=0.1x, Shift=10x), and keyboard navigation.
+  - In-place group creation and renaming (zero `window.prompt()`), with desktop right-click context menus for profiles, layers, and groups.
+  - Collapsible `BottomDock.svelte` drawer with Timeline, Spray Lab, Calibration Studio, and MCP Live Activity Log.
 
 ## In progress
-- Phase 3: World-Class UI/UX Studio Redesign (3-column studio layout, unified contextual inspector, drag-to-scrub inputs).
+- Phase 4: Production Hardening, Verification & Release (full workspace test suite verification, parity verification, benchmarks, and production package build).
 
 ## Next exact step
-- Implement Phase 3: 3-column layout architecture and unified contextual inspector in `ui/`.
+- Execute Phase 4: Full verification of workspace tests, parity tests, clippy, benchmarks, and package artifacts.
 
 ## WIP notes
 - Release artifacts generated in `dist/`:

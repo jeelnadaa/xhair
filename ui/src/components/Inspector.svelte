@@ -1,13 +1,37 @@
 <script lang="ts">
   import { editorState, DESCRIPTORS } from '../lib/state.svelte';
   import Tooltip from './Tooltip.svelte';
+  import ScrubInput from './ScrubInput.svelte';
 
-  // Scrubbing drag state
-  let activeScrubProp = $state<string | null>(null);
-  let scrubStartX = $state<number>(0);
-  let scrubStartVal = $state<number>(0);
+  // Section Accordion Collapsed States
+  let transformOpen = $state(true);
+  let geometryOpen = $state(true);
+  let fillStrokeOpen = $state(true);
+  let effectsOpen = $state(true);
+  let stylingOpen = $state(false);
 
-  const PRESET_COLORS = ['#36F2CB', '#00FF00', '#FF3864', '#FFFFFF', '#FFE600', '#FF4FD8', '#00B2FF'];
+  // Preset Colors
+  const PRESET_COLORS = [
+    '#36F2CB', // Cyan
+    '#00FF00', // Green
+    '#FF3864', // Red / Coral
+    '#FFFFFF', // White
+    '#FFE600', // Yellow
+    '#FF4FD8', // Magenta
+    '#00B2FF', // Deep Sky Blue
+    '#FF9F1C', // Amber
+  ];
+
+  const COLORBLIND_COLORS = [
+    '#0072B2', // Blue
+    '#E69F00', // Orange
+    '#56B4E9', // Sky Blue
+    '#009E73', // Bluish Green
+    '#F0E442', // Yellow
+    '#D55E00', // Vermilion
+    '#CC79A7', // Reddish Purple
+    '#999999', // Gray
+  ];
 
   const SVG_PRESETS = [
     { label: 'Arrow', path: 'M 0,-8 L 6,6 L 0,3 L -6,6 Z' },
@@ -17,1409 +41,1007 @@
     { label: 'Crosshair', path: 'M -8,0 L -2,0 M 2,0 L 8,0 M 0,-8 L 0,-2 M 0,2 L 0,8' },
   ];
 
-  function getPropertyValue(name: string): number {
-    const layer = editorState.selectedLayer;
-    if (!layer) return 0;
+  let newPresetName = $state('');
 
-    if (name === 'line.length' || name === 'shape.length') return layer.shape.length ?? 6;
-    if (name === 'line.thickness' || name === 'shape.thickness') return layer.shape.thickness ?? 2;
-    if (name === 'line.gap' || name === 'shape.gap') return layer.shape.gap ?? 4;
-    if (name === 'line.arm_count' || name === 'shape.arm_count') return layer.shape.armCount ?? 4;
-    if (name === 'dot.diameter' || name === 'shape.diameter') return layer.shape.diameter ?? 2;
-    if (name === 'shape.radius') return layer.shape.radius ?? 8;
-    if (name === 'shape.inner_radius') return layer.shape.innerRadius ?? 4;
-    if (name === 'shape.points') return layer.shape.points ?? 6;
-    if (name === 'shape.angle') return layer.shape.angle ?? 90;
-    if (name === 'shape.width') return layer.shape.width ?? 12;
-    if (name === 'shape.height') return layer.shape.height ?? 8;
-    if (name === 'shape.corner_radius') return layer.shape.cornerRadius ?? 0;
-    if (name === 'shape.base') return layer.shape.base ?? 10;
-    if (name === 'shape.start_angle') return layer.shape.startAngle ?? 0;
-    if (name === 'shape.end_angle') return layer.shape.endAngle ?? 180;
-    if (name === 'shape.center_hole') return layer.shape.centerHole ?? 0;
-    if (name === 'effect.shadow_blur') return layer.shadowBlur ?? 0;
-    if (name === 'effect.shadow_offset_x') return layer.shadowOffsetX ?? 0;
-    if (name === 'effect.shadow_offset_y') return layer.shadowOffsetY ?? 0;
-    if (name === 'effect.blur_radius') return layer.blurRadius ?? 0;
-    if (name === 'effect.glow_radius') return layer.glowRadius ?? 0;
-    if (name === 'layer.offset_x') return layer.offsetX ?? 0;
-    if (name === 'layer.offset_y') return layer.offsetY ?? 0;
-    if (name === 'layer.rotation') return layer.rotation ?? 0;
-    if (name === 'global.opacity' || name === 'layer.opacity') return layer.opacity ?? 1.0;
-    return 0;
+  function handleSavePreset() {
+    if (!newPresetName.trim()) return;
+    editorState.saveStylePreset(newPresetName.trim());
+    newPresetName = '';
   }
 
-  function handleSliderChange(name: string, e: Event) {
-    const target = e.target as HTMLInputElement;
-    const val = parseFloat(target.value);
-    editorState.updateProperty(name, val);
-  }
-
-  function handleNumberChange(name: string, e: Event) {
-    const target = e.target as HTMLInputElement;
-    const val = parseFloat(target.value);
-    if (!isNaN(val)) {
-      editorState.updateProperty(name, val);
-    }
-  }
-
-  function startScrub(name: string, e: MouseEvent) {
-    activeScrubProp = name;
-    scrubStartX = e.clientX;
-    scrubStartVal = getPropertyValue(name);
-    window.addEventListener('mousemove', onScrubMove);
-    window.addEventListener('mouseup', endScrub);
-  }
-
-  function onScrubMove(e: MouseEvent) {
-    if (!activeScrubProp) return;
-    const deltaX = e.clientX - scrubStartX;
-    const step = e.altKey ? 0.1 : e.shiftKey ? 2.0 : 0.5;
-    const stepsMoved = Math.round(deltaX / 5);
-    let newVal = scrubStartVal + stepsMoved * step;
-    newVal = Math.round(newVal * 100) / 100;
-    editorState.updateProperty(activeScrubProp, newVal);
-  }
-
-  function endScrub() {
-    activeScrubProp = null;
-    window.removeEventListener('mousemove', onScrubMove);
-    window.removeEventListener('mouseup', endScrub);
+  function handleColorChange(color: string) {
+    editorState.setLayerColor(color, true);
   }
 </script>
 
-<div class="panel">
-  <div class="panel-header">
-    <span>Properties</span>
-    <span class="mono" style="color: var(--text-muted); font-size: 11px;">
-      {editorState.selectedLayer?.name || 'No selection'}
-    </span>
+<aside class="unified-inspector">
+  <!-- Inspector Header -->
+  <div class="inspector-header">
+    <div class="header-left">
+      <span class="header-title">Inspector</span>
+      {#if editorState.selectedLayer}
+        <span class="selection-badge mono">{editorState.selectedLayer.name}</span>
+      {:else}
+        <span class="selection-badge mono empty">No Selection</span>
+      {/if}
+    </div>
+    {#if editorState.selectedLayers.length > 1}
+      <span class="multi-select-badge mono">{editorState.selectedLayers.length} layers</span>
+    {/if}
   </div>
 
   {#if editorState.selectedLayer}
     {@const layer = editorState.selectedLayer}
     {@const shape = layer.shape}
 
-    <div class="properties-list">
-      <!-- Section: Color & Appearance -->
-      <div class="prop-section">
-        <span class="section-title">Color & Appearance</span>
-        <div class="color-row">
-          <div class="swatches">
-            {#each PRESET_COLORS as c}
-              <button
-                class="swatch-btn {layer.color === c ? 'active' : ''}"
-                style="background: {c};"
-                onclick={() => editorState.setLayerColor(c)}
-                aria-label="Color {c}"
-              ></button>
-            {/each}
-          </div>
-          <input
-            type="color"
-            class="native-color-picker"
-            value={layer.color}
-            oninput={(e) => editorState.setLayerColor((e.target as HTMLInputElement).value)}
-            aria-label="Custom color picker"
-          />
-        </div>
-      </div>
+    <div class="inspector-scrollable">
+      <!-- ================= 1. TRANSFORM & POSITION ACCORDION ================= -->
+      <section class="accordion-card">
+        <button
+          class="card-header-btn"
+          onclick={() => (transformOpen = !transformOpen)}
+          aria-expanded={transformOpen}
+        >
+          <span class="card-title">Transform & Position</span>
+          <span class="card-chevron">{transformOpen ? '▼' : '▶'}</span>
+        </button>
 
-      <!-- Section: Transform & Position (2D Movement) (§5) -->
-      <div class="prop-section">
-        <div class="row" style="margin-bottom: 6px;">
-          <span class="section-title">Position & Transform (§5)</span>
-          <div class="segmented-control mini-segmented">
-            <button
-              class="btn seg-btn {editorState.positionMode === 'relative' ? 'btn-selected' : ''}"
-              onclick={() => (editorState.positionMode = 'relative')}
-            >
-              Rel
-            </button>
-            <button
-              class="btn seg-btn {editorState.positionMode === 'absolute' ? 'btn-selected' : ''}"
-              onclick={() => (editorState.positionMode = 'absolute')}
-            >
-              Abs
-            </button>
-          </div>
-        </div>
-
-        {#if editorState.selectedLayers.length > 1}
-          <div class="multi-select-hint mono">
-            {editorState.selectedLayers.length} layers selected · Bounding box center
-          </div>
-        {/if}
-
-        <!-- Position X -->
-        <div class="property-row">
-          <div class="row">
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <span
-              class="property-label {activeScrubProp === 'layer.offset_x' ? 'scrubbing' : ''}"
-              onmousedown={(e) => startScrub('layer.offset_x', e)}
-            >
-              Position X ↔
-            </span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                step="0.5"
-                value={layer.offsetX}
-                oninput={(e) => handleNumberChange('layer.offset_x', e)}
-                onwheel={(e) => {
-                  e.preventDefault();
-                  const dir = e.deltaY < 0 ? 1 : -1;
-                  const step = e.altKey ? 0.1 : e.shiftKey ? 2 : 0.5;
-                  editorState.nudge(dir * step, 0);
-                }}
-                aria-label="Position X"
-              />
-              <span class="unit-label">px</span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="-50"
-              max="50"
-              step="0.5"
-              value={layer.offsetX}
-              oninput={(e) => handleSliderChange('layer.offset_x', e)}
-              aria-label="Position X slider"
-            />
-            <div class="slider-fill-visual" style="width: {((layer.offsetX + 50) / 100) * 100}%;"></div>
-          </div>
-        </div>
-
-        <!-- Position Y -->
-        <div class="property-row">
-          <div class="row">
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <span
-              class="property-label {activeScrubProp === 'layer.offset_y' ? 'scrubbing' : ''}"
-              onmousedown={(e) => startScrub('layer.offset_y', e)}
-            >
-              Position Y ↔
-            </span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                step="0.5"
-                value={layer.offsetY}
-                oninput={(e) => handleNumberChange('layer.offset_y', e)}
-                onwheel={(e) => {
-                  e.preventDefault();
-                  const dir = e.deltaY < 0 ? -1 : 1;
-                  const step = e.altKey ? 0.1 : e.shiftKey ? 2 : 0.5;
-                  editorState.nudge(0, dir * step);
-                }}
-                aria-label="Position Y"
-              />
-              <span class="unit-label">px</span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="-50"
-              max="50"
-              step="0.5"
-              value={layer.offsetY}
-              oninput={(e) => handleSliderChange('layer.offset_y', e)}
-              aria-label="Position Y slider"
-            />
-            <div class="slider-fill-visual" style="width: {((layer.offsetY + 50) / 100) * 100}%;"></div>
-          </div>
-        </div>
-
-        <!-- Recenter Action Buttons (§6) -->
-        <div class="recenter-row">
-          <button class="btn btn-sm btn-recenter-inspector" onclick={() => editorState.recenterSelection()}>
-            Recenter selection (Home)
-          </button>
-          <button class="btn btn-sm btn-recenter-inspector" onclick={() => editorState.recenterCrosshair()}>
-            Recenter crosshair (Ctrl+Home)
-          </button>
-        </div>
-
-        <!-- Rotation -->
-        <div class="property-row">
-          <div class="row">
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <span
-              class="property-label {activeScrubProp === 'layer.rotation' ? 'scrubbing' : ''}"
-              onmousedown={(e) => startScrub('layer.rotation', e)}
-            >
-              Rotation ↔
-            </span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                min="0"
-                max="360"
-                step="1"
-                value={layer.rotation}
-                oninput={(e) => handleNumberChange('layer.rotation', e)}
-                aria-label="Rotation"
-              />
-              <span class="unit-label">°</span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="360"
-              step="1"
-              value={layer.rotation}
-              oninput={(e) => handleSliderChange('layer.rotation', e)}
-              aria-label="Rotation slider"
-            />
-            <div class="slider-fill-visual" style="width: {(layer.rotation / 360) * 100}%;"></div>
-          </div>
-        </div>
-
-        <!-- Opacity -->
-        <div class="property-row">
-          <div class="row">
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <span
-              class="property-label {activeScrubProp === 'layer.opacity' ? 'scrubbing' : ''}"
-              onmousedown={(e) => startScrub('layer.opacity', e)}
-            >
-              Opacity ↔
-            </span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                min="0"
-                max="1"
-                step="0.05"
-                value={layer.opacity}
-                oninput={(e) => handleNumberChange('layer.opacity', e)}
-                aria-label="Opacity"
-              />
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="1"
-              step="0.05"
-              value={layer.opacity}
-              oninput={(e) => handleSliderChange('layer.opacity', e)}
-              aria-label="Opacity slider"
-            />
-            <div class="slider-fill-visual" style="width: {(layer.opacity || 1) * 100}%;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section: Shape Geometry -->
-      <div class="prop-section">
-        <span class="section-title">Shape Geometry ({shape.type})</span>
-
-        <!-- LineArms / TShape Parameters -->
-        {#if shape.type === 'LineArms' || shape.type === 'TShape'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Length</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="40"
-                  step="1"
-                  value={shape.length ?? 6}
-                  oninput={(e) => handleNumberChange('shape.length', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="40"
-                step="1"
-                value={shape.length ?? 6}
-                oninput={(e) => handleSliderChange('shape.length', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.length ?? 6) - 1) / 39) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Thickness</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="12"
-                  step="1"
-                  value={shape.thickness ?? 2}
-                  oninput={(e) => handleNumberChange('shape.thickness', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="12"
-                step="1"
-                value={shape.thickness ?? 2}
-                oninput={(e) => handleSliderChange('shape.thickness', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 11) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Gap</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="30"
-                  step="0.5"
-                  value={shape.gap ?? 4}
-                  oninput={(e) => handleNumberChange('shape.gap', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="0"
-                max="30"
-                step="0.5"
-                value={shape.gap ?? 4}
-                oninput={(e) => handleSliderChange('shape.gap', e)}
-              />
-              <div class="slider-fill-visual" style="width: {((shape.gap ?? 4) / 30) * 100}%;"></div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Dot Parameters -->
-        {#if shape.type === 'Dot'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Diameter</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="16"
-                  step="0.5"
-                  value={shape.diameter ?? 2}
-                  oninput={(e) => handleNumberChange('shape.diameter', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="16"
-                step="0.5"
-                value={shape.diameter ?? 2}
-                oninput={(e) => handleSliderChange('shape.diameter', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.diameter ?? 2) - 1) / 15) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top: 4px;">
-            <span class="property-label">Dot Style</span>
-            <div class="chips-group">
-              <button
-                class="pill-chip {!shape.isSquare ? 'active' : ''}"
-                onclick={() => editorState.setDotSquare(false)}
-              >
-                Round
-              </button>
-              <button
-                class="pill-chip {shape.isSquare ? 'active' : ''}"
-                onclick={() => editorState.setDotSquare(true)}
-              >
-                Square
-              </button>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Circle / Ring Parameters -->
-        {#if shape.type === 'Circle' || shape.type === 'Ring'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="2"
-                  max="40"
-                  step="0.5"
-                  value={shape.radius ?? 8}
-                  oninput={(e) => handleNumberChange('shape.radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="2"
-                max="40"
-                step="0.5"
-                value={shape.radius ?? 8}
-                oninput={(e) => handleSliderChange('shape.radius', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.radius ?? 8) - 2) / 38) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Thickness</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={shape.thickness ?? 2}
-                  oninput={(e) => handleNumberChange('shape.thickness', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="10"
-                step="1"
-                value={shape.thickness ?? 2}
-                oninput={(e) => handleSliderChange('shape.thickness', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 9) * 100}%;"></div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Chevron Parameters -->
-        {#if shape.type === 'Chevron'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Length</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="2"
-                  max="30"
-                  step="1"
-                  value={shape.length ?? 7}
-                  oninput={(e) => handleNumberChange('shape.length', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Angle</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="30"
-                  max="150"
-                  step="5"
-                  value={shape.angle ?? 90}
-                  oninput={(e) => handleNumberChange('shape.angle', e)}
-                />
-                <span class="unit-label">°</span>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Polygon Parameters -->
-        {#if shape.type === 'Polygon'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="3"
-                  max="40"
-                  step="1"
-                  value={shape.radius ?? 8}
-                  oninput={(e) => handleNumberChange('shape.radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Sides / Points</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="3"
-                  max="12"
-                  step="1"
-                  value={shape.points ?? 6}
-                  oninput={(e) => handleNumberChange('shape.points', e)}
-                />
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Star Parameters -->
-        {#if shape.type === 'Star'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Outer Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="4"
-                  max="40"
-                  step="1"
-                  value={shape.radius ?? 9}
-                  oninput={(e) => handleNumberChange('shape.radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Inner Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="30"
-                  step="1"
-                  value={shape.innerRadius ?? 4}
-                  oninput={(e) => handleNumberChange('shape.inner_radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Star Points</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="3"
-                  max="10"
-                  step="1"
-                  value={shape.points ?? 4}
-                  oninput={(e) => handleNumberChange('shape.points', e)}
-                />
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- SvgPath Parameters -->
-        {#if shape.type === 'SvgPath'}
-          <div class="property-row">
-            <span class="property-label">Vector Presets:</span>
-            <div class="chips-group" style="flex-wrap: wrap;">
-              {#each SVG_PRESETS as p}
+        {#if transformOpen}
+          <div class="card-content">
+            <!-- Relative vs Absolute Toggle -->
+            <div class="mode-row">
+              <span class="sub-label mono">Mode</span>
+              <div class="segmented-pill">
                 <button
-                  class="pill-chip {shape.pathData === p.path ? 'active' : ''}"
-                  onclick={() => editorState.setShapePathData(p.path)}
+                  class="seg-btn {editorState.positionMode === 'relative' ? 'active' : ''}"
+                  onclick={() => (editorState.positionMode = 'relative')}
                 >
-                  {p.label}
+                  Relative
                 </button>
-              {/each}
-            </div>
-
-            <span class="property-label" style="margin-top: 6px;">Path Data (SVG):</span>
-            <textarea
-              class="input-text mono path-textarea"
-              rows="2"
-              value={shape.pathData ?? ''}
-              oninput={(e) => editorState.setShapePathData((e.target as HTMLTextAreaElement).value)}
-            ></textarea>
-          </div>
-        {/if}
-
-        <!-- Rect Parameters -->
-        {#if shape.type === 'Rect'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Width</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="60"
-                  step="1"
-                  value={shape.width ?? 12}
-                  oninput={(e) => handleNumberChange('shape.width', e)}
-                />
-                <span class="unit-label">px</span>
+                <button
+                  class="seg-btn {editorState.positionMode === 'absolute' ? 'active' : ''}"
+                  onclick={() => (editorState.positionMode = 'absolute')}
+                >
+                  Absolute
+                </button>
               </div>
             </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="60"
-                step="1"
-                value={shape.width ?? 12}
-                oninput={(e) => handleSliderChange('shape.width', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.width ?? 12) - 1) / 59) * 100}%;"></div>
-            </div>
-          </div>
 
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Height</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="60"
-                  step="1"
-                  value={shape.height ?? 8}
-                  oninput={(e) => handleNumberChange('shape.height', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="60"
-                step="1"
-                value={shape.height ?? 8}
-                oninput={(e) => handleSliderChange('shape.height', e)}
+            <!-- Position X & Y in 2-Column Grid -->
+            <div class="grid-2col">
+              <ScrubInput
+                label="X"
+                value={layer.offsetX}
+                step={0.5}
+                unit="px"
+                tooltip="Horizontal offset from center (drag label to scrub)"
+                onchange={(v) => editorState.updateProperty('layer.offset_x', v)}
               />
-              <div class="slider-fill-visual" style="width: {(((shape.height ?? 8) - 1) / 59) * 100}%;"></div>
+              <ScrubInput
+                label="Y"
+                value={layer.offsetY}
+                step={0.5}
+                unit="px"
+                tooltip="Vertical offset from center (drag label to scrub)"
+                onchange={(v) => editorState.updateProperty('layer.offset_y', v)}
+              />
             </div>
-          </div>
 
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Corner Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="20"
-                  step="0.5"
-                  value={shape.cornerRadius ?? 0}
-                  oninput={(e) => handleNumberChange('shape.corner_radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="0"
-                max="20"
-                step="0.5"
-                value={shape.cornerRadius ?? 0}
-                oninput={(e) => handleSliderChange('shape.corner_radius', e)}
+            <!-- Rotation & Opacity in 2-Column Grid -->
+            <div class="grid-2col">
+              <ScrubInput
+                label="Rot"
+                value={layer.rotation}
+                min={0}
+                max={360}
+                step={1}
+                unit="°"
+                tooltip="Layer rotation angle"
+                onchange={(v) => editorState.updateProperty('layer.rotation', v)}
               />
-              <div class="slider-fill-visual" style="width: {((shape.cornerRadius ?? 0) / 20) * 100}%;"></div>
+              <ScrubInput
+                label="Opacity"
+                value={Math.round((layer.opacity ?? 1.0) * 100)}
+                min={0}
+                max={100}
+                step={5}
+                unit="%"
+                tooltip="Layer opacity"
+                onchange={(v) => editorState.updateProperty('layer.opacity', v / 100)}
+              />
+            </div>
+
+            <!-- Recenter Actions -->
+            <div class="recenter-row">
+              <button
+                class="btn btn-sm btn-recenter"
+                onclick={() => editorState.recenterSelection()}
+                title="Recenter selection to screen center (Home)"
+              >
+                Recenter Selection (Home)
+              </button>
+              <button
+                class="btn btn-sm btn-recenter"
+                onclick={() => editorState.recenterCrosshair()}
+                title="Recenter crosshair (Ctrl+Home)"
+              >
+                Recenter All (Ctrl+Home)
+              </button>
             </div>
           </div>
         {/if}
+      </section>
 
-        <!-- Arc Parameters -->
-        {#if shape.type === 'Arc'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Radius</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="2"
-                  max="40"
-                  step="0.5"
-                  value={shape.radius ?? 10}
-                  oninput={(e) => handleNumberChange('shape.radius', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="2"
-                max="40"
-                step="0.5"
-                value={shape.radius ?? 10}
-                oninput={(e) => handleSliderChange('shape.radius', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.radius ?? 10) - 2) / 38) * 100}%;"></div>
-            </div>
-          </div>
+      <!-- ================= 2. SHAPE GEOMETRY ACCORDION ================= -->
+      <section class="accordion-card">
+        <button
+          class="card-header-btn"
+          onclick={() => (geometryOpen = !geometryOpen)}
+          aria-expanded={geometryOpen}
+        >
+          <span class="card-title">Shape Geometry ({shape.type})</span>
+          <span class="card-chevron">{geometryOpen ? '▼' : '▶'}</span>
+        </button>
 
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Thickness</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={shape.thickness ?? 2}
-                  oninput={(e) => handleNumberChange('shape.thickness', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="1"
-                max="10"
-                step="1"
-                value={shape.thickness ?? 2}
-                oninput={(e) => handleSliderChange('shape.thickness', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.thickness ?? 2) - 1) / 9) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Start Angle</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="360"
-                  step="5"
-                  value={shape.startAngle ?? 0}
-                  oninput={(e) => handleNumberChange('shape.start_angle', e)}
-                />
-                <span class="unit-label">°</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">End Angle</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="360"
-                  step="5"
-                  value={shape.endAngle ?? 180}
-                  oninput={(e) => handleNumberChange('shape.end_angle', e)}
-                />
-                <span class="unit-label">°</span>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Triangle Parameters -->
-        {#if shape.type === 'Triangle'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Base</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="2"
-                  max="40"
-                  step="1"
-                  value={shape.base ?? 10}
-                  oninput={(e) => handleNumberChange('shape.base', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="2"
-                max="40"
-                step="1"
-                value={shape.base ?? 10}
-                oninput={(e) => handleSliderChange('shape.base', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.base ?? 10) - 2) / 38) * 100}%;"></div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Height</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="2"
-                  max="40"
-                  step="1"
-                  value={shape.height ?? 12}
-                  oninput={(e) => handleNumberChange('shape.height', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                class="prop-slider"
-                min="2"
-                max="40"
-                step="1"
-                value={shape.height ?? 12}
-                oninput={(e) => handleSliderChange('shape.height', e)}
-              />
-              <div class="slider-fill-visual" style="width: {(((shape.height ?? 12) - 2) / 38) * 100}%;"></div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Plus Parameters -->
-        {#if shape.type === 'Plus'}
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Length</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="40"
-                  step="1"
+        {#if geometryOpen}
+          <div class="card-content">
+            {#if shape.type === 'LineArms'}
+              <!-- Line Arms: Length, Thickness, Gap, Arm Count -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Length"
                   value={shape.length ?? 6}
-                  oninput={(e) => handleNumberChange('shape.length', e)}
+                  min={1}
+                  max={100}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('line.length', v)}
                 />
-                <span class="unit-label">px</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Thickness</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="1"
-                  max="12"
-                  step="1"
+                <ScrubInput
+                  label="Thickness"
                   value={shape.thickness ?? 2}
-                  oninput={(e) => handleNumberChange('shape.thickness', e)}
+                  min={1}
+                  max={30}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('line.thickness', v)}
                 />
-                <span class="unit-label">px</span>
+              </div>
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Gap"
+                  value={shape.gap ?? 4}
+                  min={0}
+                  max={80}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('line.gap', v)}
+                />
+                <ScrubInput
+                  label="Arms"
+                  value={shape.armCount ?? 4}
+                  min={1}
+                  max={8}
+                  step={1}
+                  unit=""
+                  onchange={(v) => editorState.updateProperty('line.arm_count', v)}
+                />
+              </div>
+
+              <!-- Taper Toggle -->
+              <div class="toggle-row">
+                <span class="sub-label">Tapered Arms</span>
+                <input
+                  type="checkbox"
+                  checked={shape.taper ?? false}
+                  onchange={(e) => {
+                    shape.taper = (e.target as HTMLInputElement).checked;
+                    editorState.syncWithOverlay();
+                  }}
+                />
+              </div>
+
+            {:else if shape.type === 'Dot'}
+              <!-- Center Dot: Diameter, Square vs Round -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Diameter"
+                  value={shape.diameter ?? 2}
+                  min={1}
+                  max={40}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('dot.diameter', v)}
+                />
+                <div class="field-wrap">
+                  <span class="sub-label mono">Shape</span>
+                  <div class="segmented-pill">
+                    <button
+                      class="seg-btn {!shape.isSquare ? 'active' : ''}"
+                      onclick={() => {
+                        shape.isSquare = false;
+                        editorState.syncWithOverlay();
+                      }}
+                    >
+                      Round
+                    </button>
+                    <button
+                      class="seg-btn {shape.isSquare ? 'active' : ''}"
+                      onclick={() => {
+                        shape.isSquare = true;
+                        editorState.syncWithOverlay();
+                      }}
+                    >
+                      Square
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            {:else if shape.type === 'Rect'}
+              <!-- Rectangle: Width, Height, Corner Radii -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Width"
+                  value={shape.width ?? 8}
+                  min={1}
+                  max={120}
+                  step={1}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.width', v)}
+                />
+                <ScrubInput
+                  label="Height"
+                  value={shape.height ?? 8}
+                  min={1}
+                  max={120}
+                  step={1}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.height', v)}
+                />
+              </div>
+              <ScrubInput
+                label="Corner Radius"
+                value={shape.cornerRadius ?? 0}
+                min={0}
+                max={40}
+                step={0.5}
+                unit="px"
+                onchange={(v) => editorState.updateProperty('shape.corner_radius', v)}
+              />
+
+            {:else if shape.type === 'Circle'}
+              <!-- Circle / Ring: Radius, Thickness, Center Hole -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Radius"
+                  value={shape.radius ?? 8}
+                  min={1}
+                  max={80}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.radius', v)}
+                />
+                <ScrubInput
+                  label="Thickness"
+                  value={shape.thickness ?? 2}
+                  min={1}
+                  max={30}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.thickness', v)}
+                />
+              </div>
+              <ScrubInput
+                label="Center Hole"
+                value={shape.centerHole ?? 0}
+                min={0}
+                max={50}
+                step={0.5}
+                unit="px"
+                onchange={(v) => editorState.updateProperty('shape.center_hole', v)}
+              />
+
+            {:else if shape.type === 'TShape'}
+              <!-- T-Shape: Length, Thickness, Gap -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Length"
+                  value={shape.length ?? 6}
+                  min={1}
+                  max={80}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('line.length', v)}
+                />
+                <ScrubInput
+                  label="Thickness"
+                  value={shape.thickness ?? 2}
+                  min={1}
+                  max={20}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('line.thickness', v)}
+                />
+              </div>
+              <ScrubInput
+                label="Gap"
+                value={shape.gap ?? 4}
+                min={0}
+                max={60}
+                step={0.5}
+                unit="px"
+                onchange={(v) => editorState.updateProperty('line.gap', v)}
+              />
+
+            {:else if shape.type === 'Polygon' || shape.type === 'Star'}
+              <!-- Polygon / Star: Points, Radius, Inner Radius -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Points"
+                  value={shape.points ?? 5}
+                  min={3}
+                  max={16}
+                  step={1}
+                  unit=""
+                  onchange={(v) => editorState.updateProperty('shape.points', v)}
+                />
+                <ScrubInput
+                  label="Radius"
+                  value={shape.radius ?? 10}
+                  min={2}
+                  max={80}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.radius', v)}
+                />
+              </div>
+              {#if shape.type === 'Star'}
+                <ScrubInput
+                  label="Inner Rad"
+                  value={shape.innerRadius ?? 4}
+                  min={1}
+                  max={50}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.inner_radius', v)}
+                />
+              {/if}
+
+            {:else if shape.type === 'Arc'}
+              <!-- Arc Segment -->
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Radius"
+                  value={shape.radius ?? 8}
+                  min={2}
+                  max={80}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.radius', v)}
+                />
+                <ScrubInput
+                  label="Thickness"
+                  value={shape.thickness ?? 2}
+                  min={1}
+                  max={20}
+                  step={0.5}
+                  unit="px"
+                  onchange={(v) => editorState.updateProperty('shape.thickness', v)}
+                />
+              </div>
+              <div class="grid-2col">
+                <ScrubInput
+                  label="Start Angle"
+                  value={shape.startAngle ?? 0}
+                  min={0}
+                  max={360}
+                  step={5}
+                  unit="°"
+                  onchange={(v) => editorState.updateProperty('shape.start_angle', v)}
+                />
+                <ScrubInput
+                  label="End Angle"
+                  value={shape.endAngle ?? 180}
+                  min={0}
+                  max={360}
+                  step={5}
+                  unit="°"
+                  onchange={(v) => editorState.updateProperty('shape.end_angle', v)}
+                />
+              </div>
+
+            {:else if shape.type === 'SvgPath'}
+              <!-- Custom SVG Vector Path -->
+              <div class="svg-presets-row">
+                {#each SVG_PRESETS as preset}
+                  <button
+                    class="btn btn-sm btn-preset"
+                    onclick={() => {
+                      shape.pathData = preset.path;
+                      editorState.syncWithOverlay();
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                {/each}
+              </div>
+              <textarea
+                class="input-text mono svg-textarea"
+                rows="3"
+                placeholder="SVG path data (e.g. M 0,-8 L 6,6 Z)"
+                bind:value={shape.pathData}
+                oninput={() => editorState.syncWithOverlay()}
+              ></textarea>
+            {/if}
+          </div>
+        {/if}
+      </section>
+
+      <!-- ================= 3. FILL & STROKE ACCORDION ================= -->
+      <section class="accordion-card">
+        <button
+          class="card-header-btn"
+          onclick={() => (fillStrokeOpen = !fillStrokeOpen)}
+          aria-expanded={fillStrokeOpen}
+        >
+          <span class="card-title">Fill & Stroke</span>
+          <span class="card-chevron">{fillStrokeOpen ? '▼' : '▶'}</span>
+        </button>
+
+        {#if fillStrokeOpen}
+          <div class="card-content">
+            <!-- Curated Palette Swatches -->
+            <div class="palette-group">
+              <span class="sub-label mono">Tactical High-Contrast</span>
+              <div class="swatches-row">
+                {#each PRESET_COLORS as c}
+                  <button
+                    class="swatch-btn {layer.color === c ? 'active' : ''}"
+                    style="background: {c};"
+                    onclick={() => handleColorChange(c)}
+                    aria-label="Color {c}"
+                  ></button>
+                {/each}
+              </div>
+
+              <span class="sub-label mono" style="margin-top: 6px;">Colorblind Safe</span>
+              <div class="swatches-row">
+                {#each COLORBLIND_COLORS as c}
+                  <button
+                    class="swatch-btn {layer.color === c ? 'active' : ''}"
+                    style="background: {c};"
+                    onclick={() => handleColorChange(c)}
+                    aria-label="Colorblind {c}"
+                  ></button>
+                {/each}
               </div>
             </div>
-          </div>
 
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Gap</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="30"
-                  step="0.5"
-                  value={shape.gap ?? 2}
-                  oninput={(e) => handleNumberChange('shape.gap', e)}
-                />
-                <span class="unit-label">px</span>
-              </div>
+            <!-- Custom Color Picker Row -->
+            <div class="color-picker-row">
+              <div class="color-preview" style="background: {layer.color};"></div>
+              <input
+                type="text"
+                class="input-text mono hex-input"
+                value={layer.color}
+                onchange={(e) => handleColorChange((e.target as HTMLInputElement).value)}
+                placeholder="#36F2CB"
+              />
+              <input
+                type="color"
+                class="native-color-btn"
+                value={layer.color}
+                oninput={(e) => handleColorChange((e.target as HTMLInputElement).value)}
+                aria-label="Color picker"
+              />
             </div>
-          </div>
 
-          <div class="property-row">
-            <div class="row">
-              <span class="property-label">Center Hole</span>
-              <div class="input-with-unit">
-                <input
-                  type="number"
-                  class="input-text mono prop-number-input"
-                  min="0"
-                  max="20"
-                  step="0.5"
-                  value={shape.centerHole ?? 0}
-                  oninput={(e) => handleNumberChange('shape.center_hole', e)}
-                />
-                <span class="unit-label">px</span>
+            <!-- Line Cap & Join -->
+            <div class="grid-2col">
+              <div class="field-wrap">
+                <span class="sub-label mono">Line Cap</span>
+                <select
+                  class="select-dropdown mono"
+                  value={shape.strokeCap ?? 'butt'}
+                  onchange={(e) => {
+                    shape.strokeCap = (e.target as HTMLSelectElement).value as any;
+                    editorState.syncWithOverlay();
+                  }}
+                >
+                  <option value="butt">Butt</option>
+                  <option value="round">Round</option>
+                  <option value="square">Square</option>
+                </select>
+              </div>
+
+              <div class="field-wrap">
+                <span class="sub-label mono">Line Join</span>
+                <select
+                  class="select-dropdown mono"
+                  value={shape.strokeJoin ?? 'miter'}
+                  onchange={(e) => {
+                    shape.strokeJoin = (e.target as HTMLSelectElement).value as any;
+                    editorState.syncWithOverlay();
+                  }}
+                >
+                  <option value="miter">Miter</option>
+                  <option value="round">Round</option>
+                  <option value="bevel">Bevel</option>
+                </select>
               </div>
             </div>
           </div>
         {/if}
-      </div>
+      </section>
 
-      <!-- Section: Visual Effects & Filters (§4.6) -->
-      <div class="prop-section">
-        <span class="section-title">Visual Effects & Filters</span>
+      <!-- ================= 4. VISUAL EFFECTS & DYNAMICS ACCORDION ================= -->
+      <section class="accordion-card">
+        <button
+          class="card-header-btn"
+          onclick={() => (effectsOpen = !effectsOpen)}
+          aria-expanded={effectsOpen}
+        >
+          <span class="card-title">Visual Effects & Dynamics</span>
+          <span class="card-chevron">{effectsOpen ? '▼' : '▶'}</span>
+        </button>
 
-        <!-- Glow Effect -->
-        <div class="property-row">
-          <div class="row">
-            <span class="property-label">Glow Radius</span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                min="0"
-                max="20"
-                step="0.5"
+        {#if effectsOpen}
+          <div class="card-content">
+            <!-- Glow & Bloom -->
+            <div class="grid-2col">
+              <ScrubInput
+                label="Glow"
                 value={layer.glowRadius ?? 0}
-                oninput={(e) => handleNumberChange('effect.glow_radius', e)}
+                min={0}
+                max={30}
+                step={0.5}
+                unit="px"
+                tooltip="Per-layer glow halo radius"
+                onchange={(v) => editorState.updateProperty('effect.glow_radius', v)}
               />
-              <span class="unit-label">px</span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="20"
-              step="0.5"
-              value={layer.glowRadius ?? 0}
-              oninput={(e) => handleSliderChange('effect.glow_radius', e)}
-            />
-            <div class="slider-fill-visual" style="width: {((layer.glowRadius ?? 0) / 20) * 100}%;"></div>
-          </div>
-        </div>
-
-        <!-- Drop Shadow -->
-        <div class="property-row">
-          <div class="row">
-            <span class="property-label">Drop Shadow Blur</span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                min="0"
-                max="20"
-                step="0.5"
+              <ScrubInput
+                label="Shadow"
                 value={layer.shadowBlur ?? 0}
-                oninput={(e) => handleNumberChange('effect.shadow_blur', e)}
+                min={0}
+                max={30}
+                step={0.5}
+                unit="px"
+                tooltip="Drop shadow blur radius"
+                onchange={(v) => editorState.updateProperty('effect.shadow_blur', v)}
               />
-              <span class="unit-label">px</span>
+            </div>
+
+            <!-- Dynamic Spread Scrubber -->
+            <div class="spread-test-section">
+              <div class="spread-header">
+                <span class="sub-label mono">Simulated Spread Preview</span>
+                <span class="mono" style="font-size: 11px; color: var(--accent);">
+                  +{((editorState.simulatedSpread - 1.2) * 2).toFixed(1)}px
+                </span>
+              </div>
+              <ScrubInput
+                label="Recoil"
+                value={editorState.simulatedSpread}
+                min={1.0}
+                max={15.0}
+                step={0.2}
+                unit="°"
+                tooltip="Simulate weapon recoil gap expansion dynamically"
+                onchange={(v) => (editorState.simulatedSpread = v)}
+              />
             </div>
           </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="20"
-              step="0.5"
-              value={layer.shadowBlur ?? 0}
-              oninput={(e) => handleSliderChange('effect.shadow_blur', e)}
-            />
-            <div class="slider-fill-visual" style="width: {((layer.shadowBlur ?? 0) / 20) * 100}%;"></div>
-          </div>
-        </div>
+        {/if}
+      </section>
 
-        <div class="property-row">
-          <div class="row">
-            <span class="property-label">Shadow Offset X / Y</span>
-            <div style="display: flex; gap: 6px;">
+      <!-- ================= 5. STYLE PRESETS & ACTIONS ACCORDION ================= -->
+      <section class="accordion-card">
+        <button
+          class="card-header-btn"
+          onclick={() => (stylingOpen = !stylingOpen)}
+          aria-expanded={stylingOpen}
+        >
+          <span class="card-title">Style Presets & Utilities</span>
+          <span class="card-chevron">{stylingOpen ? '▼' : '▶'}</span>
+        </button>
+
+        {#if stylingOpen}
+          <div class="card-content">
+            <!-- Save Preset Form -->
+            <div class="preset-create-row">
               <input
-                type="number"
-                class="input-text mono prop-number-input"
-                style="width: 50px;"
-                min="-20"
-                max="20"
-                step="0.5"
-                value={layer.shadowOffsetX ?? 0}
-                oninput={(e) => handleNumberChange('effect.shadow_offset_x', e)}
-                placeholder="X"
+                type="text"
+                class="input-text mono"
+                placeholder="New preset name…"
+                bind:value={newPresetName}
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') handleSavePreset();
+                }}
               />
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                style="width: 50px;"
-                min="-20"
-                max="20"
-                step="0.5"
-                value={layer.shadowOffsetY ?? 0}
-                oninput={(e) => handleNumberChange('effect.shadow_offset_y', e)}
-                placeholder="Y"
-              />
+              <button class="btn btn-sm btn-primary" onclick={handleSavePreset}>
+                Save
+              </button>
+            </div>
+
+            <!-- Style Presets List -->
+            {#if editorState.stylePresets.length > 0}
+              <div class="presets-chips">
+                {#each editorState.stylePresets as preset}
+                  <button
+                    class="preset-chip mono"
+                    onclick={() => editorState.applyStylePreset(preset.name)}
+                    title="Apply style: {preset.name}"
+                  >
+                    {preset.name}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+
+            <!-- Randomize & Utility Actions -->
+            <div class="util-actions-row">
+              <button
+                class="btn btn-sm"
+                onclick={() => editorState.randomizeLayer(layer.id)}
+                title="Procedurally randomize this layer"
+              >
+                🎲 Randomize Layer
+              </button>
             </div>
           </div>
-        </div>
-
-        <!-- Softening Blur -->
-        <div class="property-row">
-          <div class="row">
-            <span class="property-label">Softening Blur</span>
-            <div class="input-with-unit">
-              <input
-                type="number"
-                class="input-text mono prop-number-input"
-                min="0"
-                max="8"
-                step="0.25"
-                value={layer.blurRadius ?? 0}
-                oninput={(e) => handleNumberChange('effect.blur_radius', e)}
-              />
-              <span class="unit-label">px</span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="8"
-              step="0.25"
-              value={layer.blurRadius ?? 0}
-              oninput={(e) => handleSliderChange('effect.blur_radius', e)}
-            />
-            <div class="slider-fill-visual" style="width: {((layer.blurRadius ?? 0) / 8) * 100}%;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Dynamic Binding Live Preview Scrubber (§12.5) -->
-      <div class="dynamic-scrubber-section">
-        <div class="dynamic-header">
-          <span class="dyn-badge">DYNAMIC SPREAD PREVIEW</span>
-          <Tooltip
-            title="Live Spread Scrubber"
-            description="Drag to preview how crosshair layers react to simulated weapon spread without needing game input (§12.5)"
-          >
-            <span class="info-icon" style="cursor: help; font-size: 11px;">ℹ️</span>
-          </Tooltip>
-        </div>
-
-        <div class="property-row">
-          <div class="row">
-            <span class="property-label">Simulated Spread</span>
-            <div class="val-group">
-              <span class="mono" style="font-size: 11px; color: var(--accent); font-weight: 700;">
-                {editorState.simulatedSpread.toFixed(1)} px
-              </span>
-            </div>
-          </div>
-          <div class="slider-wrapper">
-            <input
-              type="range"
-              class="prop-slider"
-              min="0"
-              max="15"
-              step="0.1"
-              bind:value={editorState.simulatedSpread}
-              aria-label="Simulated spread scrubber"
-            />
-            <div class="slider-fill-visual" style="width: {(editorState.simulatedSpread / 15) * 100}%;"></div>
-          </div>
-        </div>
-
-        <div class="binding-chip">
-          <span class="binding-path">layers[0].gap</span>
-          <span class="binding-op">+=</span>
-          <span class="binding-driver">spread × 0.8</span>
-        </div>
-      </div>
+        {/if}
+      </section>
     </div>
   {:else}
-    <div style="color: var(--text-muted); font-size: 12px; padding: 12px 0;">
-      Select a layer to inspect its properties.
+    <!-- Empty State -->
+    <div class="empty-inspector">
+      <span class="empty-icon">🎯</span>
+      <span class="empty-title">No Layer Selected</span>
+      <p class="empty-text">
+        Click any shape in the canvas or layers rail to inspect and edit its transform, geometry, and styling.
+      </p>
     </div>
   {/if}
-</div>
+</aside>
 
 <style>
-  .properties-list {
+  .unified-inspector {
+    width: 320px;
+    flex: none;
+    border-left: 1px solid var(--border, #262930);
+    background: var(--surface1, #0f1013);
     display: flex;
     flex-direction: column;
-    gap: 14px;
-  }
-
-  .property-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .property-label {
-    cursor: ew-resize;
-    font-size: 13px;
-    color: var(--text);
+    overflow: hidden;
     user-select: none;
   }
 
-  .property-label:hover {
-    color: var(--accent);
-  }
-
-  .property-label.scrubbing {
-    color: var(--accent);
-    font-weight: 700;
-  }
-
-  .input-with-unit {
+  .inspector-header {
+    height: 40px;
+    border-bottom: 1px solid var(--border, #262930);
+    background: var(--surface2, #16181d);
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: space-between;
+    padding: 0 12px;
+    flex-shrink: 0;
   }
 
-  .prop-number-input {
-    width: 64px;
-    height: 26px;
-    text-align: right;
-    padding: 0 6px;
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
   }
 
-  .unit-label {
-    font-family: var(--font-mono);
+  .header-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text, #f0f6fc);
+  }
+
+  .selection-badge {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--accent, #38bdf8);
+    background: rgba(56, 189, 248, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--radius-xs, 4px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
   }
 
-  .slider-wrapper {
-    position: relative;
-    height: 6px;
-    display: flex;
-    align-items: center;
+  .selection-badge.empty {
+    color: var(--text-muted, #8b949e);
+    background: var(--surface3, #1e2128);
   }
 
-  .prop-slider {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-    margin: 0;
+  .multi-select-badge {
+    font-size: 10px;
+    color: var(--text-muted, #8b949e);
+    background: var(--surface3, #1e2128);
+    padding: 2px 6px;
+    border-radius: 99px;
   }
 
-  .slider-wrapper::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .slider-fill-visual {
-    position: absolute;
-    left: 0;
-    height: 4px;
-    background: var(--accent);
-    border-radius: 2px;
-    pointer-events: none;
-  }
-
-  .dynamic-scrubber-section {
-    margin-top: 10px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
+  .inspector-scrollable {
+    flex: 1;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 1px;
+    background: var(--border, #262930);
   }
 
-  .dynamic-header {
+  .accordion-card {
+    background: var(--surface1, #0f1013);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-header-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text, #f0f6fc);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: background 100ms ease;
+  }
+
+  .card-header-btn:hover {
+    background: var(--surface2, #16181d);
+  }
+
+  .card-chevron {
+    font-size: 10px;
+    color: var(--text-muted, #8b949e);
+  }
+
+  .card-content {
+    padding: 0 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .mode-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  .dyn-badge {
+  .sub-label {
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--accent);
+    color: var(--text-muted, #8b949e);
+    letter-spacing: 0.03em;
   }
 
-  .binding-chip {
+  .segmented-pill {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(54, 242, 203, 0.06);
-    border: 1px solid rgba(54, 242, 203, 0.2);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-family: var(--font-mono);
+    background: var(--surface2, #16181d);
+    border: 1px solid var(--border, #262930);
+    border-radius: var(--radius-xs, 4px);
+    padding: 1px;
+  }
+
+  .seg-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #8b949e);
     font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
   }
 
-  .binding-path {
-    color: var(--text);
+  .seg-btn.active {
+    background: var(--accent, #38bdf8);
+    color: #000;
+    font-weight: 600;
   }
 
-  .binding-op {
-    color: var(--accent);
-  }
-
-  .binding-driver {
-    color: var(--text-muted);
-  }
-
-  .prop-section {
+  .field-wrap {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 4px;
   }
 
-  .section-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-  }
-
-  .color-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .swatches {
+  .recenter-row {
     display: flex;
     gap: 6px;
+    margin-top: 2px;
+  }
+
+  .btn-recenter {
     flex: 1;
+    font-size: 10px;
+    height: 24px;
+    padding: 0 6px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+
+  .svg-presets-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .btn-preset {
+    font-size: 10px;
+    padding: 2px 6px;
+    height: 22px;
+  }
+
+  .svg-textarea {
+    width: 100%;
+    font-size: 11px;
+    resize: vertical;
+  }
+
+  .palette-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .swatches-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
   }
 
   .swatch-btn {
     width: 22px;
     height: 22px;
-    border-radius: var(--radius-sm);
-    border: 2px solid transparent;
+    border-radius: var(--radius-xs, 4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
-    transition: transform 100ms ease, border-color 100ms ease;
+    transition: transform 100ms ease, box-shadow 100ms ease;
   }
 
   .swatch-btn:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
   }
 
   .swatch-btn.active {
-    border-color: #FFFFFF;
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--accent, #38bdf8);
   }
 
-  .native-color-picker {
+  .color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .color-preview {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-xs, 4px);
+    border: 1px solid var(--border, #262930);
+    flex-shrink: 0;
+  }
+
+  .hex-input {
+    flex: 1;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .native-color-btn {
     width: 28px;
-    height: 24px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border, #262930);
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     cursor: pointer;
-    padding: 0;
   }
 
-  .path-textarea {
-    width: 100%;
+  .select-dropdown {
+    height: 28px;
+    background: var(--surface2, #16181d);
+    border: 1px solid var(--border, #262930);
+    border-radius: var(--radius-sm, 6px);
+    color: var(--text, #f0f6fc);
     font-size: 11px;
-    resize: vertical;
-    min-height: 40px;
-    box-sizing: border-box;
+    padding: 0 6px;
   }
 
-  .chips-group {
+  .spread-test-section {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--surface2, #16181d);
+    border: 1px solid var(--border, #262930);
+    border-radius: var(--radius-sm, 6px);
+    padding: 8px;
+  }
+
+  .spread-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .preset-create-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .presets-chips {
+    display: flex;
+    flex-wrap: wrap;
     gap: 4px;
   }
 
-  .pill-chip {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
+  .preset-chip {
     font-size: 10px;
+    background: var(--surface2, #16181d);
+    border: 1px solid var(--border, #262930);
+    color: var(--text, #f0f6fc);
     padding: 2px 6px;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-xs, 4px);
     cursor: pointer;
-    font-family: var(--font-mono);
   }
 
-  .pill-chip:hover {
-    color: var(--text);
+  .preset-chip:hover {
+    border-color: var(--accent, #38bdf8);
   }
 
-  .pill-chip.active {
-    background: var(--accent-dim);
-    color: var(--accent);
-    border-color: var(--accent);
+  .util-actions-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .empty-inspector {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--text-muted, #8b949e);
+  }
+
+  .empty-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+
+  .empty-title {
+    font-size: 13px;
     font-weight: 600;
+    color: var(--text, #f0f6fc);
+    margin-bottom: 6px;
+  }
+
+  .empty-text {
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 0;
   }
 </style>

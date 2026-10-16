@@ -934,6 +934,44 @@ export class EditorState {
     }
   }
 
+  duplicateCrosshair(id: string) {
+    const item = this.library.find((c) => c.id === id);
+    if (!item) return;
+    this.pushUndo();
+    const cloned: Crosshair = JSON.parse(JSON.stringify(item));
+    cloned.id = uniqueId('ch');
+    cloned.name = `${item.name} (Copy)`;
+    this.library.push(cloned);
+    this.selectCrosshair(cloned.id);
+    this.saveCurrentProfile();
+  }
+
+  deleteCrosshair(id: string) {
+    if (this.library.length <= 1) return;
+    const idx = this.library.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    this.pushUndo();
+    this.library.splice(idx, 1);
+    if (this.crosshair.id === id) {
+      const next = this.library[Math.max(0, idx - 1)] || this.library[0];
+      if (next) {
+        this.selectCrosshair(next.id);
+      }
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('xhair_library', JSON.stringify(this.library));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
+      fetch(`/api/library/delete?id=${id}`, { method: 'POST' }).catch((e) =>
+        console.warn('Failed to delete from server library:', e)
+      );
+    }
+  }
+
   // Selection Model (§3)
   selectLayer(id: string, isCtrl: boolean = false, isShift: boolean = false) {
     if (isCtrl) {

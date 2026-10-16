@@ -373,4 +373,21 @@ describe('Editor State & Logic', () => {
     const renamedInLib = state.library.find((c) => c.id === state.crosshair.id);
     expect(renamedInLib?.name).toBe('Renamed Sniper Crosshair');
   });
+
+  it('duplicates and deletes crosshairs in library', () => {
+    const originalCount = state.library.length;
+    const initialActiveId = state.crosshair.id;
+
+    state.duplicateCrosshair(initialActiveId);
+    expect(state.library.length).toBe(originalCount + 1);
+    expect(state.crosshair.name).toContain('(Copy)');
+    const duplicatedId = state.crosshair.id;
+    expect(duplicatedId).not.toBe(initialActiveId);
+
+    // Delete the duplicated crosshair
+    state.deleteCrosshair(duplicatedId);
+    expect(state.library.length).toBe(originalCount);
+    expect(state.library.find((c) => c.id === duplicatedId)).toBeUndefined();
+  });
 });
+

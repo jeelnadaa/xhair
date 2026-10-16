@@ -74,28 +74,28 @@
 
 ## Phase 3: World-Class UI/UX Studio Redesign
 
-- [ ] **3.1 3-Column Studio Layout Architecture**
-  - [ ] Refactor [`ui/src/App.svelte`](file:///D:/cross-aim/ui/src/App.svelte) into:
+- [x] **3.1 3-Column Studio Layout Architecture**
+  - [x] Refactor [`ui/src/App.svelte`](file:///D:/cross-aim/ui/src/App.svelte) into:
     - Left Rail: Explorer & Layers (260px).
     - Center Stage: Viewport Canvas with interactive HUD.
     - Right Inspector: Contextual properties accordion (320px).
-  - [ ] Implement responsive layout supporting 1024×640 to 4K displays.
+  - [x] Implement responsive layout supporting 1024×640 to 4K displays.
 
-- [ ] **3.2 Unified Contextual Inspector (Eliminating 11-Tab Dock)**
-  - [ ] Replace `DockSystem.svelte` with unified `Inspector.svelte`.
-  - [ ] Collapsible accordion cards: Transform, Shape Geometry, Fill & Stroke, Visual Effects.
-  - [ ] Context-sensitive controls that update immediately when selecting any layer.
+- [x] **3.2 Unified Contextual Inspector (Eliminating 11-Tab Dock)**
+  - [x] Replace `DockSystem.svelte` with unified `Inspector.svelte`.
+  - [x] Collapsible accordion cards: Transform, Shape Geometry, Fill & Stroke, Visual Effects.
+  - [x] Context-sensitive controls that update immediately when selecting any layer.
 
-- [ ] **3.3 Figma-Style Drag-to-Scrub Numerical Inputs**
-  - [ ] Create `ScrubInput.svelte` component allowing horizontal drag on labels (`X`, `Y`, `Rot`, `Gap`, `Length`).
-  - [ ] Click to type numerical values; arrow keys to increment/decrement with Shift (10×) and Alt (0.1×).
+- [x] **3.3 Figma-Style Drag-to-Scrub Numerical Inputs**
+  - [x] Create `ScrubInput.svelte` component allowing horizontal drag on labels (`X`, `Y`, `Rot`, `Gap`, `Length`).
+  - [x] Click to type numerical values; arrow keys to increment/decrement with Shift (10×) and Alt (0.1×).
 
-- [ ] **3.4 Clean In-Place Modal & Group Creation**
-  - [ ] Replace `window.prompt()` in [`ui/src/components/LibrarySidebar.svelte`](file:///D:/cross-aim/ui/src/components/LibrarySidebar.svelte) with inline form.
-  - [ ] Right-click context menus for profiles and groups.
+- [x] **3.4 Clean In-Place Modal & Group Creation**
+  - [x] Replace `window.prompt()` in [`ui/src/components/LibrarySidebar.svelte`](file:///D:/cross-aim/ui/src/components/LibrarySidebar.svelte) with inline form.
+  - [x] Right-click context menus for profiles and groups.
 
-- [ ] **3.5 Collapsible Diagnostics & Labs Bottom Drawer**
-  - [ ] Create `BottomDock.svelte` with collapsible tabs for:
+- [x] **3.5 Collapsible Diagnostics & Labs Bottom Drawer**
+  - [x] Create `BottomDock.svelte` with collapsible tabs for:
     - Animation Timeline.
     - Spray Lab recoil simulator.
     - Calibration Studio.

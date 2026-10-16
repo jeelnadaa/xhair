@@ -2,8 +2,8 @@
   import TopBar from './components/TopBar.svelte';
   import LibrarySidebar from './components/LibrarySidebar.svelte';
   import CanvasGrid from './components/CanvasGrid.svelte';
-  import TimelineDock from './components/TimelineDock.svelte';
-  import DockSystem from './components/DockSystem.svelte';
+  import BottomDock from './components/BottomDock.svelte';
+  import Inspector from './components/Inspector.svelte';
   import AppearanceModal from './components/AppearanceModal.svelte';
   import CommandPalette from './components/CommandPalette.svelte';
   import McpModal from './components/McpModal.svelte';
@@ -43,22 +43,22 @@
   <!-- Top Document Bar -->
   <TopBar />
 
-  <!-- Main 3-Column Body -->
+  <!-- Main 3-Column Studio Body -->
   <div class="main-body">
-    <!-- Left: Library Sidebar (240px) -->
+    <!-- Left Rail: Explorer & Layers (260px) -->
     <LibrarySidebar />
 
-    <!-- Center: Interactive Pixel Canvas Grid & Animation Timeline -->
+    <!-- Center Stage: Interactive Pixel Canvas Viewport & Bottom Dock -->
     <main class="center-stage">
       <CanvasGrid />
-      <TimelineDock />
+      <BottomDock />
     </main>
 
-    <!-- Right: Tabbed Dock System (§10) -->
-    <DockSystem />
+    <!-- Right Rail: Unified Contextual Inspector (320px) -->
+    <Inspector />
   </div>
 
-  <!-- Modals & Drawers -->
+  <!-- Global Modals & Overlays -->
   <CommandPalette />
   <McpModal />
   <AppearanceModal />
@@ -86,6 +86,8 @@
     display: flex;
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    position: relative;
   }
 
   .center-stage {
@@ -95,5 +97,15 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    background: var(--bg);
+  }
+
+  @media (max-width: 1024px) {
+    :global(.left-rail) {
+      width: 220px !important;
+    }
+    :global(.unified-inspector) {
+      width: 280px !important;
+    }
   }
 </style>
