@@ -95,6 +95,27 @@ pub enum OverlayCommand {
     Quit,
 }
 
+/// Thread-safe cloneable handle for sending commands to the overlay window.
+#[derive(Clone)]
+pub struct OverlaySender {
+    sender: Sender<OverlayCommand>,
+    hwnd_raw: isize,
+}
+
+impl OverlaySender {
+    /// Sends a command to the overlay window thread.
+    pub fn send(&self, cmd: OverlayCommand) -> Result<(), PlatformError> {
+        self.sender
+            .send(cmd)
+            .map_err(|e| PlatformError::ChannelError(e.to_string()))?;
+        unsafe {
+            let hwnd = HWND(self.hwnd_raw as *mut _);
+            let _ = PostMessageW(hwnd, WM_APP_OVERLAY_UPDATE, WPARAM(0), LPARAM(0));
+        }
+        Ok(())
+    }
+}
+
 /// Handle to the background overlay thread.
 pub struct OverlayHandle {
     sender: Sender<OverlayCommand>,
@@ -103,15 +124,17 @@ pub struct OverlayHandle {
 }
 
 impl OverlayHandle {
+    /// Obtains a cloneable sender for issuing overlay commands from other threads.
+    pub fn get_sender(&self) -> OverlaySender {
+        OverlaySender {
+            sender: self.sender.clone(),
+            hwnd_raw: self.hwnd.0 as isize,
+        }
+    }
+
     /// Sends a command to the overlay window thread.
     pub fn send(&self, cmd: OverlayCommand) -> Result<(), PlatformError> {
-        self.sender
-            .send(cmd)
-            .map_err(|e| PlatformError::ChannelError(e.to_string()))?;
-        unsafe {
-            let _ = PostMessageW(self.hwnd, WM_APP_OVERLAY_UPDATE, WPARAM(0), LPARAM(0));
-        }
-        Ok(())
+        self.get_sender().send(cmd)
     }
 
     /// Stops the overlay thread and waits for clean exit.

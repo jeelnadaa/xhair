@@ -157,14 +157,14 @@ fn apply_override_transforms(
 #[inline]
 pub fn make_transform(offset: Vec2, scale: Vec2, rotation_deg: f32) -> Transform {
     let mut t = Transform::identity();
-    if offset.x != 0.0 || offset.y != 0.0 {
-        t = t.post_concat(Transform::from_translate(offset.x, offset.y));
+    if scale.x != 1.0 || scale.y != 1.0 {
+        t = t.post_concat(Transform::from_scale(scale.x, scale.y));
     }
     if rotation_deg != 0.0 {
         t = t.post_concat(Transform::from_rotate(rotation_deg));
     }
-    if scale.x != 1.0 || scale.y != 1.0 {
-        t = t.post_concat(Transform::from_scale(scale.x, scale.y));
+    if offset.x != 0.0 || offset.y != 0.0 {
+        t = t.post_concat(Transform::from_translate(offset.x, offset.y));
     }
     t
 }

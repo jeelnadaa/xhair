@@ -84,9 +84,9 @@ pub fn render(
     let global_rot = ch.global.rotation.0;
     let global_opacity = ch.global.opacity.0;
 
-    let root_transform = Transform::from_translate(global_tx, global_ty)
+    let root_transform = Transform::from_scale(global_sx, global_sy)
         .post_concat(Transform::from_rotate(global_rot))
-        .post_concat(Transform::from_scale(global_sx, global_sy));
+        .post_concat(Transform::from_translate(global_tx, global_ty));
 
     let solo_active = ch.layers.iter().any(|l| l.solo);
     let mut rendered_layer_count = 0;

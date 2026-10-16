@@ -460,6 +460,19 @@ impl Crosshair {
         xhair
     }
 
+    /// Creates the default crosshair ("Cyan Gap") with 4 arms and center dot matching editor UI template (§4).
+    pub fn new_default() -> Self {
+        let mut xhair = Self::new_classic("Cyan Gap");
+        xhair.layers.push(Layer::new(
+            "Center dot",
+            LayerKind::Dot(crate::shapes::DotProps {
+                diameter: 2.0,
+                shape: crate::shapes::DotShape::Square,
+            }),
+        ));
+        xhair
+    }
+
     /// Validates crosshair structure against architectural limits.
     pub fn validate(&self) -> Result<(), XhairError> {
         if self.name.is_empty() {

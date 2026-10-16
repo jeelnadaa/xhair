@@ -406,3 +406,24 @@
   - `cargo fmt --check`: 0 diffs.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
 
+## 2026-10-16 — Session 16
+- **Goal:** Resolve "overlay has only 1 dot": fix radial arm affine transformation in tiny-skia, ensure full reticle geometry is rendered, and establish real-time UI-to-Overlay sync.
+- **Root Cause & Solution:**
+  1. **Affine Transform Multiplication Order in `lines.rs`:** `instance_transform.post_concat(arm_rot)` previously applied translation to the reticle center first, and then rotated the already-translated points around the screen origin `(0, 0)`. While Arm 0 (0°) remained in bounds, Arms 1 (90°), 2 (180°), and 3 (270°) were rotated into negative coordinate space outside the bounding box and clipped away, leaving only a single 2×6 px sliver that looked like "only 1 dot". Fixed by switching to `arm_rot.post_concat(instance_transform)` so each radial arm is rotated around its local center before being translated to screen coordinates. Verified with `test_classic_crosshair_four_arms_rendered`.
+  2. **Transform Order Normalization:** Fixed `root_transform` in `renderer.rs` and `make_transform` in `symmetry.rs` to follow standard Scale -> Rotate -> Translate affine composition order.
+  3. **Default Reticle Template:** Added `Crosshair::new_default()` in `xhair-model` containing both the 4 classic arms and the center dot matching `Cyan Gap` in the UI.
+  4. **Native UI-to-Overlay Real-Time Bridge:**
+     - Created `OverlaySender` in `xhair-platform-win` allowing multi-threaded command dispatching.
+     - Created `crates/xhair-app/src/bridge.rs` converting all 15 UI shape types, arm offsets, colors, and effects into domain `Crosshair` documents.
+     - Added `POST /api/overlay/crosshair` and `POST /api/overlay/toggle` to `server.rs`.
+     - Connected `wry` IPC handler in `lib.rs` (`with_ipc_handler`) for instant direct in-process synchronization.
+     - Implemented `editorState.syncWithOverlay()` in `state.svelte.ts` and invoked on app mount, profile saving, and profile selection.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 86 Rust tests passing across all 12 crates (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+
+

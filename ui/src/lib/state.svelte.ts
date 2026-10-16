@@ -644,6 +644,31 @@ export class EditorState {
     this.crosshair.animation = this.crosshair.animation.filter((t) => t.id !== id);
   }
 
+  syncWithOverlay() {
+    try {
+      const payload = JSON.stringify(this.crosshair);
+      if (typeof window !== 'undefined') {
+        const wryIpc = (window as unknown as { ipc?: { postMessage: (msg: string) => void } }).ipc;
+        if (wryIpc && typeof wryIpc.postMessage === 'function') {
+          try {
+            wryIpc.postMessage(payload);
+          } catch (e) {
+            console.warn('IPC postMessage failed:', e);
+          }
+        }
+        if (typeof fetch === 'function') {
+          fetch('/api/overlay/crosshair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('syncWithOverlay error:', e);
+    }
+  }
+
   // Crosshair Selection & CRUD
   saveCurrentProfile() {
     this.saveStatus = 'saving';
@@ -663,6 +688,8 @@ export class EditorState {
         console.error('Failed to persist to localStorage:', e);
       }
     }
+
+    this.syncWithOverlay();
 
     this.saveStatus = 'saved';
     if (this.saveTimeout) {
@@ -694,6 +721,7 @@ export class EditorState {
           console.error(e);
         }
       }
+      this.syncWithOverlay();
     }
   }
 

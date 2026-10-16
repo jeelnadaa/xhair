@@ -3,12 +3,14 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+/// UI crosshair JSON parser and bridge adapter.
+pub mod bridge;
 /// Local HTTP server and embedded asset delivery.
 pub mod server;
 
 use xhair_geometry::ResolutionProfile;
 use xhair_model::crosshair::Crosshair;
-use xhair_platform_win::{spawn_overlay, OverlayConfig, VisibilityMode};
+use xhair_platform_win::{spawn_overlay, OverlayCommand, OverlayConfig, VisibilityMode};
 
 /// Application default window title.
 pub const APP_TITLE: &str = "XHAIR";
@@ -31,8 +33,8 @@ pub fn run() -> anyhow::Result<()> {
         is_minimized
     );
 
-    // 2. Load default crosshair and resolution profile (§4, §6)
-    let crosshair = Crosshair::new_classic("Default Crosshair");
+    // 2. Load default crosshair ("Cyan Gap" with 4 arms + center dot) and resolution profile (§4, §6)
+    let crosshair = Crosshair::new_default();
     let profile = ResolutionProfile::default_1080p();
 
     // 3. Configure overlay: default to visible on screen (§8.1)
@@ -45,10 +47,11 @@ pub fn run() -> anyhow::Result<()> {
     // 4. Spawn the Win32 transparent click-through overlay window + tray icon + hotkeys (§8)
     let overlay_handle = spawn_overlay(crosshair, profile, config)
         .map_err(|e| anyhow::anyhow!("Failed to spawn overlay: {}", e))?;
+    let overlay_sender = overlay_handle.get_sender();
 
     // 5. If not launched minimized, start the local UI server and launch native desktop window
     if !is_minimized {
-        if let Some(port) = server::start_ui_server() {
+        if let Some(port) = server::start_ui_server(Some(overlay_sender.clone())) {
             let url = format!("http://127.0.0.1:{}", port);
             tracing::info!("XHAIR Editor UI serving at {}", url);
 
@@ -60,9 +63,15 @@ pub fn run() -> anyhow::Result<()> {
                 .build(&event_loop)
                 .map_err(|e| anyhow::anyhow!("Failed to create window: {}", e))?;
 
+            let ipc_sender = overlay_sender.clone();
             let webview = wry::WebViewBuilder::new()
                 .with_url(&url)
                 .with_devtools(true)
+                .with_ipc_handler(move |msg| {
+                    if let Ok(ch) = bridge::parse_ui_crosshair(msg.body()) {
+                        let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
+                    }
+                })
                 .build(&window)
                 .map_err(|e| anyhow::anyhow!("Failed to create webview: {}", e))?;
 
@@ -99,7 +108,7 @@ mod tests {
     fn test_ui_server_and_dist() {
         let dist = server::find_ui_dist_dir();
         println!("find_ui_dist_dir returned: {:?}", dist);
-        let port = server::start_ui_server().expect("failed to start server");
+        let port = server::start_ui_server(None).expect("failed to start server");
         println!("start_ui_server returned: {}", port);
 
         use std::io::{Read, Write};

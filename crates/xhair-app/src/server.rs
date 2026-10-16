@@ -1,9 +1,12 @@
+//! Local HTTP server, overlay API, and embedded asset delivery.
+
 use rust_embed::RustEmbed;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::thread;
+use xhair_platform_win::{OverlayCommand, OverlaySender};
 
 /// Compile-time embedded UI assets from ui/dist.
 #[derive(RustEmbed)]
@@ -59,7 +62,7 @@ pub fn find_ui_dist_dir() -> Option<PathBuf> {
 }
 
 /// Starts the local HTTP server in a background thread and returns the port.
-pub fn start_ui_server() -> Option<u16> {
+pub fn start_ui_server(overlay_sender: Option<OverlaySender>) -> Option<u16> {
     // Try binding to port 4173 or an OS-assigned free port
     let listener = TcpListener::bind("127.0.0.1:4173")
         .or_else(|_| TcpListener::bind("127.0.0.1:0"))
@@ -70,8 +73,9 @@ pub fn start_ui_server() -> Option<u16> {
         .name("xhair-ui-server".to_string())
         .spawn(move || {
             for stream in listener.incoming().flatten() {
+                let sender_clone = overlay_sender.clone();
                 thread::spawn(move || {
-                    handle_connection(stream);
+                    handle_connection(stream, sender_clone.as_ref());
                 });
             }
         })
@@ -104,18 +108,123 @@ fn guess_mime(name: &str) -> &'static str {
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0u8; 2048];
-    let n = match stream.read(&mut buffer) {
-        Ok(n) if n > 0 => n,
-        _ => return,
+fn read_http_request(stream: &mut TcpStream) -> Option<(String, String, Vec<u8>)> {
+    let mut buffer = Vec::with_capacity(4096);
+    let mut chunk = [0u8; 2048];
+    let mut content_length = None;
+    let mut header_end = None;
+
+    loop {
+        let n = stream.read(&mut chunk).ok()?;
+        if n == 0 {
+            break;
+        }
+        buffer.extend_from_slice(&chunk[..n]);
+
+        if header_end.is_none() {
+            if let Some(pos) = buffer.windows(4).position(|w| w == b"\r\n\r\n") {
+                header_end = Some(pos + 4);
+                let header_str = String::from_utf8_lossy(&buffer[..pos]);
+                for line in header_str.lines() {
+                    if line.to_ascii_lowercase().starts_with("content-length:") {
+                        if let Some(val_str) = line.split(':').nth(1) {
+                            content_length = val_str.trim().parse::<usize>().ok();
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(end) = header_end {
+            let cl = content_length.unwrap_or(0);
+            if buffer.len() >= end + cl {
+                break;
+            }
+        }
+    }
+
+    let end = header_end.unwrap_or(buffer.len());
+    let header_str = String::from_utf8_lossy(&buffer[..end]).to_string();
+    let first_line = header_str.lines().next().unwrap_or("");
+    let mut parts = first_line.split_whitespace();
+    let method = parts.next().unwrap_or("").to_string();
+    let raw_path = parts.next().unwrap_or("/").to_string();
+
+    let body = if end < buffer.len() {
+        buffer[end..].to_vec()
+    } else {
+        Vec::new()
     };
 
-    let req = String::from_utf8_lossy(&buffer[..n]);
-    let first_line = req.lines().next().unwrap_or("");
-    let mut parts = first_line.split_whitespace();
-    let method = parts.next().unwrap_or("");
-    let raw_path = parts.next().unwrap_or("/");
+    Some((method, raw_path, body))
+}
+
+fn handle_connection(mut stream: TcpStream, overlay_sender: Option<&OverlaySender>) {
+    let (method, raw_path, body) = match read_http_request(&mut stream) {
+        Some(req) => req,
+        None => return,
+    };
+
+    if method == "OPTIONS" {
+        let response = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: 0\r\n\r\n";
+        let _ = stream.write_all(response.as_bytes());
+        return;
+    }
+
+    if method == "POST" {
+        let path = raw_path.split('?').next().unwrap_or("/");
+        if path == "/api/overlay/crosshair" {
+            let body_str = String::from_utf8_lossy(&body);
+            if let Some(sender) = overlay_sender {
+                match crate::bridge::parse_ui_crosshair(&body_str) {
+                    Ok(ch) => {
+                        let _ = sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
+                        let resp_body = b"{\"status\":\"ok\"}";
+                        let header = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+                            resp_body.len()
+                        );
+                        let _ = stream.write_all(header.as_bytes());
+                        let _ = stream.write_all(resp_body);
+                    }
+                    Err(e) => {
+                        let err_msg = format!("{{\"error\":\"{}\"}}", e);
+                        let header = format!(
+                            "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+                            err_msg.len()
+                        );
+                        let _ = stream.write_all(header.as_bytes());
+                        let _ = stream.write_all(err_msg.as_bytes());
+                    }
+                }
+            } else {
+                let resp_body = b"{\"status\":\"no_overlay\"}";
+                let header = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+                    resp_body.len()
+                );
+                let _ = stream.write_all(header.as_bytes());
+                let _ = stream.write_all(resp_body);
+            }
+            return;
+        } else if path == "/api/overlay/toggle" {
+            if let Some(sender) = overlay_sender {
+                let _ = sender.send(OverlayCommand::ToggleVisibility);
+            }
+            let resp_body = b"{\"status\":\"ok\"}";
+            let header = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
+                resp_body.len()
+            );
+            let _ = stream.write_all(header.as_bytes());
+            let _ = stream.write_all(resp_body);
+            return;
+        }
+
+        let response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+        let _ = stream.write_all(response.as_bytes());
+        return;
+    }
 
     if method != "GET" && method != "HEAD" {
         let response = "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n";

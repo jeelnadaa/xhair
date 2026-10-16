@@ -45,6 +45,31 @@ mod tests {
     }
 
     #[test]
+    fn test_classic_crosshair_four_arms_rendered() {
+        let xhair = Crosshair::new_classic("Classic 4-Arm");
+        let ctx = RenderContext::standard();
+        let pixmap = render_to_new_pixmap(&xhair, &ctx, 64, 64).unwrap();
+        let data = pixmap.data();
+
+        // Center is (32, 32). In Crosshair::new_classic: gap=4.0, length=6.0, thickness=2.0
+        // Arms extend from gap (4px) to gap+length (10px).
+        // Check pixel on each of the 4 arms at distance 7px from center:
+        // Top arm: (32, 32 - 7) = (32, 25)
+        let top_alpha = data[(25 * 64 + 32) * 4 + 3];
+        // Bottom arm: (32, 32 + 7) = (32, 39)
+        let bottom_alpha = data[(39 * 64 + 32) * 4 + 3];
+        // Right arm: (32 + 7, 32) = (39, 32)
+        let right_alpha = data[(32 * 64 + 39) * 4 + 3];
+        // Left arm: (32 - 7, 32) = (25, 32)
+        let left_alpha = data[(32 * 64 + 25) * 4 + 3];
+
+        assert!(top_alpha > 0, "Top arm must be rendered");
+        assert!(bottom_alpha > 0, "Bottom arm must be rendered");
+        assert!(right_alpha > 0, "Right arm must be rendered");
+        assert!(left_alpha > 0, "Left arm must be rendered");
+    }
+
+    #[test]
     fn test_render_classic_crosshair_to_png() {
         let xhair = Crosshair::new_classic("Classic Test");
         let ctx = RenderContext::standard();

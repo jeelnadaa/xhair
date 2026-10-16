@@ -54,7 +54,7 @@ pub fn render_lines(
         let skia_fill = create_skia_paint(&fill_paint, opacity, anti_alias, None);
         let arm_angle = props.start_angle.0 + (i as f32 * step);
         let arm_rot = Transform::from_rotate(arm_angle);
-        let final_transform = instance_transform.post_concat(arm_rot);
+        let final_transform = arm_rot.post_concat(instance_transform);
 
         let gap = props.gap.max(0.0);
         let taper = props.taper.clamp(0.0, 1.0);

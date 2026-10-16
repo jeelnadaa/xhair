@@ -20,7 +20,8 @@ pub use foreground::{get_foreground_window_info, is_game_foreground, ForegroundW
 pub use hotkey::{HotkeyAction, HotkeyBinding, HotkeyManager, HotkeyModifiers};
 pub use monitor::{enumerate_monitors, get_monitor_at_point, get_primary_monitor, MonitorInfo};
 pub use overlay::{
-    render_and_update, spawn_overlay, OverlayCommand, OverlayConfig, OverlayHandle, VisibilityMode,
+    render_and_update, spawn_overlay, OverlayCommand, OverlayConfig, OverlayHandle, OverlaySender,
+    VisibilityMode,
 };
 pub use startup::{is_run_at_startup_enabled, set_run_at_startup};
 pub use tray::{TrayIcon, TrayStatus, WM_TRAY_CALLBACK};
