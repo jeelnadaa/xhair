@@ -3,10 +3,8 @@
   import LibrarySidebar from './components/LibrarySidebar.svelte';
   import CanvasGrid from './components/CanvasGrid.svelte';
   import TimelineDock from './components/TimelineDock.svelte';
-  import Inspector from './components/Inspector.svelte';
-  import LayersPanel from './components/LayersPanel.svelte';
-  import NudgePad from './components/NudgePad.svelte';
-  import ColorPicker from './components/ColorPicker.svelte';
+  import DockSystem from './components/DockSystem.svelte';
+  import AppearanceModal from './components/AppearanceModal.svelte';
   import CommandPalette from './components/CommandPalette.svelte';
   import McpModal from './components/McpModal.svelte';
   import CalibrationWizard from './components/CalibrationWizard.svelte';
@@ -49,20 +47,14 @@
       <TimelineDock />
     </main>
 
-    <!-- Right: Properties, Layers, Nudge Pad, Color (320px) -->
-    <aside class="right-inspector">
-      <div class="scroll-container">
-        <Inspector />
-        <LayersPanel />
-        <NudgePad />
-        <ColorPicker />
-      </div>
-    </aside>
+    <!-- Right: Tabbed Dock System (§10) -->
+    <DockSystem />
   </div>
 
   <!-- Modals & Drawers -->
   <CommandPalette />
   <McpModal />
+  <AppearanceModal />
   <CalibrationWizard />
   <SprayLab />
   <DynamicOptInModal />
@@ -96,24 +88,5 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
-  }
-
-  .right-inspector {
-    width: 320px;
-    flex: none;
-    border-left: 1px solid var(--border);
-    background: var(--surface1);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .scroll-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
 </style>

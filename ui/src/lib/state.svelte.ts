@@ -388,6 +388,43 @@ export class EditorState {
   shortcutsDialogOpen = $state<boolean>(false);
   colorPickerOpen = $state<boolean>(false);
 
+  // Appearance & Themes (§12, §13)
+  theme = $state<string>('mono-dark');
+  fontPack = $state<string>('satoshi');
+  cornerStyle = $state<'sharp' | 'default' | 'soft'>('default');
+  density = $state<'compact' | 'default'>('default');
+  uiScale = $state<number>(1.0);
+  followSystem = $state<boolean>(true);
+  appearanceModalOpen = $state<boolean>(false);
+
+  // Tabbed Dock System (§10)
+  activeDockTab = $state<string>('Design');
+  dockTabs = $state<string[]>([
+    'Design',
+    'Shape',
+    'Fill & Stroke',
+    'Effects',
+    'Color',
+    'Layers',
+    'Nudge',
+    'Animation',
+    'Properties',
+    'MCP Activity',
+  ]);
+  dockLayoutPreset = $state<string>('Designer');
+  floatingPanels = $state<Array<{ id: string; title: string; x: number; y: number; pinned: boolean }>>([]);
+  isDockMaximized = $state<boolean>(false);
+  propertySearchQuery = $state<string>('');
+  showModifiedOnly = $state<boolean>(false);
+
+  // Style Presets (§9.1)
+  stylePresets = $state<Array<{ name: string; fill: string; stroke?: string; glow?: number }>>([
+    { name: 'Neon Cyan', fill: '#38BDF8', stroke: '#000000', glow: 2.0 },
+    { name: 'Vibrant Mint', fill: '#3DDBB0', stroke: '#000000', glow: 0.0 },
+    { name: 'Crimson Dot', fill: '#FF5A5F', stroke: '#1F0507', glow: 1.5 },
+    { name: 'High-Vis Amber', fill: '#F5B83D', stroke: '#000000', glow: 0.0 },
+  ]);
+
   // Position & Nudge Control (§5, §6)
   positionMode = $state<'relative' | 'absolute'>('relative');
   nudgeStep = $state<number>(0.5);
@@ -1738,6 +1775,151 @@ export class EditorState {
   removeDynamicBinding(bindingId: string) {
     this.pushUndo();
     this.dynamicBindings = this.dynamicBindings.filter((b) => b.id !== bindingId);
+  }
+
+  setTheme(themeId: string) {
+    this.theme = themeId;
+    if (typeof document !== 'undefined') {
+      const doc = document.documentElement;
+      const toRemove: string[] = [];
+      doc.classList.forEach((cls) => {
+        if (cls.startsWith('theme-')) toRemove.push(cls);
+      });
+      toRemove.forEach((cls) => doc.classList.remove(cls));
+      doc.classList.add(`theme-${themeId}`);
+    }
+  }
+
+  setFontPack(packId: string) {
+    this.fontPack = packId;
+    if (typeof document !== 'undefined') {
+      const doc = document.documentElement;
+      const toRemove: string[] = [];
+      doc.classList.forEach((cls) => {
+        if (cls.startsWith('font-')) toRemove.push(cls);
+      });
+      toRemove.forEach((cls) => doc.classList.remove(cls));
+      doc.classList.add(`font-${packId}`);
+    }
+  }
+
+  setCornerStyle(style: 'sharp' | 'default' | 'soft') {
+    this.cornerStyle = style;
+    if (typeof document !== 'undefined') {
+      const doc = document.documentElement;
+      const toRemove: string[] = [];
+      doc.classList.forEach((cls) => {
+        if (cls.startsWith('corner-')) toRemove.push(cls);
+      });
+      toRemove.forEach((cls) => doc.classList.remove(cls));
+      doc.classList.add(`corner-${style}`);
+    }
+  }
+
+  openAppearanceModal() {
+    this.appearanceModalOpen = true;
+  }
+
+  closeAppearanceModal() {
+    this.appearanceModalOpen = false;
+  }
+
+  setActiveDockTab(tab: string) {
+    this.activeDockTab = tab;
+  }
+
+  toggleDockMaximize() {
+    this.isDockMaximized = !this.isDockMaximized;
+  }
+
+  applyDockLayout(presetName: string) {
+    this.dockLayoutPreset = presetName;
+    if (presetName === 'Compact') {
+      this.dockTabs = ['Design', 'Layers', 'Nudge'];
+      this.activeDockTab = 'Design';
+    } else if (presetName === 'Pixel Art') {
+      this.dockTabs = ['Design', 'Layers', 'Color', 'Properties'];
+      this.activeDockTab = 'Color';
+    } else if (presetName === 'Agent Watch') {
+      this.dockTabs = ['Layers', 'Properties', 'MCP Activity', 'Animation'];
+      this.activeDockTab = 'MCP Activity';
+    } else if (presetName === 'Minimal') {
+      this.dockTabs = ['Design', 'Properties'];
+      this.activeDockTab = 'Design';
+    } else {
+      // Designer
+      this.dockTabs = [
+        'Design',
+        'Shape',
+        'Fill & Stroke',
+        'Effects',
+        'Color',
+        'Layers',
+        'Nudge',
+        'Animation',
+        'Properties',
+        'MCP Activity',
+      ];
+      this.activeDockTab = 'Design';
+    }
+  }
+
+  saveStylePreset(name: string) {
+    const layer = this.selectedLayer;
+    if (!layer) return;
+    const existingIdx = this.stylePresets.findIndex((p) => p.name === name);
+    const newPreset = {
+      name,
+      fill: layer.color,
+      stroke: '#000000',
+      glow: layer.glowRadius || 0,
+    };
+    if (existingIdx >= 0) {
+      this.stylePresets[existingIdx] = newPreset;
+    } else {
+      this.stylePresets.push(newPreset);
+    }
+  }
+
+  applyStylePreset(name: string) {
+    const preset = this.stylePresets.find((p) => p.name === name);
+    if (!preset) return;
+    this.pushUndo();
+    for (const layer of this.selectedLayers) {
+      layer.color = preset.fill;
+      if (preset.glow !== undefined) {
+        layer.glowRadius = preset.glow;
+      }
+    }
+    this.autoSave();
+  }
+
+  deleteStylePreset(name: string) {
+    this.stylePresets = this.stylePresets.filter((p) => p.name !== name);
+  }
+
+  randomizeCrosshair(seed?: number, _count?: number) {
+    this.pushUndo();
+    const effectiveSeed = seed ?? Date.now();
+    let s = effectiveSeed;
+    const rnd = () => {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+    for (const layer of this.crosshair.layers) {
+      if (layer.shape.type === 'LineArms') {
+        layer.shape.length = Math.round((2 + rnd() * 8) * 2) / 2;
+        layer.shape.gap = Math.round((rnd() * 6) * 2) / 2;
+        layer.shape.thickness = Math.round((1 + rnd() * 3) * 2) / 2;
+      } else if (layer.shape.type === 'Dot') {
+        layer.shape.diameter = Math.round((1 + rnd() * 3) * 2) / 2;
+      }
+    }
+    this.autoSave();
+  }
+
+  autoSave() {
+    this.saveCurrentProfile();
   }
 }
 

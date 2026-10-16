@@ -453,5 +453,250 @@
     "command": "calibration.set_offset",
     "mcp_tool": "calibration.set_offset",
     "description": "Sets the physical pixel calibration offset in game pixels"
+  },
+  {
+    "id": "property.list",
+    "name": "List Properties",
+    "command": "property.list",
+    "mcp_tool": "property.list",
+    "description": "Lists all schema-driven micro properties with metadata and filters"
+  },
+  {
+    "id": "property.get",
+    "name": "Get Property",
+    "command": "property.get",
+    "mcp_tool": "property.get",
+    "description": "Retrieves current value of a property by descriptor ID"
+  },
+  {
+    "id": "property.set",
+    "name": "Set Property",
+    "command": "property.set",
+    "mcp_tool": "property.set",
+    "description": "Sets a single property value by descriptor ID"
+  },
+  {
+    "id": "property.set_many",
+    "name": "Set Multiple Properties",
+    "command": "property.set_many",
+    "mcp_tool": "property.set_many",
+    "description": "Atomically updates multiple properties across layers"
+  },
+  {
+    "id": "property.reset",
+    "name": "Reset Property",
+    "command": "property.reset",
+    "mcp_tool": "property.reset",
+    "description": "Resets a property or group back to descriptor default"
+  },
+  {
+    "id": "property.link",
+    "name": "Link Properties",
+    "command": "property.link",
+    "mcp_tool": "property.link",
+    "description": "Toggles link state between paired properties"
+  },
+  {
+    "id": "property.search",
+    "name": "Search Properties",
+    "command": "property.search",
+    "mcp_tool": "property.search",
+    "description": "Searches property registry by name, label, tip, or keywords"
+  },
+  {
+    "id": "style.copy",
+    "name": "Copy Style",
+    "command": "style.copy",
+    "mcp_tool": "style.copy",
+    "description": "Copies stroke, fill, and effects style from target layer"
+  },
+  {
+    "id": "style.paste",
+    "name": "Paste Style",
+    "command": "style.paste",
+    "mcp_tool": "style.paste",
+    "description": "Applies copied style attributes onto selected layers"
+  },
+  {
+    "id": "style.save_preset",
+    "name": "Save Style Preset",
+    "command": "style.save_preset",
+    "mcp_tool": "style.save_preset",
+    "description": "Saves current layer style configuration as a reusable preset"
+  },
+  {
+    "id": "style.apply_preset",
+    "name": "Apply Style Preset",
+    "command": "style.apply_preset",
+    "mcp_tool": "style.apply_preset",
+    "description": "Applies a named style preset to selected layers"
+  },
+  {
+    "id": "style.list_presets",
+    "name": "List Style Presets",
+    "command": "style.list_presets",
+    "mcp_tool": "style.list_presets",
+    "description": "Lists all saved and default style presets"
+  },
+  {
+    "id": "style.delete_preset",
+    "name": "Delete Style Preset",
+    "command": "style.delete_preset",
+    "mcp_tool": "style.delete_preset",
+    "description": "Deletes a saved style preset"
+  },
+  {
+    "id": "crosshair.randomize",
+    "name": "Randomize Crosshair",
+    "command": "crosshair.randomize",
+    "mcp_tool": "crosshair.randomize",
+    "description": "Generates bounded random variations of the crosshair"
+  },
+  {
+    "id": "theme.list",
+    "name": "List Themes",
+    "command": "theme.list",
+    "mcp_tool": "theme.list",
+    "description": "Lists all 9 neutral-base application themes"
+  },
+  {
+    "id": "theme.get",
+    "name": "Get Theme",
+    "command": "theme.get",
+    "mcp_tool": "theme.get",
+    "description": "Gets current application theme ID and base ramp"
+  },
+  {
+    "id": "theme.set",
+    "name": "Set Theme",
+    "command": "theme.set",
+    "mcp_tool": "theme.set",
+    "description": "Switches active application theme"
+  },
+  {
+    "id": "theme.preview",
+    "name": "Preview Theme",
+    "command": "theme.preview",
+    "mcp_tool": "theme.preview",
+    "description": "Temporarily previews a theme without saving"
+  },
+  {
+    "id": "appearance.get",
+    "name": "Get Appearance",
+    "command": "appearance.get",
+    "mcp_tool": "appearance.get",
+    "description": "Returns full appearance configuration (theme, font, corner style)"
+  },
+  {
+    "id": "appearance.set",
+    "name": "Set Appearance",
+    "command": "appearance.set",
+    "mcp_tool": "appearance.set",
+    "description": "Updates theme, system sync, font pack, corner style, and density"
+  },
+  {
+    "id": "font_pack.list",
+    "name": "List Font Packs",
+    "command": "font_pack.list",
+    "mcp_tool": "font_pack.list",
+    "description": "Lists all 6 bundled self-hosted WOFF2 typography packs"
+  },
+  {
+    "id": "ui.panel.open",
+    "name": "Open Dock Panel",
+    "command": "ui.panel.open",
+    "mcp_tool": "ui.panel.open",
+    "description": "Opens a panel tab in specified dock area"
+  },
+  {
+    "id": "ui.panel.close",
+    "name": "Close Dock Panel",
+    "command": "ui.panel.close",
+    "mcp_tool": "ui.panel.close",
+    "description": "Closes a panel tab without deleting underlying data"
+  },
+  {
+    "id": "ui.panel.move",
+    "name": "Move Dock Panel",
+    "command": "ui.panel.move",
+    "mcp_tool": "ui.panel.move",
+    "description": "Moves a panel tab between dock areas (left, right, bottom)"
+  },
+  {
+    "id": "ui.panel.split",
+    "name": "Split Dock Panel",
+    "command": "ui.panel.split",
+    "mcp_tool": "ui.panel.split",
+    "description": "Splits dock area horizontally or vertically with target panel"
+  },
+  {
+    "id": "ui.panel.float",
+    "name": "Float Dock Panel",
+    "command": "ui.panel.float",
+    "mcp_tool": "ui.panel.float",
+    "description": "Floats a panel tab as an in-app mini window over canvas"
+  },
+  {
+    "id": "ui.panel.detach",
+    "name": "Detach Dock Panel",
+    "command": "ui.panel.detach",
+    "mcp_tool": "ui.panel.detach",
+    "description": "Detaches a dock panel into a separate OS window"
+  },
+  {
+    "id": "ui.panel.pin",
+    "name": "Pin Dock Panel",
+    "command": "ui.panel.pin",
+    "mcp_tool": "ui.panel.pin",
+    "description": "Pins or unpins a floating dock panel"
+  },
+  {
+    "id": "ui.panel.maximize",
+    "name": "Maximize Dock Panel",
+    "command": "ui.panel.maximize",
+    "mcp_tool": "ui.panel.maximize",
+    "description": "Maximizes panel within its dock area"
+  },
+  {
+    "id": "ui.layout.list",
+    "name": "List Dock Layouts",
+    "command": "ui.layout.list",
+    "mcp_tool": "ui.layout.list",
+    "description": "Lists saved dock layout presets (Compact, Pixel Art, Designer, Agent Watch)"
+  },
+  {
+    "id": "ui.layout.save",
+    "name": "Save Dock Layout",
+    "command": "ui.layout.save",
+    "mcp_tool": "ui.layout.save",
+    "description": "Saves current dock arrangement as a named layout preset"
+  },
+  {
+    "id": "ui.layout.apply",
+    "name": "Apply Dock Layout",
+    "command": "ui.layout.apply",
+    "mcp_tool": "ui.layout.apply",
+    "description": "Applies a saved dock layout preset"
+  },
+  {
+    "id": "ui.layout.reset",
+    "name": "Reset Dock Layout",
+    "command": "ui.layout.reset",
+    "mcp_tool": "ui.layout.reset",
+    "description": "Resets dock arrangement to default layout"
+  },
+  {
+    "id": "ui.layout.export",
+    "name": "Export Dock Layout",
+    "command": "ui.layout.export",
+    "mcp_tool": "ui.layout.export",
+    "description": "Exports dock layout configuration JSON"
+  },
+  {
+    "id": "ui.layout.import",
+    "name": "Import Dock Layout",
+    "command": "ui.layout.import",
+    "mcp_tool": "ui.layout.import",
+    "description": "Imports dock layout configuration JSON"
   }
 ]

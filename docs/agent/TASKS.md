@@ -77,4 +77,11 @@
 | **V2-003** | Spec v2 | MCP Tools Suite & Parity Test | done | v2 §0, §10 | 30 v2 tools across edit/library, 100% human/agent parity test verified |
 | **V2-004** | Spec v2 | Overlay Window Toggle & IPC Bridge | done | Bug Fix | Win32 SW_HIDE / SW_SHOWNOACTIVATE, Ctrl+Shift+X hotkey, wry IPC toggle handler |
 | **V2-005** | Spec v2 | Frontend UI Components & Runes State | done | v2 §1–§9 | Multi-select, NudgePad 8-dir+chips, Layer groups, ColorPicker, Group modal, Shortcuts dialog |
+| **V5-001** | Spec v5 | Phase 0 Design: 24 screens, pure neutral tokens & zero pills | done | v5 §0, §12, §17 | 24 screens at 1x & 2x in design/screens/, tokens.json updated to 3 neutral ramps, 9 themes, 6 font packs, radius <= 10px |
+| **V5-002** | Spec v5 | Command Registry & Bus: 23 new v5 commands with pure inverses | done | v5 §1–§10 | PropertySet, PropertySetMany, PropertyReset, PropertyLink, Style*, Randomize, ThemeSet, AppearanceSet, UiPanel*, UiLayout* |
+| **V5-003** | Spec v5 | Schema-Driven Descriptors & Properties Catalog | done | v5 §4, §9 | Descriptors for all 14 shapes, visual effects, and appearance; exported properties.json & PROPERTIES.md |
+| **V5-004** | Spec v5 | MCP Tools Suite & Parity Test (P4) | done | v5 §3, §14 | 27 new MCP tools, 100 UI actions synced, 100% parity test verified |
+| **V5-005** | Spec v5 | Tabbed Dock System & Layout Presets | done | v5 §10 | DockSystem.svelte with 11 default tabs, layout presets (Designer, Compact, Pixel Art, Agent Watch, Minimal), maximize, property search |
+| **V5-006** | Spec v5 | Appearance Modal, Neutral Themes & Styling | done | v5 §12, §13 | AppearanceModal.svelte with live theme cards & font specimens, app.css neutral styling |
+| **V5-007** | Spec v5 | Complete Documentation Deliverables | done | v5 §14.2 | AGENT_README.md, TYPOGRAPHY.md, LAYOUT.md, THEMING.md, MCP.md, COMMANDS.md |
 

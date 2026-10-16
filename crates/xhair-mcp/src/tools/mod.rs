@@ -1,11 +1,13 @@
 //! MCP Tools registry and dispatcher.
 
+pub mod appearance;
 pub mod edit;
 pub mod format;
 pub mod library;
 pub mod meta;
 pub mod overlay;
 pub mod preview;
+pub mod property;
 
 use crate::context::ServerContext;
 use crate::protocol::{CallToolResult, ToolDefinition};
@@ -837,6 +839,401 @@ pub fn list_tools() -> Vec<ToolDefinition> {
                 }
             }),
         },
+        // Properties & Styles
+        ToolDefinition {
+            name: "property.list".to_string(),
+            description: "Lists all editable properties from the schema-driven registry."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string" },
+                    "group": { "type": "string" },
+                    "modified_only": { "type": "boolean" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.get".to_string(),
+            description: "Gets the value of a property by descriptor ID.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["property_id"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "property_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.set".to_string(),
+            description: "Sets a single property value by descriptor ID.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["property_id", "value"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "property_id": { "type": "string" },
+                    "value": {}
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.set_many".to_string(),
+            description: "Sets multiple property values atomically.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["properties"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "properties": { "type": "object" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.reset".to_string(),
+            description: "Resets a property to its descriptor default value.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["property_id"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "property_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.link".to_string(),
+            description: "Links or unlinks paired properties (e.g. width/height, x/y).".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["property_a", "property_b"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "property_a": { "type": "string" },
+                    "property_b": { "type": "string" },
+                    "linked": { "type": "boolean" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "property.search".to_string(),
+            description: "Searches property registry by keywords.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                    "query": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "style.copy".to_string(),
+            description: "Copies visual style from a source layer.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["layer_id"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "layer_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "style.paste".to_string(),
+            description: "Pastes copied visual style to target layers.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["target_layer_ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "target_layer_ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "style.save_preset".to_string(),
+            description: "Saves a style preset by name.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": { "type": "string" },
+                    "properties": { "type": "object" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "style.apply_preset".to_string(),
+            description: "Applies a style preset to target layers.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["preset_name", "target_layer_ids"],
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "preset_name": { "type": "string" },
+                    "target_layer_ids": { "type": "array", "items": { "type": "string" } }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "style.list_presets".to_string(),
+            description: "Lists all saved style presets.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "style.delete_preset".to_string(),
+            description: "Deletes a saved style preset.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["preset_name"],
+                "properties": {
+                    "preset_name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "crosshair.randomize".to_string(),
+            description: "Generates bounded random variations of the crosshair.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "crosshair_id": { "type": "string" },
+                    "seed": { "type": "integer" },
+                    "count": { "type": "integer" }
+                }
+            }),
+        },
+        // Appearance & Themes (App-Only)
+        ToolDefinition {
+            name: "theme.list".to_string(),
+            description: "Lists all 9 neutral-base supported themes.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "theme.get".to_string(),
+            description: "Gets the active application theme.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "theme.set".to_string(),
+            description: "Sets the active application theme.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                    "id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "theme.preview".to_string(),
+            description: "Temporarily previews a theme without persisting.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                    "id": { "type": "string" },
+                    "duration_ms": { "type": "integer" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "appearance.get".to_string(),
+            description: "Gets full appearance configuration (theme, font, corner style)."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "appearance.set".to_string(),
+            description: "Sets appearance settings (theme, font pack, corner style, density)."
+                .to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "theme": { "type": "string" },
+                    "follow_system": { "type": "boolean" },
+                    "font_pack": { "type": "string" },
+                    "corner_style": { "type": "string", "enum": ["sharp", "default", "soft"] },
+                    "density": { "type": "string" },
+                    "ui_scale": { "type": "number" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "font_pack.list".to_string(),
+            description: "Lists all 6 bundled self-hosted typography packs.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        // UI Dock & Layouts (App-Only)
+        ToolDefinition {
+            name: "ui.panel.open".to_string(),
+            description: "Opens a dock panel in specified dock area.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" },
+                    "dock_area": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.close".to_string(),
+            description: "Closes a dock panel.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.move".to_string(),
+            description: "Moves a dock panel to another dock area.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id", "target_dock_area"],
+                "properties": {
+                    "panel_id": { "type": "string" },
+                    "target_dock_area": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.split".to_string(),
+            description: "Splits a dock panel with another panel.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" },
+                    "direction": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.float".to_string(),
+            description: "Floats a dock panel as an in-app mini window.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" },
+                    "x": { "type": "number" },
+                    "y": { "type": "number" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.detach".to_string(),
+            description: "Detaches a dock panel to a separate OS window.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.pin".to_string(),
+            description: "Pins or unpins a floating dock panel.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" },
+                    "pinned": { "type": "boolean" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.panel.maximize".to_string(),
+            description: "Maximizes a panel within its dock area.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["panel_id"],
+                "properties": {
+                    "panel_id": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.list".to_string(),
+            description: "Lists all saved dock layout presets.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.save".to_string(),
+            description: "Saves current dock layout as a preset.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.apply".to_string(),
+            description: "Applies a saved dock layout preset.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.reset".to_string(),
+            description: "Resets dock layout to default configuration.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {}
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.export".to_string(),
+            description: "Exports current dock layout as JSON.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" }
+                }
+            }),
+        },
+        ToolDefinition {
+            name: "ui.layout.import".to_string(),
+            description: "Imports a dock layout configuration JSON.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": { "type": "object" }
+                }
+            }),
+        },
     ]
 }
 
@@ -929,6 +1326,47 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
         "gun.list" => meta::gun_list(ctx, args),
         "dynamics.set_enabled" => meta::dynamics_set_enabled(ctx, args),
         "dynamics.simulate" => meta::dynamics_simulate(ctx, args),
+
+        // Properties, Styles & Presets
+        "property.list" => property::property_list(ctx, args),
+        "property.get" => property::property_get(ctx, args),
+        "property.set" => property::property_set(ctx, args),
+        "property.set_many" => property::property_set_many(ctx, args),
+        "property.reset" => property::property_reset(ctx, args),
+        "property.link" => property::property_link(ctx, args),
+        "property.search" => property::property_search(ctx, args),
+        "style.copy" => property::style_copy(ctx, args),
+        "style.paste" => property::style_paste(ctx, args),
+        "style.save_preset" => property::style_save_preset(ctx, args),
+        "style.apply_preset" => property::style_apply_preset(ctx, args),
+        "style.list_presets" => property::style_list_presets(ctx, args),
+        "style.delete_preset" => property::style_delete_preset(ctx, args),
+        "crosshair.randomize" => property::crosshair_randomize(ctx, args),
+
+        // Appearance, Themes & Font Packs
+        "theme.list" => appearance::theme_list(ctx, args),
+        "theme.get" => appearance::theme_get(ctx, args),
+        "theme.set" => appearance::theme_set(ctx, args),
+        "theme.preview" => appearance::theme_preview(ctx, args),
+        "appearance.get" => appearance::appearance_get(ctx, args),
+        "appearance.set" => appearance::appearance_set(ctx, args),
+        "font_pack.list" => appearance::font_pack_list(ctx, args),
+
+        // UI Dock & Layout
+        "ui.panel.open" => appearance::ui_panel_open(ctx, args),
+        "ui.panel.close" => appearance::ui_panel_close(ctx, args),
+        "ui.panel.move" => appearance::ui_panel_move(ctx, args),
+        "ui.panel.split" => appearance::ui_panel_split(ctx, args),
+        "ui.panel.float" => appearance::ui_panel_float(ctx, args),
+        "ui.panel.detach" => appearance::ui_panel_detach(ctx, args),
+        "ui.panel.pin" => appearance::ui_panel_pin(ctx, args),
+        "ui.panel.maximize" => appearance::ui_panel_maximize(ctx, args),
+        "ui.layout.list" => appearance::ui_layout_list(ctx, args),
+        "ui.layout.save" => appearance::ui_layout_save(ctx, args),
+        "ui.layout.apply" => appearance::ui_layout_apply(ctx, args),
+        "ui.layout.reset" => appearance::ui_layout_reset(ctx, args),
+        "ui.layout.export" => appearance::ui_layout_export(ctx, args),
+        "ui.layout.import" => appearance::ui_layout_import(ctx, args),
 
         _ => CallToolResult::error(format!("Unknown tool: {}", name)),
     };

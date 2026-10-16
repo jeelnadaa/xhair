@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 18
-- **Phase / Milestone:** Design & Spec Update v2 & Overlay Toggle Resolution
+- **Session:** 19
+- **Phase / Milestone:** Complete Design & Spec Update v5 (v2 + v3 + v4 merged)
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/` & `target/release/`
 
 ## Done (milestone-level)
@@ -18,22 +18,21 @@
 - [x] M8 Calibration (completed 2026-10-16)
 - [x] M9 Dynamics & Spray Lab (completed 2026-10-16)
 - [x] M10 Packaging & Hardening (completed 2026-10-16)
-- [x] Design & Spec Update v2 (completed 2026-10-16):
-  - Phase 0 design tokens updated to monochromatic neutral gray ramp (`#111418`, `#181C22`, `#21262F`, `#282F3A`), Satoshi font from Fontshare, 12 screen designs exported and verified.
-  - Command bus & registry: All v2 commands added (`LayerRename`, `LayerGroup`, `LayerUngroup`, `LayerSetPosition`, `LayerRecenter`, `CrosshairRecenter`, `PaintSet`, `SelectionSet`, `SelectionAdd`, `SelectionRemove`, `SelectionToggle`, `SelectionAll`, `SelectionClear`, `SelectionInvert`, plus all `Group*` and `*Pack` commands) with pure inverse mutations.
-  - MCP Tools & 100% Parity: 30 new v2 tools implemented across `crates/xhair-mcp/src/tools/` (`edit.rs`, `library.rs`), parity test passing across 35 required tools and 25 commands.
-  - UI Components: Hierarchical layer groups, multi-select bounding box & canvas marquee, 8-directional NudgePad with step chips & custom step, ColorPicker popover with SV picker / hue / alpha / custom swatches / colorblind palette, GroupSettingsModal with process binding, ShortcutsDialog cheat sheet, inline renaming with F2, and "Moved from center" indicator badge with 1-click recentering.
-- [x] Win32 Overlay Toggle Bug Resolution:
-  - Resolved overlay daemon toggle (`SetEnabled(bool)`) by explicitly issuing `ShowWindow(hwnd, SW_HIDE)` and `ShowWindow(hwnd, SW_SHOWNOACTIVATE)` on the layered transparent window.
-  - Wired native `wry` IPC handlers for `set_overlay_enabled`, `toggle_overlay`, and `recenter`.
-  - Registered Windows global hotkeys `Ctrl+Shift+X` (Toggle Overlay) and `Ctrl+Shift+C` (Recenter Crosshair).
-- [x] Release Build Recompiled: `target/release/xhair.exe` and `target/release/xhair-cli.exe` freshly compiled with embedded frontend distribution.
+- [x] Design & Spec Update v2 (completed 2026-10-16)
+- [x] Win32 Overlay Toggle Bug Resolution (completed 2026-10-16)
+- [x] Complete Design & Spec Update v5 (completed 2026-10-16):
+  - Phase 0 Design: 24 screens at 1x & 2x in `design/screens/`, 3 pure neutral base ramps (Graphite, White, Pure Black) with channel spread <= 2, 9 neutral-base themes with WCAG contrast (>= 4.5:1, high-contrast >= 7:1), 6 font packs, 3 corner curvature styles, radius <= 10px with zero pills.
+  - Backend command registry: Added 23 new v5 commands with typed scopes, availability, execution diffs, and exact mathematical inverse mutations for undo/redo.
+  - Schema-driven property registry: Descriptors for all 14 shapes (`rect`, `circle`, `ring`, `arc`, `polygon`, `triangle`, `chevron`, `t_shape`, `plus`, `path`, `pixels`, `image`), effects (`glow`, `shadow`, `bloom`), and appearance (`theme.id`, `appearance.font_pack`, `appearance.corner_style`).
+  - Human/agent parity (P4): Implemented 27 new MCP tools across `property.rs` and `appearance.rs`, passing parity test across 100 UI actions, 47 core commands, and 56 MCP tools.
+  - Frontend UI components: Tabbed `DockSystem.svelte` supporting 11 default tabs, layout presets (`Compact`, `Pixel Art`, `Designer`, `Agent Watch`, `Minimal`), live property search with "Show modified only" filter, `AppearanceModal.svelte` with live theme cards and font specimens, and pure neutral token restyling in `app.css`.
+  - Documentation deliverables: `docs/AGENT_README.md`, `docs/TYPOGRAPHY.md`, `docs/LAYOUT.md`, `docs/THEMING.md`, and updated `docs/MCP.md` & `docs/COMMANDS.md`.
 
 ## In progress
-- None. All features fully implemented, tested, and verified.
+- None. All v5 features fully implemented, tested, and verified.
 
 ## Next exact step
-- Human review and verification of standalone executable.
+- Present completion summary to human and verify release build.
 
 ## WIP notes
 - Release artifacts generated in `dist/`:

@@ -94,6 +94,41 @@ DispatchOptions {
 | `CalibrationSetOffset { profile_id, dx, dy }` | Settings | Yes | Stores subpixel centering calibration offset for a screen profile. |
 | `DynamicsSetEnabled { enabled, confirm_risk }` | Settings | No | Toggles dynamic reticle simulation with mandatory risk opt-in. |
 
+### Micro-Level Property Operations & Presets (§9)
+| Command Variant | Scope | Undoable | Description |
+|---|---|---|---|
+| `PropertySet { crosshair_id, property_id, value }` | Document | Yes | Mutates an individual property by schema descriptor ID. |
+| `PropertySetMany { crosshair_id, properties }` | Document | Yes | Atomically mutates multiple properties across layers. |
+| `PropertyReset { crosshair_id, property_id }` | Document | Yes | Resets target property back to its descriptor default. |
+| `PropertyLink { crosshair_id, property_a, property_b, linked }` | Document | Yes | Toggles linked state between paired properties. |
+| `StyleCopy { crosshair_id, layer_id }` | Document | No | Copies stroke, fill, and effects attributes from a layer. |
+| `StylePaste { crosshair_id, target_layer_ids }` | Document | Yes | Pastes copied visual style onto target layers. |
+| `StyleSavePreset { name, properties }` | Settings | Yes | Saves current layer style configuration as a named preset. |
+| `StyleApplyPreset { crosshair_id, target_layer_ids, preset_name }` | Document | Yes | Applies a named style preset to target layers. |
+| `StyleDeletePreset { preset_name }` | Settings | Yes | Deletes a saved style preset. |
+| `CrosshairRandomize { crosshair_id, seed, count }` | Document | Yes | Generates bounded procedural variations of the crosshair. |
+
+### Appearance & Themes (§12, §13, App-Only)
+| Command Variant | Scope | Undoable | Description |
+|---|---|---|---|
+| `ThemeSet { id }` | Settings | Yes | Sets the active application theme (`mono-dark`, `mono-light`, `graphite-mint`, etc.). |
+| `AppearanceSet { theme, follow_system, font_pack, corner_style, density, ui_scale }` | Settings | Yes | Updates complete appearance configuration. |
+
+### Right-Panel Tabbed Dock System (§10, App-Only)
+| Command Variant | Scope | Undoable | Description |
+|---|---|---|---|
+| `UiPanelOpen { panel_id, dock_area }` | System | No | Opens a panel tab into specified dock area. |
+| `UiPanelClose { panel_id }` | System | No | Closes a dock panel tab without deleting data. |
+| `UiPanelMove { panel_id, target_dock_area }` | System | No | Moves a dock tab to a different area. |
+| `UiPanelSplit { panel_id, direction }` | System | No | Splits dock area horizontally or vertically. |
+| `UiPanelFloat { panel_id, x, y }` | System | No | Floats panel as in-app mini window. |
+| `UiPanelDetach { panel_id }` | System | No | Detaches dock panel to a separate OS window. |
+| `UiPanelPin { panel_id, pinned }` | System | No | Pins or unpins floating dock panel. |
+| `UiPanelMaximize { panel_id }` | System | No | Maximizes panel within its dock area. |
+| `UiLayoutSave { name }` | System | No | Saves current dock layout as a named preset. |
+| `UiLayoutApply { name }` | System | No | Applies a saved dock layout preset (`Compact`, `Pixel Art`, `Designer`, `Agent Watch`). |
+| `UiLayoutReset` | System | No | Resets dock layout to default configuration. |
+
 ### Batch Execution
 | Command Variant | Scope | Undoable | Description |
 |---|---|---|---|

@@ -297,6 +297,168 @@ pub enum Command {
         /// List of commands to execute atomically in a single undo step.
         commands: Vec<Command>,
     },
+    /// Set a dynamic or micro-level property value by descriptor ID.
+    PropertySet {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Property descriptor ID.
+        property_id: String,
+        /// New property value.
+        value: serde_json::Value,
+    },
+    /// Set multiple properties atomically.
+    PropertySetMany {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Key-value property map.
+        properties: std::collections::HashMap<String, serde_json::Value>,
+    },
+    /// Reset a property to its descriptor default.
+    PropertyReset {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Property descriptor ID.
+        property_id: String,
+    },
+    /// Toggle link between paired properties.
+    PropertyLink {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// First property ID.
+        property_a: String,
+        /// Second property ID.
+        property_b: String,
+        /// Whether properties are linked.
+        linked: bool,
+    },
+    /// Copy style from a source layer.
+    StyleCopy {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Source layer ID.
+        layer_id: LayerId,
+    },
+    /// Paste style to target layers.
+    StylePaste {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Target layer IDs.
+        target_layer_ids: Vec<LayerId>,
+    },
+    /// Save current style preset.
+    StyleSavePreset {
+        /// Preset name.
+        name: String,
+        /// Preset property payload.
+        properties: serde_json::Value,
+    },
+    /// Apply a saved style preset to target layers.
+    StyleApplyPreset {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Target layer IDs.
+        target_layer_ids: Vec<LayerId>,
+        /// Preset name.
+        preset_name: String,
+    },
+    /// Delete a saved style preset.
+    StyleDeletePreset {
+        /// Preset name.
+        preset_name: String,
+    },
+    /// Generate bounded random variations of the crosshair.
+    CrosshairRandomize {
+        /// Crosshair ID.
+        crosshair_id: CrosshairId,
+        /// Optional random seed.
+        seed: Option<u64>,
+        /// Number of variations.
+        count: Option<usize>,
+    },
+    /// Switch active application theme.
+    ThemeSet {
+        /// Theme identifier (e.g. "mono-dark", "mono-light", "graphite-mint").
+        id: String,
+    },
+    /// Configure full appearance settings.
+    AppearanceSet {
+        /// Optional theme ID.
+        theme: Option<String>,
+        /// Optional follow system light/dark.
+        follow_system: Option<bool>,
+        /// Optional font pack ID.
+        font_pack: Option<String>,
+        /// Optional corner style ("sharp", "default", "soft").
+        corner_style: Option<String>,
+        /// Optional density ("compact", "default").
+        density: Option<String>,
+        /// Optional UI scale factor.
+        ui_scale: Option<f32>,
+    },
+    /// Open a dock panel into a dock area.
+    UiPanelOpen {
+        /// Panel identifier.
+        panel_id: String,
+        /// Optional target dock area ("right", "left", "bottom", "floating").
+        dock_area: Option<String>,
+    },
+    /// Close a dock panel.
+    UiPanelClose {
+        /// Panel identifier.
+        panel_id: String,
+    },
+    /// Move a dock panel to a different area.
+    UiPanelMove {
+        /// Panel identifier.
+        panel_id: String,
+        /// Target dock area.
+        target_dock_area: String,
+    },
+    /// Split a dock panel with another.
+    UiPanelSplit {
+        /// Panel identifier.
+        panel_id: String,
+        /// Split direction ("horizontal", "vertical").
+        direction: String,
+    },
+    /// Float a panel as an in-app mini window.
+    UiPanelFloat {
+        /// Panel identifier.
+        panel_id: String,
+        /// Optional X position.
+        x: Option<f32>,
+        /// Optional Y position.
+        y: Option<f32>,
+    },
+    /// Detach a panel to an external window.
+    UiPanelDetach {
+        /// Panel identifier.
+        panel_id: String,
+    },
+    /// Pin or unpin a floating panel.
+    UiPanelPin {
+        /// Panel identifier.
+        panel_id: String,
+        /// Pin state.
+        pinned: bool,
+    },
+    /// Maximize a panel.
+    UiPanelMaximize {
+        /// Panel identifier.
+        panel_id: String,
+    },
+    /// Save current dock layout as a named preset.
+    UiLayoutSave {
+        /// Preset name.
+        name: String,
+    },
+    /// Apply a saved dock layout preset.
+    UiLayoutApply {
+        /// Preset name.
+        name: String,
+    },
+    /// Reset dock layout to default configuration.
+    UiLayoutReset,
 }
 
 impl Command {
@@ -328,17 +490,69 @@ impl Command {
             Self::GlobalEffectsSet { .. } => "effects.set",
             Self::Nudge { .. } => "nudge",
             Self::Batch { .. } => "edit.batch",
+            Self::PropertySet { .. } => "property.set",
+            Self::PropertySetMany { .. } => "property.set_many",
+            Self::PropertyReset { .. } => "property.reset",
+            Self::PropertyLink { .. } => "property.link",
+            Self::StyleCopy { .. } => "style.copy",
+            Self::StylePaste { .. } => "style.paste",
+            Self::StyleSavePreset { .. } => "style.save_preset",
+            Self::StyleApplyPreset { .. } => "style.apply_preset",
+            Self::StyleDeletePreset { .. } => "style.delete_preset",
+            Self::CrosshairRandomize { .. } => "crosshair.randomize",
+            Self::ThemeSet { .. } => "theme.set",
+            Self::AppearanceSet { .. } => "appearance.set",
+            Self::UiPanelOpen { .. } => "ui.panel.open",
+            Self::UiPanelClose { .. } => "ui.panel.close",
+            Self::UiPanelMove { .. } => "ui.panel.move",
+            Self::UiPanelSplit { .. } => "ui.panel.split",
+            Self::UiPanelFloat { .. } => "ui.panel.float",
+            Self::UiPanelDetach { .. } => "ui.panel.detach",
+            Self::UiPanelPin { .. } => "ui.panel.pin",
+            Self::UiPanelMaximize { .. } => "ui.panel.maximize",
+            Self::UiLayoutSave { .. } => "ui.layout.save",
+            Self::UiLayoutApply { .. } => "ui.layout.apply",
+            Self::UiLayoutReset => "ui.layout.reset",
         }
     }
 
     /// Scope of the command.
     pub fn scope(&self) -> CommandScope {
-        CommandScope::Document
+        match self {
+            Self::ThemeSet { .. } | Self::AppearanceSet { .. } => CommandScope::Settings,
+            Self::UiPanelOpen { .. }
+            | Self::UiPanelClose { .. }
+            | Self::UiPanelMove { .. }
+            | Self::UiPanelSplit { .. }
+            | Self::UiPanelFloat { .. }
+            | Self::UiPanelDetach { .. }
+            | Self::UiPanelPin { .. }
+            | Self::UiPanelMaximize { .. }
+            | Self::UiLayoutSave { .. }
+            | Self::UiLayoutApply { .. }
+            | Self::UiLayoutReset => CommandScope::System,
+            _ => CommandScope::Document,
+        }
     }
 
     /// Runtime availability.
     pub fn availability(&self) -> Availability {
-        Availability::Everywhere
+        match self {
+            Self::ThemeSet { .. }
+            | Self::AppearanceSet { .. }
+            | Self::UiPanelOpen { .. }
+            | Self::UiPanelClose { .. }
+            | Self::UiPanelMove { .. }
+            | Self::UiPanelSplit { .. }
+            | Self::UiPanelFloat { .. }
+            | Self::UiPanelDetach { .. }
+            | Self::UiPanelPin { .. }
+            | Self::UiPanelMaximize { .. }
+            | Self::UiLayoutSave { .. }
+            | Self::UiLayoutApply { .. }
+            | Self::UiLayoutReset => Availability::AppOnly,
+            _ => Availability::Everywhere,
+        }
     }
 
     /// Target Crosshair ID affected by this command, if any.
@@ -367,8 +581,31 @@ impl Command {
             | Self::GlobalSet { crosshair_id, .. }
             | Self::SymmetrySet { crosshair_id, .. }
             | Self::GlobalEffectsSet { crosshair_id, .. }
-            | Self::Nudge { crosshair_id, .. } => Some(*crosshair_id),
+            | Self::Nudge { crosshair_id, .. }
+            | Self::PropertySet { crosshair_id, .. }
+            | Self::PropertySetMany { crosshair_id, .. }
+            | Self::PropertyReset { crosshair_id, .. }
+            | Self::PropertyLink { crosshair_id, .. }
+            | Self::StyleCopy { crosshair_id, .. }
+            | Self::StylePaste { crosshair_id, .. }
+            | Self::StyleApplyPreset { crosshair_id, .. }
+            | Self::CrosshairRandomize { crosshair_id, .. } => Some(*crosshair_id),
             Self::Batch { commands } => commands.first().and_then(|c| c.crosshair_id()),
+            Self::StyleSavePreset { .. }
+            | Self::StyleDeletePreset { .. }
+            | Self::ThemeSet { .. }
+            | Self::AppearanceSet { .. }
+            | Self::UiPanelOpen { .. }
+            | Self::UiPanelClose { .. }
+            | Self::UiPanelMove { .. }
+            | Self::UiPanelSplit { .. }
+            | Self::UiPanelFloat { .. }
+            | Self::UiPanelDetach { .. }
+            | Self::UiPanelPin { .. }
+            | Self::UiPanelMaximize { .. }
+            | Self::UiLayoutSave { .. }
+            | Self::UiLayoutApply { .. }
+            | Self::UiLayoutReset => None,
         }
     }
 }

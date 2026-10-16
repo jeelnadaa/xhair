@@ -969,6 +969,394 @@ fn apply_command_pure(
             let inverse = Command::Batch { commands: inverses };
             Ok((batch_diff, inverse, None))
         }
+
+        Command::PropertySet {
+            crosshair_id,
+            property_id,
+            value,
+        } => {
+            let mut diff = CommandDiff::new(format!("Set property '{}' to {}", property_id, value));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/properties/{}", property_id),
+                value: value.clone(),
+            });
+            let inverse = Command::PropertyReset {
+                crosshair_id: *crosshair_id,
+                property_id: property_id.clone(),
+            };
+            Ok((diff, inverse, Some(format!("prop:{}", property_id))))
+        }
+
+        Command::PropertySetMany {
+            crosshair_id,
+            properties,
+        } => {
+            let mut diff =
+                CommandDiff::new(format!("Set {} properties atomically", properties.len()));
+            for (k, v) in properties {
+                diff.add_patch(PatchOp::Replace {
+                    path: format!("/properties/{}", k),
+                    value: v.clone(),
+                });
+            }
+            let inverse = Command::PropertySetMany {
+                crosshair_id: *crosshair_id,
+                properties: properties.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::PropertyReset {
+            crosshair_id,
+            property_id,
+        } => {
+            let mut diff = CommandDiff::new(format!("Reset property '{}' to default", property_id));
+            diff.add_patch(PatchOp::Remove {
+                path: format!("/properties/{}", property_id),
+            });
+            let inverse = Command::PropertySet {
+                crosshair_id: *crosshair_id,
+                property_id: property_id.clone(),
+                value: serde_json::Value::Null,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::PropertyLink {
+            crosshair_id,
+            property_a,
+            property_b,
+            linked,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Link properties '{}' and '{}': {}",
+                property_a, property_b, linked
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/links/{}:{}", property_a, property_b),
+                value: serde_json::Value::Bool(*linked),
+            });
+            let inverse = Command::PropertyLink {
+                crosshair_id: *crosshair_id,
+                property_a: property_a.clone(),
+                property_b: property_b.clone(),
+                linked: !linked,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::StyleCopy {
+            crosshair_id,
+            layer_id,
+        } => {
+            let layer = doc
+                .layers
+                .iter()
+                .find(|l| l.id == *layer_id)
+                .ok_or_else(|| XhairError::NotFound {
+                    entity_type: "layer".to_string(),
+                    id: layer_id.0.to_string(),
+                })?;
+            let mut diff = CommandDiff::new(format!("Copied style from layer '{}'", layer.name));
+            diff.add_patch(PatchOp::Replace {
+                path: "/clipboard/style".to_string(),
+                value: serde_json::json!({
+                    "fill": layer.fill,
+                    "stroke": layer.stroke,
+                    "effects": layer.effects,
+                    "opacity": layer.opacity,
+                    "blend": layer.blend
+                }),
+            });
+            let inverse = Command::StyleCopy {
+                crosshair_id: *crosshair_id,
+                layer_id: *layer_id,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::StylePaste {
+            crosshair_id,
+            target_layer_ids,
+        } => {
+            let mut diff =
+                CommandDiff::new(format!("Pasted style to {} layers", target_layer_ids.len()));
+            for id in target_layer_ids {
+                diff.add_patch(PatchOp::Replace {
+                    path: format!("/layers/id:{}/style", id.0),
+                    value: serde_json::Value::String("pasted".to_string()),
+                });
+            }
+            let inverse = Command::StylePaste {
+                crosshair_id: *crosshair_id,
+                target_layer_ids: target_layer_ids.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::StyleSavePreset { name, properties } => {
+            let mut diff = CommandDiff::new(format!("Saved style preset '{}'", name));
+            diff.add_patch(PatchOp::Add {
+                path: format!("/presets/style/{}", name),
+                value: properties.clone(),
+            });
+            let inverse = Command::StyleDeletePreset {
+                preset_name: name.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::StyleApplyPreset {
+            crosshair_id,
+            target_layer_ids,
+            preset_name,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Applied style preset '{}' to {} layers",
+                preset_name,
+                target_layer_ids.len()
+            ));
+            for id in target_layer_ids {
+                diff.add_patch(PatchOp::Replace {
+                    path: format!("/layers/id:{}/preset", id.0),
+                    value: serde_json::Value::String(preset_name.clone()),
+                });
+            }
+            let inverse = Command::StyleApplyPreset {
+                crosshair_id: *crosshair_id,
+                target_layer_ids: target_layer_ids.clone(),
+                preset_name: preset_name.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::StyleDeletePreset { preset_name } => {
+            let mut diff = CommandDiff::new(format!("Deleted style preset '{}'", preset_name));
+            diff.add_patch(PatchOp::Remove {
+                path: format!("/presets/style/{}", preset_name),
+            });
+            let inverse = Command::StyleSavePreset {
+                name: preset_name.clone(),
+                properties: serde_json::Value::Null,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::CrosshairRandomize {
+            crosshair_id,
+            seed,
+            count,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Randomized crosshair variations (seed: {:?}, count: {:?})",
+                seed, count
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: "/randomize".to_string(),
+                value: serde_json::json!({ "seed": seed, "count": count }),
+            });
+            let inverse = Command::CrosshairRandomize {
+                crosshair_id: *crosshair_id,
+                seed: *seed,
+                count: *count,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::ThemeSet { id } => {
+            let mut diff = CommandDiff::new(format!("Switched theme to '{}'", id));
+            diff.add_patch(PatchOp::Replace {
+                path: "/settings/theme".to_string(),
+                value: serde_json::Value::String(id.clone()),
+            });
+            let inverse = Command::ThemeSet {
+                id: "mono-dark".to_string(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::AppearanceSet {
+            theme,
+            follow_system,
+            font_pack,
+            corner_style,
+            density,
+            ui_scale,
+        } => {
+            let mut diff = CommandDiff::new("Updated appearance settings");
+            diff.add_patch(PatchOp::Replace {
+                path: "/settings/appearance".to_string(),
+                value: serde_json::json!({
+                    "theme": theme,
+                    "follow_system": follow_system,
+                    "font_pack": font_pack,
+                    "corner_style": corner_style,
+                    "density": density,
+                    "ui_scale": ui_scale
+                }),
+            });
+            let inverse = Command::AppearanceSet {
+                theme: theme.clone(),
+                follow_system: *follow_system,
+                font_pack: font_pack.clone(),
+                corner_style: corner_style.clone(),
+                density: density.clone(),
+                ui_scale: *ui_scale,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelOpen {
+            panel_id,
+            dock_area,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Opened dock panel '{}' in area '{:?}'",
+                panel_id, dock_area
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/open", panel_id),
+                value: serde_json::Value::Bool(true),
+            });
+            let inverse = Command::UiPanelClose {
+                panel_id: panel_id.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelClose { panel_id } => {
+            let mut diff = CommandDiff::new(format!("Closed dock panel '{}'", panel_id));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/open", panel_id),
+                value: serde_json::Value::Bool(false),
+            });
+            let inverse = Command::UiPanelOpen {
+                panel_id: panel_id.clone(),
+                dock_area: None,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelMove {
+            panel_id,
+            target_dock_area,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Moved panel '{}' to area '{}'",
+                panel_id, target_dock_area
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/area", panel_id),
+                value: serde_json::Value::String(target_dock_area.clone()),
+            });
+            let inverse = Command::UiPanelMove {
+                panel_id: panel_id.clone(),
+                target_dock_area: "right".to_string(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelSplit {
+            panel_id,
+            direction,
+        } => {
+            let mut diff = CommandDiff::new(format!(
+                "Split panel '{}' direction '{}'",
+                panel_id, direction
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/split", panel_id),
+                value: serde_json::Value::String(direction.clone()),
+            });
+            let inverse = Command::UiPanelSplit {
+                panel_id: panel_id.clone(),
+                direction: direction.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelFloat { panel_id, x, y } => {
+            let mut diff = CommandDiff::new(format!(
+                "Floated panel '{}' at ({:?}, {:?})",
+                panel_id, x, y
+            ));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/floating", panel_id),
+                value: serde_json::json!({ "x": x, "y": y }),
+            });
+            let inverse = Command::UiPanelClose {
+                panel_id: panel_id.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelDetach { panel_id } => {
+            let mut diff =
+                CommandDiff::new(format!("Detached panel '{}' to external window", panel_id));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/detached", panel_id),
+                value: serde_json::Value::Bool(true),
+            });
+            let inverse = Command::UiPanelClose {
+                panel_id: panel_id.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelPin { panel_id, pinned } => {
+            let mut diff = CommandDiff::new(format!("Panel '{}' pinned: {}", panel_id, pinned));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/pinned", panel_id),
+                value: serde_json::Value::Bool(*pinned),
+            });
+            let inverse = Command::UiPanelPin {
+                panel_id: panel_id.clone(),
+                pinned: !pinned,
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiPanelMaximize { panel_id } => {
+            let mut diff = CommandDiff::new(format!("Maximized panel '{}'", panel_id));
+            diff.add_patch(PatchOp::Replace {
+                path: format!("/ui/panels/{}/maximized", panel_id),
+                value: serde_json::Value::Bool(true),
+            });
+            let inverse = Command::UiPanelMaximize {
+                panel_id: panel_id.clone(),
+            };
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiLayoutSave { name } => {
+            let mut diff = CommandDiff::new(format!("Saved dock layout preset '{}'", name));
+            diff.add_patch(PatchOp::Add {
+                path: format!("/ui/layouts/{}", name),
+                value: serde_json::json!({ "name": name }),
+            });
+            let inverse = Command::UiLayoutReset;
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiLayoutApply { name } => {
+            let mut diff = CommandDiff::new(format!("Applied dock layout preset '{}'", name));
+            diff.add_patch(PatchOp::Replace {
+                path: "/ui/layout/active".to_string(),
+                value: serde_json::Value::String(name.clone()),
+            });
+            let inverse = Command::UiLayoutReset;
+            Ok((diff, inverse, None))
+        }
+
+        Command::UiLayoutReset => {
+            let mut diff = CommandDiff::new("Reset dock layout to default");
+            diff.add_patch(PatchOp::Replace {
+                path: "/ui/layout/active".to_string(),
+                value: serde_json::Value::String("default".to_string()),
+            });
+            let inverse = Command::UiLayoutReset;
+            Ok((diff, inverse, None))
+        }
     }
 }
 

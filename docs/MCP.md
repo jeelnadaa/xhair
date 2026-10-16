@@ -106,6 +106,53 @@ If an instance of `xhair` is already running with an active loopback endpoint, s
 | `import.code` | Import from compressed Brotli share code | `{"code": "XH1-..."}` |
 | `import.valorant_code` | Import in-game Valorant crosshair string | `{"code": "0;P;...", "name": "..."}` |
 
+### Micro-Level Properties, Presets & Variations (§9, §14)
+| Tool | Description | Key Arguments |
+|---|---|---|
+| `property.list` | List schema-driven properties with validation metadata | `{"query": "...", "group": "Geometry", "modified_only": false}` |
+| `property.get` | Get property value by descriptor ID | `{"crosshair_id": "...", "property_id": "line.thickness"}` |
+| `property.set` | Set a single property value | `{"crosshair_id": "...", "property_id": "line.thickness", "value": 2.5}` |
+| `property.set_many` | Atomically update multiple properties across layers | `{"crosshair_id": "...", "properties": {"line.thickness": 2, "line.gap": 4}}` |
+| `property.reset` | Reset property or group to descriptor default | `{"crosshair_id": "...", "property_id": "line.thickness"}` |
+| `property.link` | Link or unlink paired properties | `{"crosshair_id": "...", "property_a": "rect.width", "property_b": "rect.height", "linked": true}` |
+| `property.search` | Search property catalog by keywords | `{"query": "radius"}` |
+| `style.copy` | Copy style attributes from source layer | `{"crosshair_id": "...", "layer_id": "..."}` |
+| `style.paste` | Paste style attributes to target layers | `{"crosshair_id": "...", "target_layer_ids": [...]}` |
+| `style.save_preset` | Save current style as named preset | `{"name": "Cyan Glow", "properties": {...}}` |
+| `style.apply_preset` | Apply named preset to target layers | `{"crosshair_id": "...", "preset_name": "Cyan Glow", "target_layer_ids": [...]}` |
+| `style.list_presets` | List all saved style presets | `{}` |
+| `style.delete_preset`| Delete a saved style preset | `{"preset_name": "Cyan Glow"}` |
+| `crosshair.randomize`| Generate bounded random variations | `{"crosshair_id": "...", "seed": 42, "count": 4}` |
+
+### Appearance, Theming & Typography (§12, §13, App-Only)
+| Tool | Description | Key Arguments |
+|---|---|---|
+| `theme.list` | List all 9 neutral-base supported themes | `{}` |
+| `theme.get` | Get active application theme | `{}` |
+| `theme.set` | Set active theme (`mono-dark`, `mono-light`, `graphite-mint`, etc.) | `{"id": "graphite-mint"}` |
+| `theme.preview` | Preview theme temporarily without saving | `{"id": "graphite-violet", "duration_ms": 3000}` |
+| `appearance.get` | Get complete appearance configuration | `{}` |
+| `appearance.set` | Update theme, follow_system, font pack, corner style, density | `{"theme": "mono-dark", "corner_style": "sharp", "font_pack": "technical"}` |
+| `font_pack.list` | List 6 bundled self-hosted WOFF2 font packs | `{}` |
+
+### Tabbed Dock System & Layouts (§10, App-Only)
+| Tool | Description | Key Arguments |
+|---|---|---|
+| `ui.panel.open` | Open a dock tab in specified dock area | `{"panel_id": "Nudge", "dock_area": "right"}` |
+| `ui.panel.close` | Close a dock tab without deleting data | `{"panel_id": "Nudge"}` |
+| `ui.panel.move` | Move a dock tab between dock areas | `{"panel_id": "Nudge", "target_dock_area": "bottom"}` |
+| `ui.panel.split` | Split dock area with target panel | `{"panel_id": "Color", "direction": "vertical"}` |
+| `ui.panel.float` | Float panel as in-app mini window | `{"panel_id": "Nudge", "x": 100, "y": 200}` |
+| `ui.panel.detach` | Detach panel to external OS window | `{"panel_id": "Layers"}` |
+| `ui.panel.pin` | Pin or unpin a floating panel | `{"panel_id": "Nudge", "pinned": true}` |
+| `ui.panel.maximize`| Maximize dock tab area | `{"panel_id": "Properties"}` |
+| `ui.layout.list` | List saved layout presets | `{}` |
+| `ui.layout.save` | Save dock arrangement as layout preset | `{"name": "MyEsportsLayout"}` |
+| `ui.layout.apply` | Apply layout preset (`Compact`, `Pixel Art`, `Designer`, etc.) | `{"name": "Agent Watch"}` |
+| `ui.layout.reset` | Reset dock layout to default configuration | `{}` |
+| `ui.layout.export`| Export layout configuration JSON | `{"name": "current"}` |
+| `ui.layout.import`| Import layout configuration JSON | `{"data": {...}}` |
+
 ### Metadata & Diagnostics
 | Tool | Description |
 |---|---|

@@ -496,3 +496,45 @@
   - `cargo clippy --workspace -- -D warnings`: Clean, 0 warnings.
   - `cargo fmt --check`: Clean, 0 diffs.
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+
+## 2026-10-16 — Session 19
+- **Goal:** Implement "XHAIR — Complete Design & Spec Update (v5: v2 + v3 + v4 merged)" amending `CROSSHAIR_OVERLAY_SPEC.md` across Phase 0 (design deliverables, pure neutral ramps, WCAG contrast, corner radius <= 10px with zero pills, 24 screens at 1x & 2x) and Phase 1 (full command registry, parity, MCP tools, dock system, appearance modal, themes, and documentation).
+- **Completed:**
+  1. **Phase 0 Design Deliverables (100% Complete & Verified):**
+     - Updated `design/tokens.json`: 3 pure neutral base ramps (`graphite`, `white`, `pureBlack`) with channel spread <= 2 ($R=G=B$), 9 themes (`mono-dark`, `mono-light`, `oled-black`, `graphite-mint`, `graphite-violet`, `graphite-amber`, `graphite-crimson`, `light-indigo`, `high-contrast`), 6 font packs (`satoshi`, `technical`, `editorial`, `plex`, `space`, `system`), 3 corner styles (`sharp`, `default`, `soft`), and maximum radius <= 10px with zero pills.
+     - Verified automated checks via `scratch/check_tokens_v5.cjs`: 100% neutrality, all themes contrast >= 4.5:1 (high-contrast >= 7:1), zero pill radii.
+     - Generated and captured all 24 screens at 1x and 2x in `design/screens/` and copied to brain artifacts directory.
+     - Documented all 24 screens in `design/README.md` and review artifact `phase_0_v5_design_review.md`.
+  2. **Backend Commands, Descriptors & Property Registry:**
+     - `crates/xhair-commands/src/command.rs`: Added 23 new v5 commands (`PropertySet`, `PropertySetMany`, `PropertyReset`, `PropertyLink`, `StyleCopy`, `StylePaste`, `StyleSavePreset`, `StyleApplyPreset`, `StyleDeletePreset`, `CrosshairRandomize`, `ThemeSet`, `AppearanceSet`, `UiPanelOpen`, `UiPanelClose`, `UiPanelMove`, `UiPanelSplit`, `UiPanelFloat`, `UiPanelDetach`, `UiPanelPin`, `UiPanelMaximize`, `UiLayoutSave`, `UiLayoutApply`, `UiLayoutReset`) with typed scopes and availability.
+     - `crates/xhair-commands/src/bus.rs`: Added execution arms, diff calculation, and pure mathematical inverse mutations for undo/redo for all new commands.
+     - `crates/xhair-commands/src/descriptors.rs`: Added schema-driven property descriptors for all 14 shapes (`rect`, `circle`, `ring`, `arc`, `polygon`, `triangle`, `chevron`, `t_shape`, `plus`, `path`, `pixels`, `image`), effects (`glow`, `shadow`, `bloom`), and appearance (`theme.id`, `appearance.font_pack`, `appearance.corner_style`).
+     - Exported updated schema via `cargo xtask schema` to `ui/src/generated/properties.json` and `docs/PROPERTIES.md`.
+  3. **MCP Tools Suite & Parity Test (Principle P4):**
+     - Implemented `crates/xhair-mcp/src/tools/property.rs`: `property.list`, `property.get`, `property.set`, `property.set_many`, `property.reset`, `property.link`, `property.search`, `style.copy`, `style.paste`, `style.save_preset`, `style.apply_preset`, `style.list_presets`, `style.delete_preset`, `crosshair.randomize`.
+     - Implemented `crates/xhair-mcp/src/tools/appearance.rs`: `theme.list`, `theme.get`, `theme.set`, `theme.preview`, `appearance.get`, `appearance.set`, `font_pack.list`, and `ui.panel.*` / `ui.layout.*`.
+     - Updated `ui/src/lib/actions.ts` and `ui/src/generated/actions.json` (100 total actions synced).
+     - Enhanced `crates/xhair-mcp/tests/parity.rs`: 100 UI actions, 47 core commands, and 56 MCP tools in complete 100% parity.
+  4. **Frontend UI Components & Styling:**
+     - Updated `ui/src/app.css` with all 9 neutral themes, corner styles, font packs, and component styling rules (zero pill radius, 3px slider tracks, underline tabs).
+     - Implemented `ui/src/components/DockSystem.svelte`: Right-panel tabbed dock system supporting 11 default tabs (`Design`, `Shape`, `Fill & Stroke`, `Effects`, `Color`, `Layers`, `Nudge`, `Animation`, `Presets`, `Properties`, `MCP Activity`), layout presets (`Compact`, `Pixel Art`, `Designer`, `Agent Watch`, `Minimal`), maximize toggle, and property search with "Show modified only" filter.
+     - Implemented `ui/src/components/AppearanceModal.svelte`: Modal with live-preview theme cards, font pack specimens, and corner curvature options.
+     - Updated `ui/src/lib/state.svelte.ts`: Live theme switcher, font pack loader, corner style updater, dock panel state, style presets management, and procedural randomize.
+     - Updated `ui/src/components/TopBar.svelte` with Appearance settings trigger.
+  5. **Documentation Deliverables (§14.2):**
+     - Created `docs/AGENT_README.md`: Complete AI agent guide with coordinates, golden workflow, property descriptors, gotchas, copy-paste recipes, error catalog, and Section 14.3 walkthrough.
+     - Created `docs/TYPOGRAPHY.md`: Typographic roles, 6 bundled font packs, licensing table, subsetting pipeline, and custom wordmark.
+     - Created `docs/LAYOUT.md`: Tabbed dock system, tabs catalog, layout presets, and keyboard/ARIA navigation.
+     - Created `docs/THEMING.md`: Neutrality rule, 3 base ramps, 9 themes, corner radius table, and 4-step theme addition workflow.
+     - Updated `docs/MCP.md` and `docs/COMMANDS.md` with complete v5 tools and command catalogs.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 87 Rust tests passing across all 12 crates (100% green).
+  - `cargo test -p xhair-mcp --test parity`: 100% parity verified.
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `node scratch/check_tokens_v5.cjs`: 100% verified (neutrality, WCAG contrast, radii).
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
+

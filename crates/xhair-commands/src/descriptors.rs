@@ -240,17 +240,278 @@ impl PropertyRegistry {
         });
 
         reg.add(PropertyDescriptor {
-            name: "recenter.crosshair".into(),
-            label: "Recenter Crosshair".into(),
-            tip: "Resets entire crosshair global offset back to (0, 0). Shortcut: Ctrl+Home."
+            name: "rect.width".into(),
+            label: "Rectangle Width".into(),
+            tip: "Width of rectangle layer in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(8.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "rect.height".into(),
+            label: "Rectangle Height".into(),
+            tip: "Height of rectangle layer in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(8.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "rect.corner_radius".into(),
+            label: "Corner Radius".into(),
+            tip: "Rounding radius of rectangle corners in game pixels (max 10 px).".into(),
+            unit: Some("px".into()),
+            min: Some(0.0),
+            max: Some(10.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(0.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "circle.diameter".into(),
+            label: "Circle Diameter".into(),
+            tip: "Total outer diameter of circle in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(16.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "ring.outer_radius".into(),
+            label: "Ring Outer Radius".into(),
+            tip: "Outer radius of circular ring in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(10.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "ring.inner_radius".into(),
+            label: "Ring Inner Radius".into(),
+            tip: "Inner cutout radius of ring in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(0.0),
+            max: Some(255.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(7.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "arc.radius".into(),
+            label: "Arc Radius".into(),
+            tip: "Radius of circular arc in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(12.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "polygon.sides".into(),
+            label: "Polygon Sides".into(),
+            tip: "Number of sides or points for regular polygon / star (3 to 64).".into(),
+            unit: None,
+            min: Some(3.0),
+            max: Some(64.0),
+            step: Some(1.0),
+            fine_step: Some(1.0),
+            default_value: serde_json::json!(6),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "triangle.base".into(),
+            label: "Triangle Base".into(),
+            tip: "Width of triangle base in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(10.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "chevron.arm_length".into(),
+            label: "Chevron Arm Length".into(),
+            tip: "Length of each chevron wing in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(6.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "t_shape.bar_length".into(),
+            label: "T-Shape Bar Length".into(),
+            tip: "Horizontal top bar length of T-shape in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(10.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "plus.length".into(),
+            label: "Plus Arm Length".into(),
+            tip: "Length of plus cross arms in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(1.0),
+            max: Some(256.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(6.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "path.stroke_width".into(),
+            label: "Path Stroke Width".into(),
+            tip: "Width of vector Bézier path stroke in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(0.25),
+            max: Some(64.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(2.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "pixels.grid_size".into(),
+            label: "Pixel Grid Dimension".into(),
+            tip: "Resolution of custom pixel matrix grid (e.g. 16 for 16x16).".into(),
+            unit: None,
+            min: Some(4.0),
+            max: Some(64.0),
+            step: Some(1.0),
+            fine_step: Some(1.0),
+            default_value: serde_json::json!(16),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "image.scale".into(),
+            label: "Image Scale".into(),
+            tip: "Scaling factor for custom sprite image layer.".into(),
+            unit: Some("x".into()),
+            min: Some(0.1),
+            max: Some(10.0),
+            step: Some(0.1),
+            fine_step: Some(0.01),
+            default_value: serde_json::json!(1.0),
+            group: "Geometry".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "glow.radius".into(),
+            label: "Glow Radius".into(),
+            tip: "Diffusion spread radius of Gaussian glow in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(0.0),
+            max: Some(64.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(0.0),
+            group: "Effects".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "shadow.blur".into(),
+            label: "Drop Shadow Blur".into(),
+            tip: "Blur radius of drop shadow in game pixels.".into(),
+            unit: Some("px".into()),
+            min: Some(0.0),
+            max: Some(64.0),
+            step: Some(0.5),
+            fine_step: Some(0.1),
+            default_value: serde_json::json!(0.0),
+            group: "Effects".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "bloom.intensity".into(),
+            label: "Global Bloom Intensity".into(),
+            tip: "HDR luminance threshold boost for high-contrast reticle visibility.".into(),
+            unit: Some("%".into()),
+            min: Some(0.0),
+            max: Some(200.0),
+            step: Some(5.0),
+            fine_step: Some(1.0),
+            default_value: serde_json::json!(0.0),
+            group: "Effects".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "theme.id".into(),
+            label: "Active Theme".into(),
+            tip: "Monochromatic UI chrome theme (mono-dark, mono-light, graphite-mint, etc.)."
                 .into(),
             unit: None,
             min: None,
             max: None,
             step: None,
             fine_step: None,
-            default_value: serde_json::Value::Null,
-            group: "Transform".into(),
+            default_value: serde_json::json!("mono-dark"),
+            group: "Appearance".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "appearance.font_pack".into(),
+            label: "Font Pack".into(),
+            tip: "Bundled WOFF2 typography pack (satoshi, technical, editorial, plex, space, system).".into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::json!("satoshi"),
+            group: "Appearance".into(),
+        });
+
+        reg.add(PropertyDescriptor {
+            name: "appearance.corner_style".into(),
+            label: "Corner Style".into(),
+            tip: "UI component corner radius scale: sharp, default (max 8px), or soft (max 10px)."
+                .into(),
+            unit: None,
+            min: None,
+            max: None,
+            step: None,
+            fine_step: None,
+            default_value: serde_json::json!("default"),
+            group: "Appearance".into(),
         });
 
         reg

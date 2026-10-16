@@ -220,6 +220,15 @@
     </Tooltip>
 
     <Tooltip
+      title="Appearance & Themes"
+      description="Select neutral theme, typography pack, and corner curvature (§12, §13)"
+    >
+      <button class="pill" onclick={() => editorState.openAppearanceModal()}>
+        🎨 {editorState.theme}
+      </button>
+    </Tooltip>
+
+    <Tooltip
       title="Visibility Score"
       description="WCAG-style contrast ratio against background"
       details="Score: {editorState.visibilityScore}:1 (High contrast)"
