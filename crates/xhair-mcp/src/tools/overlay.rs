@@ -28,6 +28,9 @@ pub fn overlay_set_enabled(ctx: &ServerContext, args: Value) -> CallToolResult {
 
     ctx.with_state(|state| {
         state.overlay_enabled = enabled;
+        if let Some(ref ctrl) = state.overlay_controller {
+            let _ = ctrl.set_enabled(enabled);
+        }
         CallToolResult::json(&serde_json::json!({
             "status": "overlay_updated",
             "overlay_enabled": enabled
@@ -41,6 +44,17 @@ pub fn overlay_activate(ctx: &ServerContext, args: Value) -> CallToolResult {
         let slot_u8 = slot as u8;
         return ctx.with_state(|state| {
             state.active_slot = Some(slot_u8);
+            if let Some(ref lib) = state.library {
+                if let Ok(Some(ch_id)) = lib.get_slot(slot_u8 as usize) {
+                    if let Ok(ch) = lib.load_crosshair(ch_id) {
+                        state.active_crosshair_id = Some(ch.id);
+                        state.bus.register_document(ch.clone());
+                        if let Some(ref ctrl) = state.overlay_controller {
+                            let _ = ctrl.set_crosshair(Box::new(ch));
+                        }
+                    }
+                }
+            }
             CallToolResult::json(&serde_json::json!({
                 "status": "slot_activated",
                 "slot": slot_u8
@@ -55,9 +69,22 @@ pub fn overlay_activate(ctx: &ServerContext, args: Value) -> CallToolResult {
         };
         return ctx.with_state(|state| {
             if !state.bus.documents.contains_key(&id) {
-                return CallToolResult::error(format!("Crosshair not found: {}", id));
+                if let Some(ref lib) = state.library {
+                    if let Ok(ch) = lib.load_crosshair(id) {
+                        state.bus.register_document(ch);
+                    } else {
+                        return CallToolResult::error(format!("Crosshair not found: {}", id));
+                    }
+                } else {
+                    return CallToolResult::error(format!("Crosshair not found: {}", id));
+                }
             }
             state.active_crosshair_id = Some(id);
+            if let Some(ref ctrl) = state.overlay_controller {
+                if let Some(doc) = state.bus.documents.get(&id) {
+                    let _ = ctrl.set_crosshair(Box::new(doc.clone()));
+                }
+            }
             CallToolResult::json(&serde_json::json!({
                 "status": "crosshair_activated",
                 "id": id
@@ -82,6 +109,13 @@ pub fn overlay_next(ctx: &ServerContext, _args: Value) -> CallToolResult {
         let next_idx = (current_idx + 1) % ids.len();
         state.active_crosshair_id = Some(ids[next_idx]);
 
+        let doc_to_send = state.bus.documents.get(&ids[next_idx]).cloned();
+        if let Some(ref ctrl) = state.overlay_controller {
+            if let Some(doc) = doc_to_send {
+                let _ = ctrl.set_crosshair(Box::new(doc));
+            }
+        }
+
         CallToolResult::json(&serde_json::json!({
             "status": "cycled_next",
             "active_crosshair_id": ids[next_idx]
@@ -103,6 +137,13 @@ pub fn overlay_previous(ctx: &ServerContext, _args: Value) -> CallToolResult {
         let prev_idx = (current_idx + ids.len() - 1) % ids.len();
         state.active_crosshair_id = Some(ids[prev_idx]);
 
+        let doc_to_send = state.bus.documents.get(&ids[prev_idx]).cloned();
+        if let Some(ref ctrl) = state.overlay_controller {
+            if let Some(doc) = doc_to_send {
+                let _ = ctrl.set_crosshair(Box::new(doc));
+            }
+        }
+
         CallToolResult::json(&serde_json::json!({
             "status": "cycled_previous",
             "active_crosshair_id": ids[prev_idx]
@@ -111,24 +152,35 @@ pub fn overlay_previous(ctx: &ServerContext, _args: Value) -> CallToolResult {
 }
 
 /// Lists available monitors and displays.
-pub fn display_list(_ctx: &ServerContext, _args: Value) -> CallToolResult {
-    // Return primary display info
-    CallToolResult::json(&serde_json::json!([
-        {
-            "id": "\\\\.\\DISPLAY1",
-            "name": "Primary Display",
-            "is_primary": true,
-            "width": 1920,
-            "height": 1080,
-            "dpi_scale": 1.0
+pub fn display_list(ctx: &ServerContext, _args: Value) -> CallToolResult {
+    ctx.with_state(|state| {
+        if let Some(ref ctrl) = state.overlay_controller {
+            if let Ok(monitors) = ctrl.list_monitors() {
+                if !monitors.is_empty() {
+                    return CallToolResult::json(&serde_json::Value::Array(monitors));
+                }
+            }
         }
-    ]))
+        CallToolResult::json(&serde_json::json!([
+            {
+                "id": "\\\\.\\DISPLAY1",
+                "name": "Primary Display",
+                "is_primary": true,
+                "width": 1920,
+                "height": 1080,
+                "dpi_scale": 1.0
+            }
+        ]))
+    })
 }
 
 /// Shows the calibration test pattern.
 pub fn calibration_show(ctx: &ServerContext, _args: Value) -> CallToolResult {
     ctx.with_state(|state| {
         state.calibration_active = true;
+        if let Some(ref ctrl) = state.overlay_controller {
+            let _ = ctrl.toggle_calibration_pattern();
+        }
         CallToolResult::json(&serde_json::json!({
             "status": "calibration_pattern_visible",
             "offset": state.calibration_offset
@@ -140,6 +192,9 @@ pub fn calibration_show(ctx: &ServerContext, _args: Value) -> CallToolResult {
 pub fn calibration_hide(ctx: &ServerContext, _args: Value) -> CallToolResult {
     ctx.with_state(|state| {
         state.calibration_active = false;
+        if let Some(ref ctrl) = state.overlay_controller {
+            let _ = ctrl.toggle_calibration_pattern();
+        }
         CallToolResult::json(&serde_json::json!({
             "status": "calibration_pattern_hidden"
         }))
@@ -153,6 +208,9 @@ pub fn calibration_set_offset(ctx: &ServerContext, args: Value) -> CallToolResul
 
     ctx.with_state(|state| {
         state.calibration_offset = (dx, dy);
+        if let Some(ref ctrl) = state.overlay_controller {
+            let _ = ctrl.nudge(xhair_model::Vec2::new(dx, dy));
+        }
         CallToolResult::json(&serde_json::json!({
             "status": "offset_updated",
             "dx": dx,

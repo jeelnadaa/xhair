@@ -22,6 +22,22 @@ pub struct ActivityEntry {
     pub result: String,
 }
 
+/// Trait for dispatching physical overlay actions from MCP tools (§13.3).
+pub trait OverlayController: Send + Sync {
+    /// Explicitly enable or disable the overlay window.
+    fn set_enabled(&self, enabled: bool) -> Result<(), String>;
+    /// Update the crosshair rendered on the overlay window.
+    fn set_crosshair(&self, crosshair: Box<Crosshair>) -> Result<(), String>;
+    /// Toggle overlay visibility.
+    fn toggle_visibility(&self) -> Result<(), String>;
+    /// Toggle calibration test pattern.
+    fn toggle_calibration_pattern(&self) -> Result<(), String>;
+    /// Nudge crosshair position or set calibration offset.
+    fn nudge(&self, delta: xhair_model::Vec2) -> Result<(), String>;
+    /// List connected display monitors with geometry and DPI.
+    fn list_monitors(&self) -> Result<Vec<serde_json::Value>, String>;
+}
+
 /// Server runtime context shared across stdio and HTTP transports.
 #[derive(Clone)]
 pub struct ServerContext {
@@ -34,6 +50,8 @@ pub struct ServerState {
     pub bus: CommandBus,
     /// Library engine for disk catalog and slots.
     pub library: Option<LibraryEngine>,
+    /// Optional physical overlay window controller.
+    pub overlay_controller: Option<Arc<dyn OverlayController>>,
     /// Currently active crosshair ID.
     pub active_crosshair_id: Option<CrosshairId>,
     /// Overlay visibility state flag.
@@ -73,6 +91,7 @@ impl ServerContext {
         let state = ServerState {
             bus,
             library,
+            overlay_controller: None,
             active_crosshair_id: Some(active_id),
             overlay_enabled: true,
             visibility_mode: "ForegroundOnly".to_string(),
@@ -88,6 +107,26 @@ impl ServerContext {
         Self {
             inner: Arc::new(Mutex::new(state)),
         }
+    }
+
+    /// Sets an overlay controller for dispatching physical overlay updates.
+    pub fn set_overlay_controller(&self, controller: Arc<dyn OverlayController>) {
+        self.with_state(|state| {
+            state.overlay_controller = Some(controller);
+        });
+    }
+
+    /// Sync the active crosshair from the CommandBus to the physical overlay.
+    pub fn sync_overlay(&self) {
+        self.with_state(|state| {
+            if let Some(ref controller) = state.overlay_controller {
+                if let Some(active_id) = state.active_crosshair_id {
+                    if let Some(doc) = state.bus.documents.get(&active_id) {
+                        let _ = controller.set_crosshair(Box::new(doc.clone()));
+                    }
+                }
+            }
+        });
     }
 
     /// Execute a closure with mutable access to server state.

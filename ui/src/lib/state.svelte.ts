@@ -15,6 +15,7 @@ import type {
   GunProfile,
   DynamicBinding,
   CrosshairGroup,
+  McpActivityItem,
 } from './types';
 import propertiesData from '../generated/properties.json';
 
@@ -354,6 +355,7 @@ export class EditorState {
   library = $state<Crosshair[]>(JSON.parse(JSON.stringify(loadSavedLibrary())));
   saveStatus = $state<'idle' | 'saving' | 'saved'>('idle');
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
   selectedLayerIds = $state<string[]>(['layer-arms-1']);
   get selectedLayerId(): string {
     return this.selectedLayerIds[0] ?? '';
@@ -483,7 +485,7 @@ export class EditorState {
   mcpEnabled = $state<boolean>(true);
   isAgentEditing = $state<boolean>(false);
   mcpPanelOpen = $state<boolean>(false);
-  mcpActivityLog = $state<Array<{ id: string; timestamp: string; tool: string; summary: string; status: string }>>([
+  mcpActivityLog = $state<McpActivityItem[]>([
     {
       id: 'log-init',
       timestamp: new Date().toLocaleTimeString(),
@@ -799,6 +801,75 @@ export class EditorState {
     }
   }
 
+  async loadLibraryFromDisk() {
+    if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
+      try {
+        const resp = await fetch('/api/library');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (Array.isArray(data.crosshairs) && data.crosshairs.length > 0) {
+            const items: Crosshair[] = [];
+            for (const summary of data.crosshairs) {
+              try {
+                const getResp = await fetch(`/api/library/get?id=${summary.id}`);
+                if (getResp.ok) {
+                  const full = await getResp.json();
+                  items.push(full);
+                }
+              } catch (_) {}
+            }
+            if (items.length > 0) {
+              this.library = items;
+              if (data.active_id) {
+                const active = items.find((c) => c.id === data.active_id);
+                if (active) {
+                  this.crosshair = JSON.parse(JSON.stringify(active));
+                  this.selectedLayerId = this.crosshair.layers[0]?.id ?? '';
+                  this.syncWithOverlay();
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load library from server:', e);
+      }
+    }
+  }
+
+  async fetchMcpActivity() {
+    if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
+      try {
+        const resp = await fetch('/api/mcp/activity');
+        if (resp.ok) {
+          const list = await resp.json();
+          if (Array.isArray(list)) {
+            const mapped: McpActivityItem[] = list.map(
+              (
+                item: { timestamp?: string; action?: string; summary?: string; result?: string },
+                idx: number
+              ) => ({
+                id: `${item.timestamp || ''}-${idx}`,
+                timestamp: item.timestamp?.split('T')?.[1]?.slice(0, 8) || item.timestamp || '',
+                tool: item.action || 'tool',
+                summary: item.summary || '',
+                status: item.result?.startsWith('error') ? 'error' : 'success',
+              })
+            );
+            const prevCount = this.mcpActivityLog.length;
+            this.mcpActivityLog = mapped;
+            if (mapped.length > prevCount && prevCount > 0) {
+              this.isAgentEditing = true;
+              setTimeout(() => {
+                this.isAgentEditing = false;
+              }, 3000);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
   // Crosshair Selection & CRUD
   saveCurrentProfile() {
     this.saveStatus = 'saving';
@@ -817,6 +888,14 @@ export class EditorState {
       } catch (e) {
         console.error('Failed to persist to localStorage:', e);
       }
+    }
+
+    if (typeof window !== 'undefined' && typeof fetch === 'function' && window.location?.host) {
+      fetch('/api/library/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(snapshot),
+      }).catch((e) => console.warn('Failed to save to /api/library/save:', e));
     }
 
     this.syncWithOverlay();

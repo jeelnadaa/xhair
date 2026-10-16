@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 20
-- **Phase / Milestone:** Production Readiness — Phase 1 Critical Fixes Complete
+- **Session:** 21
+- **Phase / Milestone:** Production Readiness — Phase 2 Unified Backend & Real-Time MCP Bridge Complete
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/` & `target/release/`
 
 ## Done (milestone-level)
@@ -29,12 +29,18 @@
   - Layer hit-testing separating canvas drag from marquee selection with 120fps redraw.
   - Tool palette mapping fixes (tool `R` inserts `Rect`).
   - Color picker undo coalescing with live preview and single history snapshot.
+- [x] Production Readiness Phase 2: Unified Backend & Real-Time MCP Bridge (completed 2026-10-16):
+  - Embedded loopback `McpServer` running in `xhair.exe` on `127.0.0.1:0` with 256-bit Bearer token and `%TEMP%/xhair-endpoint.json` discovery/cleanup.
+  - Dual-mode `xhair-cli mcp` stdio proxying to live running instance with fallback to offline headless `LibraryEngine`.
+  - `OverlayController` trait wiring `overlay.*`, `calibration.*`, `display.list`, and document mutations directly to physical Win32 `OverlayCommand`.
+  - `LibraryEngine` integrated into app runtime with `/api/library` REST endpoints and UI disk storage sync.
+  - Real-time MCP event activity polling and pulsing neon "Agent is editing" UI banner.
 
 ## In progress
-- Phase 2: Unified Backend & Real-Time MCP Bridge (embedded MCP server in `xhair.exe`, `xhair-library` disk persistence, stdio proxying).
+- Phase 3: World-Class UI/UX Studio Redesign (3-column studio layout, unified contextual inspector, drag-to-scrub inputs).
 
 ## Next exact step
-- Implement Phase 2: Embedded loopback MCP server and physical overlay wiring.
+- Implement Phase 3: 3-column layout architecture and unified contextual inspector in `ui/`.
 
 ## WIP notes
 - Release artifacts generated in `dist/`:

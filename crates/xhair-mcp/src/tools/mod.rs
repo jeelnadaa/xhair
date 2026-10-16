@@ -1373,5 +1373,20 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
 
     let status = if result.is_error { "error" } else { "success" };
     ctx.log_activity(name, &summary, status);
+
+    if !result.is_error
+        && (name.starts_with("layer.")
+            || name.starts_with("property.")
+            || name.starts_with("paint.")
+            || name.starts_with("crosshair.")
+            || name.starts_with("style.")
+            || name == "nudge"
+            || name == "undo"
+            || name == "redo"
+            || name == "edit.batch")
+    {
+        ctx.sync_overlay();
+    }
+
     result
 }

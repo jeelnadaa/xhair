@@ -565,4 +565,38 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph`: memory graph verified.
 
+## 2026-10-16 — Session 21
+- **Goal:** Production Readiness Phase 2: Unified Backend & Real-Time MCP Bridge (embedded loopback MCP server, `%TEMP%/xhair-endpoint.json` lifecycle, dual-mode CLI stdio proxy, physical Win32 overlay controls, `xhair-library` disk persistence, and real-time agent activity streaming).
+- **Completed:**
+  1. **Embedded Loopback MCP Server (`crates/xhair-app/src/lib.rs` & `server.rs`):**
+     - Mounted and started `McpServer::start_http` on loopback `127.0.0.1:0` with cryptographically secure 256-bit Bearer token.
+     - Written `%TEMP%/xhair-endpoint.json` containing port, auth token, PID, and protocol version for auto-discovery.
+     - Clean file removal on shutdown and panic hook.
+     - Integration test `test_embedded_mcp_and_endpoint_info` verified.
+  2. **Dual-Mode Stdio Proxy in `xhair-cli` (`crates/xhair-cli/src/main.rs`):**
+     - Inspects `read_endpoint_info()` and liveness probe on `127.0.0.1:<port>`.
+     - When GUI app is running: transparently proxies stdio JSON-RPC streams to app's loopback MCP HTTP endpoint (`run_stdio_proxy`).
+     - When GUI app is offline: seamlessly falls back to headless in-process `ServerContext` with disk `LibraryEngine`.
+  3. **Physical Win32 Overlay Controls for MCP Tools (`crates/xhair-mcp/src/` & `crates/xhair-app/src/lib.rs`):**
+     - Defined `OverlayController` trait in `xhair-mcp` and implemented `Win32OverlayController` forwarding commands over `OverlaySender`.
+     - Connected `overlay_set_enabled`, `overlay_activate`, `overlay_next`, `overlay_previous`, `calibration_show`, `calibration_hide`, `calibration_set_offset`, and `display_list` directly to physical Win32 overlay window.
+     - Connected all mutating actions (`layer.*`, `property.*`, `paint.*`, `nudge`, `undo`, `redo`, `edit.batch`) to trigger automatic live overlay redraw synchronization (`sync_overlay`).
+  4. **Disk Storage Integration (`crates/xhair-app/src/server.rs` & `ui/src/lib/state.svelte.ts`):**
+     - Initialized `LibraryEngine::new(LibraryEngine::resolve_data_dir())` in app runtime.
+     - Exposed local REST endpoints `/api/library`, `/api/library/get`, `/api/library/save`, `/api/library/delete`, and `/api/mcp/activity`.
+     - Tested in integration test `test_server_library_api_lifecycle`.
+     - Connected `ui/src/lib/state.svelte.ts` to hydrate library from `/api/library` on startup and persist crosshairs via `/api/library/save`.
+  5. **Real-Time UI Event Streaming:**
+     - Exposed `/api/mcp/activity` endpoint streaming live MCP tool executions.
+     - Added periodic polling in `ui/src/lib/state.svelte.ts` updating `mcpActivityLog` in `McpModal.svelte` and triggering neon "Agent is editing" pulse in `TopBar.svelte`.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 88 Rust unit and integration tests passing (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `pnpm -C ui build`: Frontend production build successful (Vite 8.3.4, 754ms).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
+
 

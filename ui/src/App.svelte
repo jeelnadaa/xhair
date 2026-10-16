@@ -20,6 +20,13 @@
 
   onMount(() => {
     editorState.syncWithOverlay();
+    editorState.loadLibraryFromDisk();
+
+    const interval = setInterval(() => {
+      editorState.fetchMcpActivity();
+    }, 2000);
+
+    return () => clearInterval(interval);
   });
 
   function handleKeydown(e: KeyboardEvent) {

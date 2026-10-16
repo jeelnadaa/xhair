@@ -156,7 +156,21 @@ fn handle_render(args: &[String]) -> Result<()> {
 }
 
 fn handle_mcp(_args: &[String]) -> Result<()> {
-    let server = xhair_mcp::McpServer::default();
+    if let Some(info) = xhair_mcp::read_endpoint_info() {
+        if xhair_mcp::is_endpoint_alive(&info) {
+            eprintln!(
+                "[xhair-cli] Connected to active xhair instance (PID {}, port {})",
+                info.pid, info.port
+            );
+            return xhair_mcp::run_stdio_proxy(info).context("MCP stdio proxy loop exited");
+        }
+    }
+
+    eprintln!("[xhair-cli] No active xhair instance found; starting headless MCP engine");
+    let data_dir = xhair_library::LibraryEngine::resolve_data_dir();
+    let library = xhair_library::LibraryEngine::new(data_dir).ok();
+    let ctx = xhair_mcp::ServerContext::new(library);
+    let server = xhair_mcp::McpServer::new(ctx);
     server.run_stdio().context("MCP stdio loop exited")
 }
 

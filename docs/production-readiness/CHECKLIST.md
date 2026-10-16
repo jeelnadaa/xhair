@@ -42,33 +42,33 @@
 
 ## Phase 2: Unified Backend & Real-Time MCP Bridge
 
-- [ ] **2.1 Embedded Loopback MCP HTTP Server in Main Application**
-  - [ ] Mount and start `McpServer` inside [`crates/xhair-app/src/lib.rs`](file:///D:/cross-aim/crates/xhair-app/src/lib.rs) on loopback `127.0.0.1:0`.
-  - [ ] Generate secure 256-bit Bearer token on app startup.
-  - [ ] Write `%TEMP%/xhair-endpoint.json` with port, token, and PID on startup.
-  - [ ] Delete `%TEMP%/xhair-endpoint.json` on clean exit and panic hook.
+- [x] **2.1 Embedded Loopback MCP HTTP Server in Main Application**
+  - [x] Mount and start `McpServer` inside [`crates/xhair-app/src/lib.rs`](file:///D:/cross-aim/crates/xhair-app/src/lib.rs) on loopback `127.0.0.1:0`.
+  - [x] Generate secure 256-bit Bearer token on app startup.
+  - [x] Write `%TEMP%/xhair-endpoint.json` with port, token, and PID on startup.
+  - [x] Delete `%TEMP%/xhair-endpoint.json` on clean exit and panic hook.
 
-- [ ] **2.2 Automatic Stdio Proxying in `xhair-cli mcp`**
-  - [ ] Update `handle_mcp` in [`crates/xhair-cli/src/main.rs`](file:///D:/cross-aim/crates/xhair-cli/src/main.rs) to inspect `read_endpoint_info()`.
-  - [ ] If running instance is alive, proxy stdin/stdout via `run_stdio_proxy()`.
-  - [ ] If no instance is running, fallback to headless `ServerContext` with disk `LibraryEngine`.
+- [x] **2.2 Automatic Stdio Proxying in `xhair-cli mcp`**
+  - [x] Update `handle_mcp` in [`crates/xhair-cli/src/main.rs`](file:///D:/cross-aim/crates/xhair-cli/src/main.rs) to inspect `read_endpoint_info()`.
+  - [x] If running instance is alive, proxy stdin/stdout via `run_stdio_proxy()`.
+  - [x] If no instance is running, fallback to headless `ServerContext` with disk `LibraryEngine`.
 
-- [ ] **2.3 Physical Win32 Overlay Controls for MCP Tools**
-  - [ ] Wire `OverlaySender` into [`crates/xhair-mcp/src/context.rs`](file:///D:/cross-aim/crates/xhair-mcp/src/context.rs).
-  - [ ] Connect `overlay.set_enabled` to issue `OverlayCommand::SetEnabled(enabled)`.
-  - [ ] Connect `calibration.show` and `calibration.hide` to `OverlayCommand::ToggleCalibrationPattern`.
-  - [ ] Connect `calibration.set_offset` to `OverlayCommand::Nudge(Vec2::new(dx, dy))`.
-  - [ ] Connect `display.list` to Win32 `EnumDisplayMonitors` API.
+- [x] **2.3 Physical Win32 Overlay Controls for MCP Tools**
+  - [x] Wire `OverlaySender` into [`crates/xhair-mcp/src/context.rs`](file:///D:/cross-aim/crates/xhair-mcp/src/context.rs).
+  - [x] Connect `overlay.set_enabled` to issue `OverlayCommand::SetEnabled(enabled)`.
+  - [x] Connect `calibration.show` and `calibration.hide` to `OverlayCommand::ToggleCalibrationPattern`.
+  - [x] Connect `calibration.set_offset` to `OverlayCommand::Nudge(Vec2::new(dx, dy))`.
+  - [x] Connect `display.list` to Win32 `EnumDisplayMonitors` API.
 
-- [ ] **2.4 Disk Storage Integration (`xhair-library`)**
-  - [ ] Initialize `LibraryEngine::new(LibraryEngine::resolve_data_dir())` in [`crates/xhair-app/src/lib.rs`](file:///D:/cross-aim/crates/xhair-app/src/lib.rs).
-  - [ ] Expose local `/api/library` REST endpoints in [`crates/xhair-app/src/server.rs`](file:///D:/cross-aim/crates/xhair-app/src/server.rs).
-  - [ ] Update [`ui/src/lib/state.svelte.ts`](file:///D:/cross-aim/ui/src/lib/state.svelte.ts) to load and save crosshairs to disk library instead of `localStorage`.
+- [x] **2.4 Disk Storage Integration (`xhair-library`)**
+  - [x] Initialize `LibraryEngine::new(LibraryEngine::resolve_data_dir())` in [`crates/xhair-app/src/lib.rs`](file:///D:/cross-aim/crates/xhair-app/src/lib.rs).
+  - [x] Expose local `/api/library` REST endpoints in [`crates/xhair-app/src/server.rs`](file:///D:/cross-aim/crates/xhair-app/src/server.rs).
+  - [x] Update [`ui/src/lib/state.svelte.ts`](file:///D:/cross-aim/ui/src/lib/state.svelte.ts) to load and save crosshairs to disk library instead of `localStorage`.
 
-- [ ] **2.5 Real-Time UI Event Streaming for MCP Mutations**
-  - [ ] Emit custom DOM events into WebView2 webview when MCP tools mutate documents.
-  - [ ] Show pulsing neon "Agent is editing" indicator in `TopBar.svelte` during agent mutations.
-  - [ ] Populate `McpModal.svelte` with actual live tool invocation logs and timings.
+- [x] **2.5 Real-Time UI Event Streaming for MCP Mutations**
+  - [x] Emit custom DOM events into WebView2 webview when MCP tools mutate documents.
+  - [x] Show pulsing neon "Agent is editing" indicator in `TopBar.svelte` during agent mutations.
+  - [x] Populate `McpModal.svelte` with actual live tool invocation logs and timings.
 
 ---
 

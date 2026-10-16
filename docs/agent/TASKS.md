@@ -89,4 +89,9 @@
 | **PR-003** | Phase 1 | Canvas Mouse Drag & Marquee State Separation | done | PR §1.3 | Layer hit-testing separating layer drag from marquee selection with 120fps redraw |
 | **PR-004** | Phase 1 | Tool Palette Mapping & Shape Creation Fixes | done | PR §1.4 | Tool 'R' inserts Rect instead of TShape, tool 'B' adds polygon |
 | **PR-005** | Phase 1 | Color Picker Undo Coalescing | done | PR §1.5 | Single undo snapshot on drag start, continuous live color preview, sync on release |
+| **PR-006** | Phase 2 | Embedded Loopback MCP Server in App | done | PR §2.1 | Loopback 127.0.0.1:0, 256-bit token, %TEMP%/xhair-endpoint.json lifecycle & cleanup |
+| **PR-007** | Phase 2 | Dual-Mode Stdio Proxy in CLI | done | PR §2.2 | Stdio proxying to running app instance; fallback to headless LibraryEngine |
+| **PR-008** | Phase 2 | Physical Win32 Overlay Controls for MCP | done | PR §2.3 | OverlayController trait wired to OverlaySender for overlay, calibration, display tools |
+| **PR-009** | Phase 2 | Disk Storage Integration (xhair-library) | done | PR §2.4 | LibraryEngine in app, REST endpoints /api/library/*, UI syncs with disk |
+| **PR-010** | Phase 2 | Real-Time UI Event Streaming for MCP | done | PR §2.5 | /api/mcp/activity polling, agent editing banner in TopBar & McpModal activity log |
 

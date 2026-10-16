@@ -62,7 +62,10 @@ pub fn find_ui_dist_dir() -> Option<PathBuf> {
 }
 
 /// Starts the local HTTP server in a background thread and returns the port.
-pub fn start_ui_server(overlay_sender: Option<OverlaySender>) -> Option<u16> {
+pub fn start_ui_server(
+    overlay_sender: Option<OverlaySender>,
+    mcp_ctx: Option<xhair_mcp::ServerContext>,
+) -> Option<u16> {
     // Try binding to port 4173 or an OS-assigned free port
     let listener = TcpListener::bind("127.0.0.1:4173")
         .or_else(|_| TcpListener::bind("127.0.0.1:0"))
@@ -74,8 +77,9 @@ pub fn start_ui_server(overlay_sender: Option<OverlaySender>) -> Option<u16> {
         .spawn(move || {
             for stream in listener.incoming().flatten() {
                 let sender_clone = overlay_sender.clone();
+                let mcp_clone = mcp_ctx.clone();
                 thread::spawn(move || {
-                    handle_connection(stream, sender_clone.as_ref());
+                    handle_connection(stream, sender_clone.as_ref(), mcp_clone.as_ref());
                 });
             }
         })
@@ -159,76 +163,198 @@ fn read_http_request(stream: &mut TcpStream) -> Option<(String, String, Vec<u8>)
     Some((method, raw_path, body))
 }
 
-fn handle_connection(mut stream: TcpStream, overlay_sender: Option<&OverlaySender>) {
+fn send_json_response(stream: &mut TcpStream, status: &str, body: &str) {
+    let header = format!(
+        "HTTP/1.1 {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nConnection: close\r\n\r\n",
+        status,
+        body.len()
+    );
+    let _ = stream.write_all(header.as_bytes());
+    let _ = stream.write_all(body.as_bytes());
+}
+
+fn handle_connection(
+    mut stream: TcpStream,
+    overlay_sender: Option<&OverlaySender>,
+    mcp_ctx: Option<&xhair_mcp::ServerContext>,
+) {
     let (method, raw_path, body) = match read_http_request(&mut stream) {
         Some(req) => req,
         None => return,
     };
 
     if method == "OPTIONS" {
-        let response = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: 0\r\n\r\n";
+        let response = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: 0\r\n\r\n";
         let _ = stream.write_all(response.as_bytes());
         return;
     }
 
+    let path = raw_path.split('?').next().unwrap_or("/");
+
     if method == "POST" {
-        let path = raw_path.split('?').next().unwrap_or("/");
         if path == "/api/overlay/crosshair" {
             let body_str = String::from_utf8_lossy(&body);
             if let Some(sender) = overlay_sender {
                 match crate::bridge::parse_ui_crosshair(&body_str) {
                     Ok(ch) => {
-                        let _ = sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
-                        let resp_body = b"{\"status\":\"ok\"}";
-                        let header = format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
-                            resp_body.len()
-                        );
-                        let _ = stream.write_all(header.as_bytes());
-                        let _ = stream.write_all(resp_body);
+                        let _ = sender.send(OverlayCommand::SetCrosshair(Box::new(ch.clone())));
+                        if let Some(ctx) = mcp_ctx {
+                            ctx.with_state(|state| {
+                                state.active_crosshair_id = Some(ch.id);
+                                state.bus.register_document(ch.clone());
+                                if let Some(ref mut lib) = state.library {
+                                    let _ = lib.save_crosshair(&ch, None);
+                                }
+                            });
+                        }
+                        send_json_response(&mut stream, "200 OK", "{\"status\":\"ok\"}");
                     }
                     Err(e) => {
                         let err_msg = format!("{{\"error\":\"{}\"}}", e);
-                        let header = format!(
-                            "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
-                            err_msg.len()
-                        );
-                        let _ = stream.write_all(header.as_bytes());
-                        let _ = stream.write_all(err_msg.as_bytes());
+                        send_json_response(&mut stream, "400 Bad Request", &err_msg);
                     }
                 }
             } else {
-                let resp_body = b"{\"status\":\"no_overlay\"}";
-                let header = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
-                    resp_body.len()
-                );
-                let _ = stream.write_all(header.as_bytes());
-                let _ = stream.write_all(resp_body);
+                send_json_response(&mut stream, "200 OK", "{\"status\":\"no_overlay\"}");
             }
             return;
         } else if path == "/api/overlay/toggle" {
             if let Some(sender) = overlay_sender {
                 let _ = sender.send(OverlayCommand::ToggleVisibility);
             }
-            let resp_body = b"{\"status\":\"ok\"}";
-            let header = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\n\r\n",
-                resp_body.len()
-            );
-            let _ = stream.write_all(header.as_bytes());
-            let _ = stream.write_all(resp_body);
+            send_json_response(&mut stream, "200 OK", "{\"status\":\"ok\"}");
+            return;
+        } else if path == "/api/library/save" {
+            let body_str = String::from_utf8_lossy(&body);
+            match serde_json::from_str::<xhair_model::crosshair::Crosshair>(&body_str)
+                .or_else(|_| crate::bridge::parse_ui_crosshair(&body_str))
+            {
+                Ok(ch) => {
+                    let ch_id = ch.id;
+                    if let Some(sender) = overlay_sender {
+                        let _ = sender.send(OverlayCommand::SetCrosshair(Box::new(ch.clone())));
+                    }
+                    if let Some(ctx) = mcp_ctx {
+                        ctx.with_state(|state| {
+                            state.active_crosshair_id = Some(ch_id);
+                            state.bus.register_document(ch.clone());
+                            if let Some(ref mut lib) = state.library {
+                                let _ = lib.save_crosshair(&ch, None);
+                            }
+                        });
+                    }
+                    send_json_response(
+                        &mut stream,
+                        "200 OK",
+                        &format!("{{\"status\":\"ok\",\"id\":\"{}\"}}", ch_id),
+                    );
+                }
+                Err(e) => {
+                    send_json_response(
+                        &mut stream,
+                        "400 Bad Request",
+                        &format!("{{\"error\":\"{}\"}}", e),
+                    );
+                }
+            }
+            return;
+        } else if path == "/api/library/delete" {
+            let body_str = String::from_utf8_lossy(&body);
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&body_str) {
+                if let Some(id_str) = val.get("id").and_then(|v| v.as_str()) {
+                    if let Ok(id) = id_str.parse::<xhair_model::units::CrosshairId>() {
+                        if let Some(ctx) = mcp_ctx {
+                            ctx.with_state(|state| {
+                                if let Some(ref mut lib) = state.library {
+                                    let _ = lib.delete_crosshair(id);
+                                }
+                                state.bus.documents.remove(&id);
+                            });
+                        }
+                        send_json_response(&mut stream, "200 OK", "{\"status\":\"ok\"}");
+                        return;
+                    }
+                }
+            }
+            send_json_response(&mut stream, "400 Bad Request", "{\"error\":\"Invalid id\"}");
             return;
         }
 
-        let response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-        let _ = stream.write_all(response.as_bytes());
+        send_json_response(&mut stream, "404 Not Found", "{\"error\":\"Not found\"}");
         return;
     }
 
+    if method == "GET" {
+        if path == "/api/library" {
+            if let Some(ctx) = mcp_ctx {
+                let json = ctx.with_state(|state| {
+                    let (crosshairs, folders) = if let Some(ref lib) = state.library {
+                        (lib.index().crosshairs.clone(), lib.index().folders.clone())
+                    } else {
+                        (vec![], vec![])
+                    };
+                    serde_json::json!({
+                        "crosshairs": crosshairs,
+                        "folders": folders,
+                        "active_id": state.active_crosshair_id,
+                    })
+                });
+                send_json_response(&mut stream, "200 OK", &json.to_string());
+                return;
+            } else {
+                send_json_response(
+                    &mut stream,
+                    "200 OK",
+                    "{\"crosshairs\":[],\"folders\":[],\"active_id\":null}",
+                );
+                return;
+            }
+        } else if path == "/api/library/get" {
+            let id_param = raw_path.split('?').nth(1).and_then(|q| {
+                q.split('&')
+                    .find(|pair| pair.starts_with("id="))
+                    .map(|pair| pair.trim_start_matches("id="))
+            });
+
+            if let Some(id_str) = id_param {
+                if let Ok(id) = id_str.parse::<xhair_model::units::CrosshairId>() {
+                    if let Some(ctx) = mcp_ctx {
+                        let doc = ctx.with_state(|state| {
+                            if let Some(ref lib) = state.library {
+                                lib.load_crosshair(id).ok()
+                            } else {
+                                state.bus.documents.get(&id).cloned()
+                            }
+                        });
+                        if let Some(ch) = doc {
+                            let json = serde_json::to_string(&ch).unwrap_or_default();
+                            send_json_response(&mut stream, "200 OK", &json);
+                            return;
+                        }
+                    }
+                }
+            }
+            send_json_response(&mut stream, "404 Not Found", "{\"error\":\"Not found\"}");
+            return;
+        } else if path == "/api/mcp/activity" {
+            if let Some(ctx) = mcp_ctx {
+                let log = ctx.with_state(|state| state.activity_log.clone());
+                let json = serde_json::to_string(&log).unwrap_or_else(|_| "[]".to_string());
+                send_json_response(&mut stream, "200 OK", &json);
+                return;
+            } else {
+                send_json_response(&mut stream, "200 OK", "[]");
+                return;
+            }
+        }
+    }
+
     if method != "GET" && method != "HEAD" {
-        let response = "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n";
-        let _ = stream.write_all(response.as_bytes());
+        send_json_response(
+            &mut stream,
+            "405 Method Not Allowed",
+            "{\"error\":\"Method not allowed\"}",
+        );
         return;
     }
 

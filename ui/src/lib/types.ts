@@ -234,3 +234,12 @@ export interface SprayShotImpact {
   timestamp_seconds: number;
   spread_radius: number;
 }
+
+export interface McpActivityItem {
+  id: string;
+  timestamp: string;
+  tool: string;
+  summary: string;
+  status: 'success' | 'error' | string;
+}
+

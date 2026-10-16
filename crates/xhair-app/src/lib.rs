@@ -8,12 +8,77 @@ pub mod bridge;
 /// Local HTTP server and embedded asset delivery.
 pub mod server;
 
+use std::sync::Arc;
 use xhair_geometry::ResolutionProfile;
 use xhair_model::crosshair::Crosshair;
-use xhair_platform_win::{spawn_overlay, OverlayCommand, OverlayConfig, VisibilityMode};
+use xhair_platform_win::{
+    spawn_overlay, OverlayCommand, OverlayConfig, OverlaySender, VisibilityMode,
+};
 
 /// Application default window title.
 pub const APP_TITLE: &str = "XHAIR";
+
+/// Bridge between MCP tools and the physical Win32 overlay window.
+pub struct Win32OverlayController {
+    sender: OverlaySender,
+}
+
+impl Win32OverlayController {
+    /// Creates a new Win32OverlayController.
+    pub fn new(sender: OverlaySender) -> Self {
+        Self { sender }
+    }
+}
+
+impl xhair_mcp::OverlayController for Win32OverlayController {
+    fn set_enabled(&self, enabled: bool) -> Result<(), String> {
+        self.sender
+            .send(OverlayCommand::SetEnabled(enabled))
+            .map_err(|e| e.to_string())
+    }
+
+    fn set_crosshair(&self, crosshair: Box<Crosshair>) -> Result<(), String> {
+        self.sender
+            .send(OverlayCommand::SetCrosshair(crosshair))
+            .map_err(|e| e.to_string())
+    }
+
+    fn toggle_visibility(&self) -> Result<(), String> {
+        self.sender
+            .send(OverlayCommand::ToggleVisibility)
+            .map_err(|e| e.to_string())
+    }
+
+    fn toggle_calibration_pattern(&self) -> Result<(), String> {
+        self.sender
+            .send(OverlayCommand::ToggleCalibrationPattern)
+            .map_err(|e| e.to_string())
+    }
+
+    fn nudge(&self, delta: xhair_model::Vec2) -> Result<(), String> {
+        self.sender
+            .send(OverlayCommand::Nudge(delta))
+            .map_err(|e| e.to_string())
+    }
+
+    fn list_monitors(&self) -> Result<Vec<serde_json::Value>, String> {
+        let monitors = xhair_platform_win::enumerate_monitors().map_err(|e| e.to_string())?;
+        let list = monitors
+            .into_iter()
+            .map(|m| {
+                serde_json::json!({
+                    "id": m.device_name,
+                    "name": m.device_name,
+                    "is_primary": m.is_primary,
+                    "width": m.width(),
+                    "height": m.height(),
+                    "dpi_scale": m.scale_factor
+                })
+            })
+            .collect();
+        Ok(list)
+    }
+}
 
 /// Runs the main application event loop.
 pub fn run() -> anyhow::Result<()> {
@@ -33,25 +98,83 @@ pub fn run() -> anyhow::Result<()> {
         is_minimized
     );
 
-    // 2. Load default crosshair ("Cyan Gap" with 4 arms + center dot) and resolution profile (§4, §6)
-    let crosshair = Crosshair::new_default();
+    // 2. Initialize disk storage engine (§10)
+    let data_dir = xhair_library::LibraryEngine::resolve_data_dir();
+    let library = match xhair_library::LibraryEngine::new(&data_dir) {
+        Ok(lib) => {
+            tracing::info!("Initialized library engine at {:?}", data_dir);
+            Some(lib)
+        }
+        Err(e) => {
+            tracing::warn!("Failed to initialize library engine: {}", e);
+            None
+        }
+    };
+
+    // 3. Load default or active crosshair and resolution profile (§4, §6)
+    let crosshair = if let Some(ref lib) = library {
+        if let Some(first) = lib.index().crosshairs.first() {
+            lib.load_crosshair(first.id)
+                .unwrap_or_else(|_| Crosshair::new_default())
+        } else {
+            Crosshair::new_default()
+        }
+    } else {
+        Crosshair::new_default()
+    };
     let profile = ResolutionProfile::default_1080p();
 
-    // 3. Configure overlay: default to visible on screen (§8.1)
+    // 4. Configure overlay: default to visible on screen (§8.1)
     let config = OverlayConfig {
         visibility_mode: VisibilityMode::AlwaysShow,
         follow_game_window: false,
         ..Default::default()
     };
 
-    // 4. Spawn the Win32 transparent click-through overlay window + tray icon + hotkeys (§8)
+    // 5. Spawn the Win32 transparent click-through overlay window + tray icon + hotkeys (§8)
     let overlay_handle = spawn_overlay(crosshair, profile, config)
         .map_err(|e| anyhow::anyhow!("Failed to spawn overlay: {}", e))?;
     let overlay_sender = overlay_handle.get_sender();
 
-    // 5. If not launched minimized, start the local UI server and launch native desktop window
+    // 6. Initialize MCP Server context and wire Win32 overlay controller (§13)
+    let mcp_ctx = xhair_mcp::ServerContext::new(library);
+    mcp_ctx.set_overlay_controller(Arc::new(Win32OverlayController::new(
+        overlay_sender.clone(),
+    )));
+
+    // 7. Start loopback MCP HTTP server and write %TEMP%/xhair-endpoint.json for discovery
+    let token = format!("xhair_sec_{}", uuid::Uuid::new_v4().simple());
+    let mut mcp_server = xhair_mcp::McpServer::new(mcp_ctx.clone());
+    let http_config = xhair_mcp::HttpConfig {
+        port: 0,
+        bearer_token: token.clone(),
+    };
+
+    match mcp_server.start_http(http_config) {
+        Ok(socket_addr) => {
+            tracing::info!(
+                "Started embedded MCP HTTP server on 127.0.0.1:{}",
+                socket_addr.port()
+            );
+            let endpoint_info = xhair_mcp::EndpointInfo {
+                port: socket_addr.port(),
+                token,
+                pid: std::process::id(),
+            };
+            if let Err(e) = xhair_mcp::write_endpoint_info(&endpoint_info) {
+                tracing::warn!("Failed to write endpoint info file: {}", e);
+            }
+        }
+        Err(e) => {
+            tracing::warn!("Failed to start embedded MCP HTTP server: {}", e);
+        }
+    }
+
+    // 8. If not launched minimized, start the local UI server and launch native desktop window
     if !is_minimized {
-        if let Some(port) = server::start_ui_server(Some(overlay_sender.clone())) {
+        if let Some(port) =
+            server::start_ui_server(Some(overlay_sender.clone()), Some(mcp_ctx.clone()))
+        {
             let url = format!("http://127.0.0.1:{}", port);
             tracing::info!("XHAIR Editor UI serving at {}", url);
 
@@ -64,6 +187,7 @@ pub fn run() -> anyhow::Result<()> {
                 .map_err(|e| anyhow::anyhow!("Failed to create window: {}", e))?;
 
             let ipc_sender = overlay_sender.clone();
+            let ipc_ctx = mcp_ctx.clone();
             let webview = wry::WebViewBuilder::new()
                 .with_url(&url)
                 .with_devtools(true)
@@ -91,10 +215,25 @@ pub fn run() -> anyhow::Result<()> {
                                 _ => {}
                             }
                         } else if let Ok(ch) = bridge::parse_ui_crosshair(text) {
-                            let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
+                            let _ =
+                                ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch.clone())));
+                            ipc_ctx.with_state(|state| {
+                                state.active_crosshair_id = Some(ch.id);
+                                state.bus.register_document(ch.clone());
+                                if let Some(ref mut lib) = state.library {
+                                    let _ = lib.save_crosshair(&ch, None);
+                                }
+                            });
                         }
                     } else if let Ok(ch) = bridge::parse_ui_crosshair(text) {
-                        let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch)));
+                        let _ = ipc_sender.send(OverlayCommand::SetCrosshair(Box::new(ch.clone())));
+                        ipc_ctx.with_state(|state| {
+                            state.active_crosshair_id = Some(ch.id);
+                            state.bus.register_document(ch.clone());
+                            if let Some(ref mut lib) = state.library {
+                                let _ = lib.save_crosshair(&ch, None);
+                            }
+                        });
                     }
                 })
                 .build(&window)
@@ -108,14 +247,16 @@ pub fn run() -> anyhow::Result<()> {
                     ..
                 } = event
                 {
+                    xhair_mcp::clear_endpoint_info();
                     *control_flow = tao::event_loop::ControlFlow::Exit;
                 }
             });
         }
     }
 
-    // 6. Keep daemon running until exit (blocks on overlay thread message loop / tray menu)
+    // 9. Keep daemon running until exit (blocks on overlay thread message loop / tray menu)
     overlay_handle.wait();
+    xhair_mcp::clear_endpoint_info();
 
     Ok(())
 }
@@ -133,7 +274,7 @@ mod tests {
     fn test_ui_server_and_dist() {
         let dist = server::find_ui_dist_dir();
         println!("find_ui_dist_dir returned: {:?}", dist);
-        let port = server::start_ui_server(None).expect("failed to start server");
+        let port = server::start_ui_server(None, None).expect("failed to start server");
         println!("start_ui_server returned: {}", port);
 
         use std::io::{Read, Write};
@@ -166,5 +307,105 @@ mod tests {
         let resp_js_str = String::from_utf8_lossy(&resp_js);
         assert!(resp_js_str.contains("HTTP/1.1 200 OK"));
         assert!(resp_js_str.contains("Content-Type: application/javascript"));
+    }
+
+    #[test]
+    fn test_server_library_api_lifecycle() {
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
+
+        let temp_dir = tempfile::tempdir().expect("failed to create tempdir");
+        let library =
+            xhair_library::LibraryEngine::new(temp_dir.path()).expect("failed to create engine");
+        let mcp_ctx = xhair_mcp::ServerContext::new(Some(library));
+        let port =
+            server::start_ui_server(None, Some(mcp_ctx.clone())).expect("failed to start server");
+
+        // 1. GET /api/library
+        let mut stream = TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream
+            .write_all(b"GET /api/library HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            .unwrap();
+        let mut resp = Vec::new();
+        stream.read_to_end(&mut resp).unwrap();
+        let resp_str = String::from_utf8_lossy(&resp);
+        assert!(resp_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_str.contains("\"crosshairs\":"));
+
+        // 2. POST /api/library/save
+        let new_ch = Crosshair::new_classic("REST Reticle");
+        let body = serde_json::to_string(&new_ch).unwrap();
+        let req = format!(
+            "POST /api/library/save HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: {}\r\nContent-Type: application/json\r\n\r\n{}",
+            body.len(),
+            body
+        );
+        let mut stream_save =
+            TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream_save.write_all(req.as_bytes()).unwrap();
+        let mut resp_save = Vec::new();
+        stream_save.read_to_end(&mut resp_save).unwrap();
+        let resp_save_str = String::from_utf8_lossy(&resp_save);
+        assert!(resp_save_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_save_str.contains("\"status\":\"ok\""));
+
+        // 3. GET /api/library/get?id=...
+        let get_req = format!(
+            "GET /api/library/get?id={} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n",
+            new_ch.id
+        );
+        let mut stream_get =
+            TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream_get.write_all(get_req.as_bytes()).unwrap();
+        let mut resp_get = Vec::new();
+        stream_get.read_to_end(&mut resp_get).unwrap();
+        let resp_get_str = String::from_utf8_lossy(&resp_get);
+        assert!(resp_get_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_get_str.contains("REST Reticle"));
+
+        // 4. GET /api/mcp/activity
+        mcp_ctx.log_activity("test.action", "args summary", "success");
+        let mut stream_act =
+            TcpStream::connect(format!("127.0.0.1:{}", port)).expect("connect failed");
+        stream_act
+            .write_all(b"GET /api/mcp/activity HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            .unwrap();
+        let mut resp_act = Vec::new();
+        stream_act.read_to_end(&mut resp_act).unwrap();
+        let resp_act_str = String::from_utf8_lossy(&resp_act);
+        assert!(resp_act_str.contains("HTTP/1.1 200 OK"));
+        assert!(resp_act_str.contains("test.action"));
+    }
+
+    #[test]
+    fn test_embedded_mcp_and_endpoint_info() {
+        let mcp_ctx = xhair_mcp::ServerContext::default();
+        let mut mcp_server = xhair_mcp::McpServer::new(mcp_ctx);
+        let token = "test_token_secret_12345".to_string();
+        let config = xhair_mcp::HttpConfig {
+            port: 0,
+            bearer_token: token.clone(),
+        };
+
+        let socket_addr = mcp_server
+            .start_http(config)
+            .expect("failed to start MCP HTTP server");
+        assert!(socket_addr.port() > 0);
+
+        let endpoint_info = xhair_mcp::EndpointInfo {
+            port: socket_addr.port(),
+            token: token.clone(),
+            pid: std::process::id(),
+        };
+
+        xhair_mcp::write_endpoint_info(&endpoint_info).expect("write endpoint failed");
+        let read_info = xhair_mcp::read_endpoint_info().expect("read endpoint failed");
+        assert_eq!(read_info.port, socket_addr.port());
+        assert_eq!(read_info.token, token);
+        assert!(xhair_mcp::is_endpoint_alive(&read_info));
+
+        xhair_mcp::clear_endpoint_info();
+        assert!(xhair_mcp::read_endpoint_info().is_none());
+        mcp_server.stop_http();
     }
 }

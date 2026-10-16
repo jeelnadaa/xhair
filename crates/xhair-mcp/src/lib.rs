@@ -15,7 +15,7 @@ pub mod resources;
 pub mod stdio;
 pub mod tools;
 
-pub use context::{ActivityEntry, ServerContext, ServerState};
+pub use context::{ActivityEntry, OverlayController, ServerContext, ServerState};
 pub use http::{HttpConfig, HttpServer};
 pub use prompts::{get_prompt, list_prompts};
 pub use protocol::{CallToolResult, JsonRpcRequest, JsonRpcResponse, ToolDefinition};
