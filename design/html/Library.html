@@ -2,40 +2,37 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Library — XHAIR Design v2</title>
+<title>Library & Crosshair Groups — XHAIR Design v5</title>
 <link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #090A0D;
-  --s1: #111418;
-  --s2: #181C22;
-  --s3: #21262F;
-  --ln: #282F3A;
-  --ln-subtle: #1C222B;
-  --ln-active: #404A59;
-  --tx: #E5E7EB;
-  --mu: #8E98A8;
-  --dim: #545E6E;
-  --ac: #38BDF8;
-  --ac-dim: #0C2836;
-  --center-guide: #FF4FD8;
-  --warning: #F59E0B;
-  --warning-bg: #261B07;
-  --danger: #EF4444;
-  --danger-bg: #2B1111;
-  --success: #10B981;
-  --success-bg: #0A261C;
+  
+      --bg: #0A0A0A; --canvas: #080808; --s1: #111111; --s2: #171717; --hover: #1F1F1F;
+      --border: #262626; --border-strong: #3A3A3A; --tx: #EDEDED; --tx-muted: #A0A0A0; --tx-dim: #808080;
+      --grid-minor: #141414; --grid-major: #1E1E1E; --accent: #FFFFFF; --on-accent: #0A0A0A;
+      --guide: #FFFFFF; --selection: #2B2B2B; --focus-ring: #FFFFFF;
+      --success: #10B981; --warning: #F59E0B; --danger: #EF4444; --info: #60A5FA;
+    
+  --rad-none: 0px;
+  --rad-xs: 2px;
+  --rad-sm: 3px;
+  --rad-md: 4px;
+  --rad-lg: 6px;
+  --rad-xl: 8px;
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.75);
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  margin: 0; padding: 0;
   background: var(--bg);
   color: var(--tx);
   font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
 .m { font-family: 'JetBrains Mono', Consolas, monospace; }
@@ -45,251 +42,421 @@ body {
   overflow: hidden; background: var(--bg);
   position: relative;
 }
+
+/* TOPBAR */
 .top-bar {
-  height: 52px; flex: none;
-  background: var(--s1);
-  border-bottom: 1px solid var(--ln);
-  display: flex; align-items: center; gap: 12px;
-  padding: 0 16px;
+  height: 44px; background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; flex-shrink: 0; gap: 12px;
 }
-.brand {
-  font-weight: 900; letter-spacing: 0.14em;
-  color: var(--tx); font-size: 14px;
+.brand-group { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  font-family: 'Clash Display', 'Satoshi', sans-serif;
+  font-weight: 700; font-size: 15px; letter-spacing: 0.12em;
+  color: var(--tx); display: flex; align-items: center; gap: 6px;
 }
-.sep { color: var(--dim); margin: 0 4px; }
-.btn {
-  background: var(--s2);
-  border: 1px solid var(--ln);
-  border-radius: 6px;
-  padding: 0 12px; height: 32px;
-  font-family: inherit; font-size: 12px; font-weight: 500;
-  color: var(--tx); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  transition: all 0.15s ease;
+.brand-mark span { color: var(--accent); }
+.file-title {
+  padding: 3px 8px; border-radius: var(--rad-sm);
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--tx); font-weight: 500; font-size: 12px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
 }
-.btn:hover { background: var(--s3); border-color: var(--ln-active); }
-.btn-sm { height: 26px; padding: 0 8px; font-size: 11px; }
-.btn-primary { background: var(--tx); color: #000; border-color: var(--tx); font-weight: 700; }
-.btn-primary:hover { background: #fff; border-color: #fff; }
-.btn-accent { background: var(--ac); color: #04110E; border-color: var(--ac); font-weight: 700; }
-.pill {
-  border: 1px solid var(--ln);
-  border-radius: 99px;
-  padding: 4px 10px; font-size: 11px; color: var(--mu);
-  background: var(--s2);
+.file-title .badge {
+  font-size: 10px; color: var(--tx-dim); text-transform: uppercase;
+}
+
+.center-warning-badge {
   display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: var(--rad-sm);
+  background: #261B07; border: 1px solid #78350F;
+  color: #FBBF24; font-size: 11px; font-weight: 500;
+  cursor: pointer;
 }
-.pill.active { color: var(--tx); border-color: var(--ln-active); }
-.dot-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
-.dot-indicator.on { background: var(--tx); box-shadow: 0 0 6px rgba(255,255,255,0.4); }
-.input {
-  background: var(--bg);
-  border: 1px solid var(--ln);
-  border-radius: 6px; height: 32px;
-  padding: 0 10px; color: var(--tx);
-  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+.center-warning-badge:hover { background: #38240A; }
+
+.status-cluster { display: flex; align-items: center; gap: 8px; }
+.tag-chip {
+  height: 24px; padding: 0 8px; border-radius: var(--rad-sm);
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--tx-muted); font-size: 11px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
 }
-.input:focus { outline: none; border-color: var(--ln-active); }
-.panel {
-  background: var(--s1);
-  border: 1px solid var(--ln);
-  border-radius: 8px; padding: 14px; margin-bottom: 12px;
+.tag-chip.active { color: var(--tx); border-color: var(--border-strong); }
+.tag-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx-dim); }
+.tag-chip.active .dot.green { background: #10B981; }
+.tag-chip.active .dot.accent { background: var(--accent); }
+
+/* BUTTONS */
+.btn {
+  height: 28px; padding: 0 10px; border-radius: var(--rad-md);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; outline: none; transition: background 120ms ease;
 }
-.panel-h {
-  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--mu); font-weight: 700; margin: 0 0 12px 0;
+.btn-primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn-primary:hover { filter: brightness(0.92); }
+.btn-secondary { background: var(--s2); border: 1px solid var(--border); color: var(--tx); }
+.btn-secondary:hover { background: var(--hover); border-color: var(--border-strong); }
+.btn-ghost { background: transparent; color: var(--tx-muted); }
+.btn-ghost:hover { background: var(--hover); color: var(--tx); }
+.btn-icon { width: 28px; height: 28px; padding: 0; }
+
+/* MAIN WORKSPACE */
+.main-workspace {
+  flex: 1; display: flex; overflow: hidden; position: relative;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px; background: var(--s1);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-header {
+  height: 38px; padding: 0 12px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
-.badge {
-  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
-  background: var(--s3); color: var(--mu);
+.sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tx-muted); }
+.sidebar-content { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.group-tree-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: var(--rad-sm); cursor: pointer;
+  color: var(--tx); font-weight: 500; font-size: 12px;
 }
-.badge-success { background: var(--success-bg); color: var(--success); }
-.badge-warning { background: var(--warning-bg); color: var(--warning); }
-.badge-danger { background: var(--danger-bg); color: var(--danger); }
-.badge-offset { background: #261D09; color: #FBBF24; border: 1px solid #78350F; }
-.badge-shortcut { background: var(--s3); border: 1px solid var(--ln); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mu); padding: 1px 5px; border-radius: 3px; }
-.row-flex { display: flex; align-items: center; justify-content: space-between; }
-.track { height: 4px; background: var(--ln); border-radius: 2px; margin-top: 6px; position: relative; }
-.track-fill { height: 4px; background: var(--tx); border-radius: 2px; }
-.modal-overlay {
-  position: absolute; inset: 0;
-  background: rgba(4, 5, 8, 0.78);
-  backdrop-filter: blur(4px);
+.group-tree-row:hover { background: var(--hover); }
+.group-tree-row.active { background: var(--s2); border-left: 2px solid var(--accent); border-radius: 0 var(--rad-sm) var(--rad-sm) 0; }
+.group-tree-row .left { display: flex; align-items: center; gap: 6px; }
+.color-dot { width: 8px; height: 8px; border-radius: 50%; }
+.count-badge { font-size: 11px; color: var(--tx-dim); }
+
+.reticle-sub-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px 5px 22px; border-radius: var(--rad-sm); cursor: pointer;
+  color: var(--tx-muted); font-size: 12px;
+}
+.reticle-sub-row:hover { background: var(--hover); color: var(--tx); }
+.reticle-sub-row.active { background: var(--hover); color: var(--tx); font-weight: 500; }
+
+/* TOOL RAIL */
+.tool-rail {
+  width: 44px; background: var(--s1);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0; gap: 4px; flex-shrink: 0;
+}
+.tool-btn {
+  width: 32px; height: 32px; border-radius: var(--rad-md);
   display: flex; align-items: center; justify-content: center;
-  z-index: 100;
+  color: var(--tx-muted); background: transparent; border: none; cursor: pointer;
+}
+.tool-btn:hover { background: var(--hover); color: var(--tx); }
+.tool-btn.active { background: var(--s2); color: var(--accent); border: 1px solid var(--border-strong); }
+
+/* CANVAS STAGE */
+.canvas-stage {
+  flex: 1; background: var(--canvas);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.canvas-grid-bg {
+  position: absolute; inset: 0;
+  background-image: 
+    linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+  background-size: 8px 8px, 8px 8px, 40px 40px, 40px 40px;
+}
+.canvas-center-guides {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.guide-x { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--guide); opacity: 0.35; }
+.guide-y { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--guide); opacity: 0.35; }
+.guide-center-dot {
+  position: absolute; top: 50%; left: 50%;
+  width: 5px; height: 5px; transform: translate(-50%, -50%);
+  background: var(--guide); border-radius: 50%;
+}
+.guide-ring {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px dashed var(--guide); border-radius: 50%; opacity: 0.25;
+}
+
+/* FLOATING ZOOM / FOOTER */
+.canvas-footer {
+  position: absolute; bottom: 12px; left: 16px; right: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none;
+}
+.floating-chip-bar {
+  pointer-events: auto; background: var(--s1);
+  border: 1px solid var(--border); border-radius: var(--rad-md);
+  padding: 3px 6px; display: flex; align-items: center; gap: 4px;
+  box-shadow: var(--shadow-subtle);
+}
+.zoom-chip {
+  padding: 2px 6px; border-radius: var(--rad-xs); font-size: 11px;
+  color: var(--tx-muted); cursor: pointer;
+}
+.zoom-chip:hover { background: var(--hover); color: var(--tx); }
+.zoom-chip.active { background: var(--s2); color: var(--tx); font-weight: 600; }
+
+/* RIGHT PANEL DOCK SYSTEM */
+.dock-panel {
+  width: 360px; background: var(--s1);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.dock-header {
+  height: 38px; background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px 0 8px; flex-shrink: 0;
+}
+.dock-tabs-scroll {
+  display: flex; align-items: center; gap: 2px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.dock-tab {
+  padding: 8px 10px; font-size: 12px; font-weight: 500;
+  color: var(--tx-muted); cursor: pointer; white-space: nowrap;
+  position: relative; display: flex; align-items: center; gap: 6px;
+}
+.dock-tab:hover { color: var(--tx); }
+.dock-tab.active {
+  color: var(--tx); font-weight: 600;
+}
+.dock-tab.active::after {
+  content: ''; position: absolute; bottom: -1px; left: 6px; right: 6px;
+  height: 2px; background: var(--accent); border-radius: 1px;
+}
+.dock-body {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* SECTION CARD */
+.section-card {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: var(--rad-md); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.section-card-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--tx-muted); display: flex; align-items: center; justify-content: space-between;
+}
+
+/* FORM CONTROLS */
+.form-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.form-label { font-size: 12px; color: var(--tx-muted); display: flex; align-items: center; gap: 4px; }
+.form-input-number {
+  width: 64px; height: 26px; border-radius: var(--rad-sm);
+  background: var(--s1); border: 1px solid var(--border);
+  color: var(--tx); padding: 0 6px; font-size: 12px; text-align: right;
+}
+.form-input-number:focus { border-color: var(--border-strong); outline: 2px solid var(--focus-ring); }
+.slider-track {
+  flex: 1; height: 4px; background: var(--border);
+  border-radius: var(--rad-xs); position: relative; cursor: pointer;
+}
+.slider-fill {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: var(--tx-muted); border-radius: var(--rad-xs);
+}
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 12px; height: 12px; background: var(--tx); border-radius: 50%;
+  box-shadow: var(--shadow-subtle);
+}
+
+/* OVERLAY MODAL / POPOVER */
+.modal-overlay {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
 }
 .modal-window {
-  background: var(--s1);
-  border: 1px solid var(--ln-active);
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.85);
-  overflow: hidden;
+  background: var(--s1); border: 1px solid var(--border-strong);
+  border-radius: var(--rad-xl); box-shadow: var(--shadow-modal);
+  display: flex; flex-direction: column; overflow: hidden;
 }
+.modal-header {
+  height: 44px; padding: 0 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 14px; font-weight: 600; color: var(--tx); }
+.modal-body { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer {
+  height: 48px; padding: 0 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  background: var(--s2);
+}
+
+/* CUSTOM SPECIFIC CSS INJECTION */
+
 </style>
 </head>
 <body>
-
 <div class="app-shell">
+  
+      
   <header class="top-bar">
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span class="brand">XHAIR</span><span class="sep">/</span><span style="font-weight:600; font-size:14px;">Library & Groups</span>
+    <div class="brand-group">
+      <div class="brand-mark">XH<span>AIR</span></div>
+      <div class="file-title">
+        <span>Crosshair Library</span>
+        <span class="badge">F2</span>
+      </div>
+      
+      <div class="center-warning-badge">
+        <span>⚠ Moved from center (Δx +1.5, Δy −0.5)</span>
+        <span class="m" style="text-decoration: underline;">Recenter</span>
+      </div>
     </div>
-    <div style="flex:1;"></div>
-    <div style="display:flex; align-items:center; gap:8px; background:var(--s2); border:1px solid var(--ln); border-radius:6px; padding:4px 8px;">
-      <span class="m" style="font-size:11px; color:var(--tx); font-weight:600;">✓ 3 Selected</span>
-      <button class="btn btn-sm">Move to Group ▾</button>
-      <button class="btn btn-sm">Export .xhairpack</button>
-      <button class="btn btn-sm" style="color:var(--danger); border-color:#5B1D1D;">Delete (Del)</button>
+    <div class="status-cluster">
+      <div class="tag-chip active">
+        <span class="dot green"></span>
+        <span>Overlay ON</span>
+      </div>
+      <div class="tag-chip active">
+        <span class="dot accent"></span>
+        <span>MCP ON</span>
+      </div>
+      <div class="tag-chip">
+        <span>1920×1080 Native</span>
+      </div>
+      <button class="btn btn-primary">
+        <span>💾 Save</span>
+        <span class="m" style="opacity: 0.6; font-size: 10px;">Ctrl+S</span>
+      </button>
     </div>
   </header>
-  <div style="display:flex; flex:1; min-height:0;">
-    <aside style="width:280px; background:var(--s1); border-right:1px solid var(--ln); padding:16px; display:flex; flex-direction:column; gap:12px;">
-      <div class="panel-h">
-        <span>Crosshair Groups</span>
-        <button class="btn btn-sm" style="height:20px; padding:0 6px;">+ New</button>
+      <div class="main-workspace">
+        
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Library & Groups</span>
+      <button class="btn btn-ghost btn-icon" title="New Group">+</button>
+    </div>
+    <div class="sidebar-content">
+      <div class="group-tree-row active">
+        <div class="left">
+          <span style="font-size: 10px;">▼</span>
+          <span class="color-dot" style="background: #38BDF8;"></span>
+          <span>Valorant</span>
+        </div>
+        <span class="count-badge">4</span>
       </div>
-      <div style="display:flex; flex-direction:column; gap:6px; flex:1; overflow-y:auto;">
-        <div style="border:1px solid var(--ln-active); border-radius:8px; background:var(--s2); overflow:hidden;">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:var(--s3); cursor:pointer;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span>▾</span>
-              <span style="width:8px; height:8px; border-radius:50%; background:#10B981;"></span>
-              <span style="font-weight:700;">Valorant</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span class="badge">3</span>
-              <span class="badge badge-success">Active</span>
-            </div>
-          </div>
-          <div style="padding:6px 10px; font-size:10px; color:var(--mu); border-bottom:1px solid var(--ln); display:flex; justify-content:space-between;">
-            <span>Bound: VALORANT-Win64...</span>
-            <span class="badge-shortcut">Ctrl+1</span>
-          </div>
-          <div style="padding:4px 6px; display:flex; flex-direction:column; gap:2px;">
-            <div style="padding:6px 8px; border-radius:4px; background:#101B24; border:1px solid var(--ac); display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-weight:600; color:var(--tx);">★ Cyan Gap</span>
-              <span class="m" style="font-size:10px; color:var(--ac);">Active</span>
-            </div>
-            <div style="padding:6px 8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; color:var(--mu);">
-              <span>Dot Sniper</span>
-              <span class="badge-shortcut">Slot 2</span>
-            </div>
-            <div style="padding:6px 8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; color:var(--mu);">
-              <span>Circle Red</span>
-              <span class="badge-shortcut">Slot 3</span>
-            </div>
-          </div>
-        </div>
-        <div style="border:1px solid var(--ln); border-radius:8px; background:var(--s2); overflow:hidden;">
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; cursor:pointer;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span>▸</span>
-              <span style="width:8px; height:8px; border-radius:50%; background:#F59E0B;"></span>
-              <span style="font-weight:600;">CS2 Competitive</span>
-            </div>
-            <span class="badge">4</span>
-          </div>
-          <div style="padding:4px 10px 8px 10px; font-size:10px; color:var(--dim);">Bound: cs2.exe · 1280×960 Default</div>
-        </div>
-        <div style="border:1px solid var(--ln); border-radius:8px; background:var(--s2); padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span>▸</span>
-            <span style="width:8px; height:8px; border-radius:50%; background:#38BDF8;"></span>
-            <span style="font-weight:600;">Apex Legends</span>
-          </div>
-          <span class="badge">2</span>
-        </div>
-        <div style="border:1px dashed var(--ln); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; color:var(--mu);">
-          <span>📁 Ungrouped</span>
-          <span class="badge">3</span>
-        </div>
+      <div class="reticle-sub-row active">
+        <span>• Cyan Gap (Active)</span>
       </div>
-      <button class="btn btn-primary" style="width:100%;">+ Create Group</button>
-    </aside>
-    <main style="flex:1; padding:24px; overflow-y:auto; display:flex; flex-direction:column; gap:20px;">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <div>
-          <h2 style="margin:0 0 4px 0; font-size:18px;">Valorant Reticles (3)</h2>
-          <div style="font-size:12px; color:var(--mu);">Linked Process: <code class="m" style="color:var(--tx);">VALORANT-Win64-Shipping.exe</code> · Default Resolution: <span style="color:var(--tx); font-weight:600;">1280×960 (4:3 Stretched)</span></div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn">Group Settings</button>
-          <button class="btn btn-primary">+ Add Crosshair</button>
-        </div>
+      <div class="reticle-sub-row ">
+        <span>• Dot 2px</span>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px;">
-        <div style="background:var(--s1); border:1px solid var(--ac); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px; position:relative;">
-          <div style="position:absolute; top:12px; right:12px; display:flex; gap:6px;">
-            <span class="badge badge-success">ACTIVE</span>
-            <input type="checkbox" checked style="accent-color:var(--tx);">
-          </div>
-          <div style="height:140px; background:#0B0E13; border:1px solid var(--ln); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-            <svg width="60" height="60" viewBox="0 0 60 60">
-              <rect x="29" y="10" width="2" height="14" fill="#38BDF8"/>
-              <rect x="29" y="36" width="2" height="14" fill="#38BDF8"/>
-              <rect x="10" y="29" width="14" height="2" fill="#38BDF8"/>
-              <rect x="36" y="29" width="14" height="2" fill="#38BDF8"/>
-              <circle cx="30" cy="30" r="1.5" fill="#38BDF8"/>
-            </svg>
-          </div>
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-              <span style="font-weight:700; font-size:14px;">Cyan Gap</span>
-              <span class="badge-shortcut">Slot 1</span>
-            </div>
-            <div style="font-size:11px; color:var(--mu);">4 Arms · 1 Center Dot · 0.5px Nudge</div>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-sm btn-primary" style="flex:1;">Open in Editor</button>
-            <button class="btn btn-sm">Share</button>
-          </div>
-        </div>
-        <div style="background:var(--s1); border:1px solid var(--ln); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px; position:relative;">
-          <div style="position:absolute; top:12px; right:12px;">
-            <input type="checkbox" checked style="accent-color:var(--tx);">
-          </div>
-          <div style="height:140px; background:#0B0E13; border:1px solid var(--ln); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-            <svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="3" fill="#E5E7EB"/></svg>
-          </div>
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-              <span style="font-weight:700; font-size:14px;">Dot Sniper</span>
-              <span class="badge-shortcut">Slot 2</span>
-            </div>
-            <div style="font-size:11px; color:var(--mu);">1 Round Dot · Crisp 3px · High Contrast</div>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-sm btn-primary" style="flex:1;">Open in Editor</button>
-            <button class="btn btn-sm">Share</button>
-          </div>
-        </div>
-        <div style="background:var(--s1); border:1px solid var(--ln); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px; position:relative;">
-          <div style="position:absolute; top:12px; right:12px;">
-            <input type="checkbox" checked style="accent-color:var(--tx);">
-          </div>
-          <div style="height:140px; background:#0B0E13; border:1px solid var(--ln); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-            <svg width="60" height="60" viewBox="0 0 60 60">
-              <circle cx="30" cy="30" r="14" fill="none" stroke="#EF4444" stroke-width="2"/>
-              <circle cx="30" cy="30" r="1.5" fill="#EF4444"/>
-            </svg>
-          </div>
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-              <span style="font-weight:700; font-size:14px;">Circle Red</span>
-              <span class="badge-shortcut">Slot 3</span>
-            </div>
-            <div style="font-size:11px; color:var(--mu);">1 Ring · Center Dot · Red Accent</div>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-sm btn-primary" style="flex:1;">Open in Editor</button>
-            <button class="btn btn-sm">Share</button>
-          </div>
-        </div>
+      <div class="reticle-sub-row ">
+        <span>• T-Shape Crisp</span>
       </div>
-    </main>
-  </div>
-</div>
+      <div class="reticle-sub-row ">
+        <span>• Pink Ring</span>
+      </div>
 
+      <div class="group-tree-row ">
+        <div class="left">
+          <span style="font-size: 10px;">▶</span>
+          <span class="color-dot" style="background: #F59E0B;"></span>
+          <span>CS2</span>
+        </div>
+        <span class="count-badge">2</span>
+      </div>
+
+      <div class="group-tree-row ">
+        <div class="left">
+          <span style="font-size: 10px;">▶</span>
+          <span class="color-dot" style="background: #EF4444;"></span>
+          <span>Apex Legends</span>
+        </div>
+        <span class="count-badge">3</span>
+      </div>
+
+      <div class="group-tree-row " style="margin-top: 12px;">
+        <div class="left">
+          <span class="color-dot" style="background: var(--tx-dim);"></span>
+          <span>Ungrouped</span>
+        </div>
+        <span class="count-badge">1</span>
+      </div>
+    </div>
+  </aside>
+        <div style="flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 700;">Valorant Profiles</h2>
+              <p style="color: var(--tx-muted); font-size: 13px; margin-top: 4px;">
+                Bound Process: <span class="m" style="color: var(--accent);">VALORANT-Win64-Shipping.exe</span> · 4 crosshairs
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary">Group Settings</button>
+              <button class="btn btn-secondary">Export Pack (.xhairpack)</button>
+              <button class="btn btn-primary">+ Blank Crosshair</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
+            <!-- Card 1 -->
+            <div class="section-card" style="padding: 16px; border-color: var(--accent);">
+              <div style="height: 140px; background: var(--canvas); border-radius: var(--rad-sm); display: flex; align-items: center; justify-content: center; position: relative;">
+                <span class="tag-chip active" style="position: absolute; top: 8px; right: 8px; font-size: 10px;">ACTIVE OVERLAY</span>
+                <svg width="60" height="60" viewBox="-30 -30 60 60">
+                  <line x1="4" y1="0" x2="12" y2="0" stroke="#38BDF8" stroke-width="2"/>
+                  <line x1="-12" y1="0" x2="-4" y2="0" stroke="#38BDF8" stroke-width="2"/>
+                  <line x1="0" y1="4" x2="0" y2="12" stroke="#38BDF8" stroke-width="2"/>
+                  <line x1="0" y1="-12" x2="0" y2="-4" stroke="#38BDF8" stroke-width="2"/>
+                  <circle cx="0" cy="0" r="1.5" fill="#38BDF8"/>
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-weight: 600; font-size: 14px;">Cyan Gap</span>
+                <span class="m" style="color: var(--tx-dim); font-size: 11px;">Slot 1</span>
+              </div>
+              <p style="color: var(--tx-muted); font-size: 11px; margin-top: 4px;">Classic 4 arms + center dot · 1080p</p>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="section-card" style="padding: 16px;">
+              <div style="height: 140px; background: var(--canvas); border-radius: var(--rad-sm); display: flex; align-items: center; justify-content: center;">
+                <svg width="40" height="40" viewBox="-20 -20 40 40">
+                  <circle cx="0" cy="0" r="2" fill="#10B981"/>
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-weight: 600; font-size: 14px;">Dot 2px</span>
+                <span class="m" style="color: var(--tx-dim); font-size: 11px;">Slot 2</span>
+              </div>
+              <p style="color: var(--tx-muted); font-size: 11px; margin-top: 4px;">Green round precision dot</p>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="section-card" style="padding: 16px;">
+              <div style="height: 140px; background: var(--canvas); border-radius: var(--rad-sm); display: flex; align-items: center; justify-content: center;">
+                <svg width="40" height="40" viewBox="-20 -20 40 40">
+                  <circle cx="0" cy="0" r="8" fill="none" stroke="#FF4FD8" stroke-width="2" stroke-dasharray="3,2"/>
+                </svg>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span style="font-weight: 600; font-size: 14px;">Pink Ring</span>
+                <span class="m" style="color: var(--tx-dim); font-size: 11px;">Slot 3</span>
+              </div>
+              <p style="color: var(--tx-muted); font-size: 11px; margin-top: 4px;">Dashed shotgun reticle</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+</div>
 </body>
 </html>

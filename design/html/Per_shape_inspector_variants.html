@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Micro-Level Shape Inspectors (All 14 Shapes) — XHAIR Design v5</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  
+      --bg: #0A0A0A; --canvas: #080808; --s1: #111111; --s2: #171717; --hover: #1F1F1F;
+      --border: #262626; --border-strong: #3A3A3A; --tx: #EDEDED; --tx-muted: #A0A0A0; --tx-dim: #808080;
+      --grid-minor: #141414; --grid-major: #1E1E1E; --accent: #FFFFFF; --on-accent: #0A0A0A;
+      --guide: #FFFFFF; --selection: #2B2B2B; --focus-ring: #FFFFFF;
+      --success: #10B981; --warning: #F59E0B; --danger: #EF4444; --info: #60A5FA;
+    
+  --rad-none: 0px;
+  --rad-xs: 2px;
+  --rad-sm: 3px;
+  --rad-md: 4px;
+  --rad-lg: 6px;
+  --rad-xl: 8px;
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.75);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+.m { font-family: 'JetBrains Mono', Consolas, monospace; }
+.app-shell {
+  width: 1440px; height: 900px;
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+  position: relative;
+}
+
+/* TOPBAR */
+.top-bar {
+  height: 44px; background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; flex-shrink: 0; gap: 12px;
+}
+.brand-group { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  font-family: 'Clash Display', 'Satoshi', sans-serif;
+  font-weight: 700; font-size: 15px; letter-spacing: 0.12em;
+  color: var(--tx); display: flex; align-items: center; gap: 6px;
+}
+.brand-mark span { color: var(--accent); }
+.file-title {
+  padding: 3px 8px; border-radius: var(--rad-sm);
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--tx); font-weight: 500; font-size: 12px;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.file-title .badge {
+  font-size: 10px; color: var(--tx-dim); text-transform: uppercase;
+}
+
+.center-warning-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: var(--rad-sm);
+  background: #261B07; border: 1px solid #78350F;
+  color: #FBBF24; font-size: 11px; font-weight: 500;
+  cursor: pointer;
+}
+.center-warning-badge:hover { background: #38240A; }
+
+.status-cluster { display: flex; align-items: center; gap: 8px; }
+.tag-chip {
+  height: 24px; padding: 0 8px; border-radius: var(--rad-sm);
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--tx-muted); font-size: 11px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.tag-chip.active { color: var(--tx); border-color: var(--border-strong); }
+.tag-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx-dim); }
+.tag-chip.active .dot.green { background: #10B981; }
+.tag-chip.active .dot.accent { background: var(--accent); }
+
+/* BUTTONS */
+.btn {
+  height: 28px; padding: 0 10px; border-radius: var(--rad-md);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; outline: none; transition: background 120ms ease;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn-primary:hover { filter: brightness(0.92); }
+.btn-secondary { background: var(--s2); border: 1px solid var(--border); color: var(--tx); }
+.btn-secondary:hover { background: var(--hover); border-color: var(--border-strong); }
+.btn-ghost { background: transparent; color: var(--tx-muted); }
+.btn-ghost:hover { background: var(--hover); color: var(--tx); }
+.btn-icon { width: 28px; height: 28px; padding: 0; }
+
+/* MAIN WORKSPACE */
+.main-workspace {
+  flex: 1; display: flex; overflow: hidden; position: relative;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px; background: var(--s1);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-header {
+  height: 38px; padding: 0 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tx-muted); }
+.sidebar-content { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.group-tree-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: var(--rad-sm); cursor: pointer;
+  color: var(--tx); font-weight: 500; font-size: 12px;
+}
+.group-tree-row:hover { background: var(--hover); }
+.group-tree-row.active { background: var(--s2); border-left: 2px solid var(--accent); border-radius: 0 var(--rad-sm) var(--rad-sm) 0; }
+.group-tree-row .left { display: flex; align-items: center; gap: 6px; }
+.color-dot { width: 8px; height: 8px; border-radius: 50%; }
+.count-badge { font-size: 11px; color: var(--tx-dim); }
+
+.reticle-sub-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px 5px 22px; border-radius: var(--rad-sm); cursor: pointer;
+  color: var(--tx-muted); font-size: 12px;
+}
+.reticle-sub-row:hover { background: var(--hover); color: var(--tx); }
+.reticle-sub-row.active { background: var(--hover); color: var(--tx); font-weight: 500; }
+
+/* TOOL RAIL */
+.tool-rail {
+  width: 44px; background: var(--s1);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0; gap: 4px; flex-shrink: 0;
+}
+.tool-btn {
+  width: 32px; height: 32px; border-radius: var(--rad-md);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tx-muted); background: transparent; border: none; cursor: pointer;
+}
+.tool-btn:hover { background: var(--hover); color: var(--tx); }
+.tool-btn.active { background: var(--s2); color: var(--accent); border: 1px solid var(--border-strong); }
+
+/* CANVAS STAGE */
+.canvas-stage {
+  flex: 1; background: var(--canvas);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.canvas-grid-bg {
+  position: absolute; inset: 0;
+  background-image: 
+    linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px);
+  background-size: 8px 8px, 8px 8px, 40px 40px, 40px 40px;
+}
+.canvas-center-guides {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.guide-x { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--guide); opacity: 0.35; }
+.guide-y { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--guide); opacity: 0.35; }
+.guide-center-dot {
+  position: absolute; top: 50%; left: 50%;
+  width: 5px; height: 5px; transform: translate(-50%, -50%);
+  background: var(--guide); border-radius: 50%;
+}
+.guide-ring {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px dashed var(--guide); border-radius: 50%; opacity: 0.25;
+}
+
+/* FLOATING ZOOM / FOOTER */
+.canvas-footer {
+  position: absolute; bottom: 12px; left: 16px; right: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  pointer-events: none;
+}
+.floating-chip-bar {
+  pointer-events: auto; background: var(--s1);
+  border: 1px solid var(--border); border-radius: var(--rad-md);
+  padding: 3px 6px; display: flex; align-items: center; gap: 4px;
+  box-shadow: var(--shadow-subtle);
+}
+.zoom-chip {
+  padding: 2px 6px; border-radius: var(--rad-xs); font-size: 11px;
+  color: var(--tx-muted); cursor: pointer;
+}
+.zoom-chip:hover { background: var(--hover); color: var(--tx); }
+.zoom-chip.active { background: var(--s2); color: var(--tx); font-weight: 600; }
+
+/* RIGHT PANEL DOCK SYSTEM */
+.dock-panel {
+  width: 360px; background: var(--s1);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.dock-header {
+  height: 38px; background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px 0 8px; flex-shrink: 0;
+}
+.dock-tabs-scroll {
+  display: flex; align-items: center; gap: 2px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.dock-tab {
+  padding: 8px 10px; font-size: 12px; font-weight: 500;
+  color: var(--tx-muted); cursor: pointer; white-space: nowrap;
+  position: relative; display: flex; align-items: center; gap: 6px;
+}
+.dock-tab:hover { color: var(--tx); }
+.dock-tab.active {
+  color: var(--tx); font-weight: 600;
+}
+.dock-tab.active::after {
+  content: ''; position: absolute; bottom: -1px; left: 6px; right: 6px;
+  height: 2px; background: var(--accent); border-radius: 1px;
+}
+.dock-body {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* SECTION CARD */
+.section-card {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: var(--rad-md); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.section-card-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--tx-muted); display: flex; align-items: center; justify-content: space-between;
+}
+
+/* FORM CONTROLS */
+.form-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.form-label { font-size: 12px; color: var(--tx-muted); display: flex; align-items: center; gap: 4px; }
+.form-input-number {
+  width: 64px; height: 26px; border-radius: var(--rad-sm);
+  background: var(--s1); border: 1px solid var(--border);
+  color: var(--tx); padding: 0 6px; font-size: 12px; text-align: right;
+}
+.form-input-number:focus { border-color: var(--border-strong); outline: 2px solid var(--focus-ring); }
+.slider-track {
+  flex: 1; height: 4px; background: var(--border);
+  border-radius: var(--rad-xs); position: relative; cursor: pointer;
+}
+.slider-fill {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: var(--tx-muted); border-radius: var(--rad-xs);
+}
+.slider-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 12px; height: 12px; background: var(--tx); border-radius: 50%;
+  box-shadow: var(--shadow-subtle);
+}
+
+/* OVERLAY MODAL / POPOVER */
+.modal-overlay {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal-window {
+  background: var(--s1); border: 1px solid var(--border-strong);
+  border-radius: var(--rad-xl); box-shadow: var(--shadow-modal);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  height: 44px; padding: 0 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 14px; font-weight: 600; color: var(--tx); }
+.modal-body { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer {
+  height: 48px; padding: 0 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  background: var(--s2);
+}
+
+/* CUSTOM SPECIFIC CSS INJECTION */
+
+</style>
+</head>
+<body>
+<div class="app-shell">
+  
+      
+  <header class="top-bar">
+    <div class="brand-group">
+      <div class="brand-mark">XH<span>AIR</span></div>
+      <div class="file-title">
+        <span>Shape Parameters Catalog</span>
+        <span class="badge">F2</span>
+      </div>
+      
+      <div class="center-warning-badge">
+        <span>⚠ Moved from center (Δx +1.5, Δy −0.5)</span>
+        <span class="m" style="text-decoration: underline;">Recenter</span>
+      </div>
+    </div>
+    <div class="status-cluster">
+      <div class="tag-chip active">
+        <span class="dot green"></span>
+        <span>Overlay ON</span>
+      </div>
+      <div class="tag-chip active">
+        <span class="dot accent"></span>
+        <span>MCP ON</span>
+      </div>
+      <div class="tag-chip">
+        <span>1920×1080 Native</span>
+      </div>
+      <button class="btn btn-primary">
+        <span>💾 Save</span>
+        <span class="m" style="opacity: 0.6; font-size: 10px;">Ctrl+S</span>
+      </button>
+    </div>
+  </header>
+      <div class="main-workspace" style="padding: 24px; overflow-y: auto;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <h2 style="font-size: 20px; font-weight: 700;">14 Shape Primitives Micro-Inspectors</h2>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <!-- Shape 1: Line Arms -->
+            <div class="section-card">
+              <div class="section-card-title">1. Line (Arms)</div>
+              <div class="form-row"><span class="form-label">Thickness</span><span class="m">2.0 px</span></div>
+              <div class="form-row"><span class="form-label">Length</span><span class="m">6.0 px</span></div>
+              <div class="form-row"><span class="form-label">Gap</span><span class="m">4.0 px</span></div>
+              <div class="form-row"><span class="form-label">Taper</span><span class="m">0.0 px</span></div>
+            </div>
+
+            <!-- Shape 2: Dot -->
+            <div class="section-card">
+              <div class="section-card-title">2. Dot</div>
+              <div class="form-row"><span class="form-label">Diameter</span><span class="m">2.0 px</span></div>
+              <div class="form-row"><span class="form-label">Shape</span><span class="m">Round</span></div>
+              <div class="form-row"><span class="form-label">Outline</span><span class="m">1.0 px</span></div>
+            </div>
+
+            <!-- Shape 3: Rect -->
+            <div class="section-card">
+              <div class="section-card-title">3. Rect</div>
+              <div class="form-row"><span class="form-label">Width</span><span class="m">8.0 px</span></div>
+              <div class="form-row"><span class="form-label">Height</span><span class="m">8.0 px</span></div>
+              <div class="form-row"><span class="form-label">Corner Radius</span><span class="m">2.0 px</span></div>
+            </div>
+
+            <!-- Shape 4: Circle -->
+            <div class="section-card">
+              <div class="section-card-title">4. Circle</div>
+              <div class="form-row"><span class="form-label">Diameter</span><span class="m">16.0 px</span></div>
+              <div class="form-row"><span class="form-label">Inner Hole</span><span class="m">0.0 px</span></div>
+            </div>
+
+            <!-- Shape 5: Ring -->
+            <div class="section-card">
+              <div class="section-card-title">5. Ring</div>
+              <div class="form-row"><span class="form-label">Outer Radius</span><span class="m">10.0 px</span></div>
+              <div class="form-row"><span class="form-label">Inner Radius</span><span class="m">7.0 px</span></div>
+              <div class="form-row"><span class="form-label">Segments</span><span class="m">4 (Gapped)</span></div>
+            </div>
+
+            <!-- Shape 6: Arc -->
+            <div class="section-card">
+              <div class="section-card-title">6. Arc</div>
+              <div class="form-row"><span class="form-label">Radius</span><span class="m">12.0 px</span></div>
+              <div class="form-row"><span class="form-label">Angles</span><span class="m">45° - 135°</span></div>
+              <div class="form-row"><span class="form-label">Taper</span><span class="m">Enabled</span></div>
+            </div>
+
+            <!-- Shape 7: Polygon -->
+            <div class="section-card">
+              <div class="section-card-title">7. Polygon / Star</div>
+              <div class="form-row"><span class="form-label">Sides</span><span class="m">6 (Hexagon)</span></div>
+              <div class="form-row"><span class="form-label">Star Ratio</span><span class="m">0.60</span></div>
+            </div>
+
+            <!-- Shape 8: Triangle -->
+            <div class="section-card">
+              <div class="section-card-title">8. Triangle</div>
+              <div class="form-row"><span class="form-label">Base</span><span class="m">10.0 px</span></div>
+              <div class="form-row"><span class="form-label">Height</span><span class="m">8.0 px</span></div>
+            </div>
+
+            <!-- Shape 9: Chevron -->
+            <div class="section-card">
+              <div class="section-card-title">9. Chevron</div>
+              <div class="form-row"><span class="form-label">Arm Length</span><span class="m">6.0 px</span></div>
+              <div class="form-row"><span class="form-label">Angle</span><span class="m">90°</span></div>
+            </div>
+
+            <!-- Shape 10: T-Shape -->
+            <div class="section-card">
+              <div class="section-card-title">10. T-Shape</div>
+              <div class="form-row"><span class="form-label">Bar Length</span><span class="m">10.0 px</span></div>
+              <div class="form-row"><span class="form-label">Stem Length</span><span class="m">6.0 px</span></div>
+            </div>
+
+            <!-- Shape 11: Plus -->
+            <div class="section-card">
+              <div class="section-card-title">11. Plus</div>
+              <div class="form-row"><span class="form-label">Center Hole</span><span class="m">2.0 px</span></div>
+              <div class="form-row"><span class="form-label">H/V Thickness</span><span class="m">Linked (2px)</span></div>
+            </div>
+
+            <!-- Shape 12: Path -->
+            <div class="section-card">
+              <div class="section-card-title">12. Path (Bézier)</div>
+              <div class="form-row"><span class="form-label">Points</span><span class="m">8 nodes</span></div>
+              <div class="form-row"><span class="form-label">Fill Rule</span><span class="m">NonZero</span></div>
+            </div>
+
+            <!-- Shape 13: Pixels -->
+            <div class="section-card">
+              <div class="section-card-title">13. Pixels Grid</div>
+              <div class="form-row"><span class="form-label">Grid Size</span><span class="m">16 × 16</span></div>
+              <div class="form-row"><span class="form-label">Mirror Paint</span><span class="m">HV Quad</span></div>
+            </div>
+
+            <!-- Shape 14: Image -->
+            <div class="section-card">
+              <div class="section-card-title">14. Image Sprite</div>
+              <div class="form-row"><span class="form-label">Scale</span><span class="m">1.00×</span></div>
+              <div class="form-row"><span class="form-label">Color Key</span><span class="m">#000000</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+</div>
+</body>
+</html>
