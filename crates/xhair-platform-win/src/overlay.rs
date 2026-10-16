@@ -400,6 +400,33 @@ fn run_overlay_thread(
     }
 }
 
+/// Computes physical window placement and dimensions symmetrically around the screen center,
+/// ensuring that calibration offsets, layer nudges, and asymmetric arms never clip (§6.6, §8.1).
+pub fn compute_overlay_window_rect(
+    active_xhair: &Crosshair,
+    mapping: &GeometryMapping,
+    config: &OverlayConfig,
+) -> (i32, i32, u32, u32) {
+    let bbox = calculate_crosshair_bounds(active_xhair);
+    let scale_x = mapping.sx as f32;
+    let scale_y = mapping.sy as f32;
+    let max_half_w = (bbox.min_x * scale_x)
+        .abs()
+        .max((bbox.max_x * scale_x).abs());
+    let max_half_h = (bbox.min_y * scale_y)
+        .abs()
+        .max((bbox.max_y * scale_y).abs());
+    let win_w = ((max_half_w * 2.0).ceil() as u32 + 16).clamp(32, 2048);
+    let win_h = ((max_half_h * 2.0).ceil() as u32 + 16).clamp(32, 2048);
+
+    let screen_center_x = mapping.out_center_x as f32 + config.calibration_offset.x;
+    let screen_center_y = mapping.out_center_y as f32 + config.calibration_offset.y;
+    let win_x = (screen_center_x - (win_w as f32 / 2.0)).round() as i32;
+    let win_y = (screen_center_y - (win_h as f32 / 2.0)).round() as i32;
+
+    (win_x, win_y, win_w, win_h)
+}
+
 /// Renders the active crosshair and commits via UpdateLayeredWindow (§6.6, §8.1).
 pub fn render_and_update(
     hwnd: HWND,
@@ -480,9 +507,7 @@ pub fn render_and_update(
         static_only: false,
     };
 
-    let bbox = calculate_crosshair_bounds(&active_xhair);
-    let win_w = (bbox.width().ceil() as u32).clamp(16, 2048);
-    let win_h = (bbox.height().ceil() as u32).clamp(16, 2048);
+    let (win_x, win_y, win_w, win_h) = compute_overlay_window_rect(&active_xhair, &mapping, config);
 
     // Allocate raster surface
     let mut pixmap = match Pixmap::new(win_w, win_h) {
@@ -500,12 +525,6 @@ pub fn render_and_update(
     for chunk in data.chunks_exact_mut(4) {
         chunk.swap(0, 2);
     }
-
-    // Screen window placement position (physical coordinates)
-    let screen_center_x = mapping.out_center_x as f32;
-    let screen_center_y = mapping.out_center_y as f32;
-    let win_x = (screen_center_x - (win_w as f32 / 2.0)).round() as i32;
-    let win_y = (screen_center_y - (win_h as f32 / 2.0)).round() as i32;
 
     unsafe {
         // Commit premultiplied BGRA pixels via UpdateLayeredWindow

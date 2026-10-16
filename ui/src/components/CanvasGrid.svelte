@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { editorState } from '../lib/state.svelte';
-  import type { ToolType } from '../lib/types';
+  import type { ToolType, Layer } from '../lib/types';
   import Tooltip from './Tooltip.svelte';
 
   let canvasEl: HTMLCanvasElement | null = null;
@@ -516,32 +516,81 @@
       const rect = canvasEl.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
+      const centerX = rect.width / 2 + editorState.panX;
+      const centerY = rect.height / 2 + editorState.panY;
+      const zoom = editorState.zoom;
 
-      // Start marquee selection drag
-      isMarquee = true;
-      marqueeStartX = mouseX;
-      marqueeStartY = mouseY;
-      marqueeEndX = mouseX;
-      marqueeEndY = mouseY;
+      // 1. Hit-test against visible crosshair layers to differentiate shape drag vs marquee
+      let clickedLayer: Layer | null = null;
+      let minDistance = Infinity;
 
-      isDraggingTarget = true;
-      dragStartClientX = e.clientX;
-      dragStartClientY = e.clientY;
+      for (const l of editorState.crosshair.layers) {
+        if (!l.visible) continue;
+        const lx = centerX + (editorState.crosshair.offsetX + l.offsetX) * zoom;
+        const ly = centerY + (editorState.crosshair.offsetY + l.offsetY) * zoom;
 
-      if (editorState.nudgeTarget === 'all') {
-        initialTargetX = editorState.crosshair.offsetX;
-        initialTargetY = editorState.crosshair.offsetY;
-      } else if (editorState.nudgeTarget === 'layer' && editorState.selectedLayer) {
-        initialTargetX = editorState.selectedLayer.offsetX;
-        initialTargetY = editorState.selectedLayer.offsetY;
-      } else if (editorState.nudgeTarget === 'arm' && editorState.selectedLayer) {
-        const armCount = editorState.selectedLayer.shape.armCount || 4;
-        if (!editorState.selectedLayer.shape.armOffsets || editorState.selectedLayer.shape.armOffsets.length < armCount) {
-          editorState.selectedLayer.shape.armOffsets = Array.from({ length: armCount }, () => ({ x: 0, y: 0 }));
+        let extent = 8;
+        if (l.shape.type === 'LineArms' || l.shape.type === 'TShape' || l.shape.type === 'Plus') {
+          extent = (l.shape.length || 6) + (l.shape.gap || 4);
+        } else if (l.shape.type === 'Dot') {
+          extent = Math.max(4, (l.shape.diameter || 2) * 1.5);
+        } else if (l.shape.type === 'Circle' || l.shape.type === 'Ring' || l.shape.type === 'Arc') {
+          extent = l.shape.radius || 10;
+        } else if (l.shape.type === 'Rect') {
+          extent = Math.max(l.shape.width || 8, l.shape.height || 8) / 2;
         }
-        const arm = editorState.selectedLayer.shape.armOffsets[editorState.selectedArmIndex];
-        initialTargetX = arm.x;
-        initialTargetY = arm.y;
+
+        const hitRadius = Math.max(16, extent * zoom);
+        const dist = Math.hypot(mouseX - lx, mouseY - ly);
+        if (dist <= hitRadius && dist < minDistance) {
+          minDistance = dist;
+          clickedLayer = l;
+        }
+      }
+
+      if (clickedLayer) {
+        // Direct click on a layer: select and start dragging!
+        editorState.selectLayer(clickedLayer.id, e.ctrlKey || e.metaKey, e.shiftKey);
+        if (editorState.activeTool === 'direct') {
+          editorState.nudgeTarget = 'arm';
+        } else if (editorState.nudgeTarget !== 'all') {
+          editorState.nudgeTarget = 'layer';
+        }
+
+        // Push undo state ONCE before dragging starts
+        editorState.pushUndo();
+
+        isDraggingTarget = true;
+        isMarquee = false;
+        dragStartClientX = e.clientX;
+        dragStartClientY = e.clientY;
+
+        if (editorState.nudgeTarget === 'all') {
+          initialTargetX = editorState.crosshair.offsetX;
+          initialTargetY = editorState.crosshair.offsetY;
+        } else if (editorState.nudgeTarget === 'layer' && editorState.selectedLayer) {
+          initialTargetX = editorState.selectedLayer.offsetX;
+          initialTargetY = editorState.selectedLayer.offsetY;
+        } else if (editorState.nudgeTarget === 'arm' && editorState.selectedLayer) {
+          const armCount = editorState.selectedLayer.shape.armCount || 4;
+          if (!editorState.selectedLayer.shape.armOffsets || editorState.selectedLayer.shape.armOffsets.length < armCount) {
+            editorState.selectedLayer.shape.armOffsets = Array.from({ length: armCount }, () => ({ x: 0, y: 0 }));
+          }
+          const arm = editorState.selectedLayer.shape.armOffsets[editorState.selectedArmIndex];
+          initialTargetX = arm.x;
+          initialTargetY = arm.y;
+        }
+      } else {
+        // Click on empty canvas: clear single selection and start marquee drag
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          editorState.selectedLayerIds = [];
+        }
+        isMarquee = true;
+        isDraggingTarget = false;
+        marqueeStartX = mouseX;
+        marqueeStartY = mouseY;
+        marqueeEndX = mouseX;
+        marqueeEndY = mouseY;
       }
     }
   }
@@ -561,13 +610,7 @@
       return;
     }
 
-    if (isMarquee) {
-      marqueeEndX = mouseX;
-      marqueeEndY = mouseY;
-      renderCanvas();
-    }
-
-    if (isDraggingTarget && !isMarquee) {
+    if (isDraggingTarget) {
       const zoom = editorState.zoom;
       const deltaX = (e.clientX - dragStartClientX) / zoom;
       const deltaY = (e.clientY - dragStartClientY) / zoom;
@@ -589,6 +632,13 @@
       return;
     }
 
+    if (isMarquee) {
+      marqueeEndX = mouseX;
+      marqueeEndY = mouseY;
+      renderCanvas();
+      return;
+    }
+
     const centerX = rect.width / 2 + editorState.panX;
     const centerY = rect.height / 2 + editorState.panY;
     const zoom = editorState.zoom;
@@ -602,7 +652,12 @@
     hoverPixelJ = Math.floor(profileH / 2 + hoverGameY);
   }
 
-  function handleMouseUp(e: MouseEvent) {
+  function handleMouseUp(_e: MouseEvent) {
+    if (isDraggingTarget) {
+      isDraggingTarget = false;
+      editorState.syncWithOverlay();
+    }
+
     if (isMarquee) {
       const minX = Math.min(marqueeStartX, marqueeEndX);
       const maxX = Math.max(marqueeStartX, marqueeEndX);
@@ -631,10 +686,6 @@
       renderCanvas();
     }
 
-    if (isDraggingTarget) {
-      editorState.pushUndo();
-      isDraggingTarget = false;
-    }
     isPanning = false;
   }
 
@@ -649,11 +700,13 @@
     } else if (toolId === 'dot') {
       editorState.addLayer('Dot', 'Center Dot');
     } else if (toolId === 'rect') {
-      editorState.addLayer('TShape', 'T-Shape');
+      editorState.addLayer('Rect', 'Rectangle');
     } else if (toolId === 'circle') {
-      editorState.addLayer('Circle', 'Circle / Ring');
+      editorState.addLayer('Circle', 'Circle');
     } else if (toolId === 'pen') {
       editorState.addLayer('SvgPath', 'Custom Path');
+    } else if (toolId === 'brush') {
+      editorState.addLayer('Polygon', 'Star / Polygon');
     }
   }
 

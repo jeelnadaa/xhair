@@ -1,8 +1,8 @@
 # Project State
 
 - **Updated:** 2026-10-16
-- **Session:** 19
-- **Phase / Milestone:** Complete Design & Spec Update v5 (v2 + v3 + v4 merged)
+- **Session:** 20
+- **Phase / Milestone:** Production Readiness — Phase 1 Critical Fixes Complete
 - **Version released:** 0.1.0 | **Release Artifacts:** Verified in `dist/` & `target/release/`
 
 ## Done (milestone-level)
@@ -20,19 +20,21 @@
 - [x] M10 Packaging & Hardening (completed 2026-10-16)
 - [x] Design & Spec Update v2 (completed 2026-10-16)
 - [x] Win32 Overlay Toggle Bug Resolution (completed 2026-10-16)
-- [x] Complete Design & Spec Update v5 (completed 2026-10-16):
-  - Phase 0 Design: 24 screens at 1x & 2x in `design/screens/`, 3 pure neutral base ramps (Graphite, White, Pure Black) with channel spread <= 2, 9 neutral-base themes with WCAG contrast (>= 4.5:1, high-contrast >= 7:1), 6 font packs, 3 corner curvature styles, radius <= 10px with zero pills.
-  - Backend command registry: Added 23 new v5 commands with typed scopes, availability, execution diffs, and exact mathematical inverse mutations for undo/redo.
-  - Schema-driven property registry: Descriptors for all 14 shapes (`rect`, `circle`, `ring`, `arc`, `polygon`, `triangle`, `chevron`, `t_shape`, `plus`, `path`, `pixels`, `image`), effects (`glow`, `shadow`, `bloom`), and appearance (`theme.id`, `appearance.font_pack`, `appearance.corner_style`).
-  - Human/agent parity (P4): Implemented 27 new MCP tools across `property.rs` and `appearance.rs`, passing parity test across 100 UI actions, 47 core commands, and 56 MCP tools.
-  - Frontend UI components: Tabbed `DockSystem.svelte` supporting 11 default tabs, layout presets (`Compact`, `Pixel Art`, `Designer`, `Agent Watch`, `Minimal`), live property search with "Show modified only" filter, `AppearanceModal.svelte` with live theme cards and font specimens, and pure neutral token restyling in `app.css`.
-  - Documentation deliverables: `docs/AGENT_README.md`, `docs/TYPOGRAPHY.md`, `docs/LAYOUT.md`, `docs/THEMING.md`, and updated `docs/MCP.md` & `docs/COMMANDS.md`.
+- [x] Complete Design & Spec Update v5 (completed 2026-10-16)
+- [x] Production Readiness Documentation Suite (completed 2026-10-16):
+  - Created `docs/production-readiness/` with comprehensive audits: `00_OVERVIEW_AND_EXECUTIVE_SUMMARY.md`, `01_WRONGLY_IMPLEMENTED_AND_BROKEN_FEATURES.md`, `02_MCP_ARCHITECTURE_AND_PARITY.md`, `03_UI_UX_PRODUCTION_REDESIGN_SPEC.md`, `04_CORE_APP_AND_STORAGE_ENGINE.md`, `05_STEP_BY_STEP_IMPLEMENTATION_ROADMAP.md`, and `CHECKLIST.md`.
+- [x] Production Readiness Phase 1: Critical Engine & Interaction Fixes (completed 2026-10-16):
+  - Win32 overlay calibration offset applied to physical window position.
+  - Symmetrical zero-clipping buffer extents around `(0, 0)`.
+  - Layer hit-testing separating canvas drag from marquee selection with 120fps redraw.
+  - Tool palette mapping fixes (tool `R` inserts `Rect`).
+  - Color picker undo coalescing with live preview and single history snapshot.
 
 ## In progress
-- None. All v5 features fully implemented, tested, and verified.
+- Phase 2: Unified Backend & Real-Time MCP Bridge (embedded MCP server in `xhair.exe`, `xhair-library` disk persistence, stdio proxying).
 
 ## Next exact step
-- Present completion summary to human and verify release build.
+- Implement Phase 2: Embedded loopback MCP server and physical overlay wiring.
 
 ## WIP notes
 - Release artifacts generated in `dist/`:
@@ -48,12 +50,12 @@
 - None.
 
 ## Measured numbers (latest)
-- Workspace crates: 12 (all build & test green, 87 tests passing)
+- Workspace crates: 12 (all build & test green, 88 tests passing)
 - Golden image tests: 8 tests passing
 - Geometry tests: 11 tests passing (symmetry detection, quarter-pixel quantization, multi-res verification)
 - Render & effect tests: 13 unit tests passing (four arms rendered, bloom, animation evaluation, static lock, heavy budget)
 - Performance benchmarks: typical crosshair 2.91 µs (< 1000 µs budget), heavy crosshair 5470.72 µs (< 8000 µs budget)
-- Platform tests: 13 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection, overlay toggle SW_HIDE)
+- Platform tests: 15 tests passing (overlay styles, crash reports, startup registry, hotkeys, foreground detection, overlay toggle, calibration offset, zero-clipping bounds)
 - MCP tests & Parity: 7 tests passing (stdio, HTTP, auth, prompts, resources, 100% parity across 35 tools and 25 commands)
 - UI test suite: 23 tests passing in Vitest (100% green)
 - TypeScript lint: 0 errors (`tsc --noEmit`)

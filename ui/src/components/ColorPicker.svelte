@@ -71,22 +71,23 @@
     return { r, g, b, a };
   }
 
-  function applyColor() {
+  function applyColor(pushUndo: boolean = true) {
     const [r, g, b] = hsvToRgb(hue, saturation, value);
     const hex = rgbToHex(r, g, b, alpha);
-    editorState.setLayerColor(hex);
+    editorState.setLayerColor(hex, pushUndo);
   }
 
   function handleSvMouseDown(e: MouseEvent) {
     isDraggingSV = true;
-    updateSvFromMouse(e);
+    editorState.pushUndo();
+    updateSvFromMouse(e, false);
     window.addEventListener('mousemove', handleSvMouseMove);
     window.addEventListener('mouseup', handleSvMouseUp);
   }
 
   function handleSvMouseMove(e: MouseEvent) {
     if (isDraggingSV) {
-      updateSvFromMouse(e);
+      updateSvFromMouse(e, false);
     }
   }
 
@@ -94,16 +95,17 @@
     isDraggingSV = false;
     window.removeEventListener('mousemove', handleSvMouseMove);
     window.removeEventListener('mouseup', handleSvMouseUp);
+    editorState.syncWithOverlay();
   }
 
-  function updateSvFromMouse(e: MouseEvent) {
+  function updateSvFromMouse(e: MouseEvent, pushUndo: boolean = false) {
     if (!svBoxEl) return;
     const rect = svBoxEl.getBoundingClientRect();
     const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
     const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
     saturation = Math.round((x / rect.width) * 100) / 100;
     value = Math.round((1 - y / rect.height) * 100) / 100;
-    applyColor();
+    applyColor(pushUndo);
   }
 
   function onHexInput(e: Event) {
@@ -182,7 +184,9 @@
         max="360"
         step="1"
         bind:value={hue}
-        oninput={applyColor}
+        onpointerdown={() => editorState.pushUndo()}
+        oninput={() => applyColor(false)}
+        onchange={() => editorState.syncWithOverlay()}
         aria-label="Hue slider"
       />
     </div>
@@ -198,7 +202,9 @@
           max="1"
           step="0.01"
           bind:value={alpha}
-          oninput={applyColor}
+          onpointerdown={() => editorState.pushUndo()}
+          oninput={() => applyColor(false)}
+          onchange={() => editorState.syncWithOverlay()}
           style="--thumb-color: rgb({currentRgb[0]}, {currentRgb[1]}, {currentRgb[2]});"
           aria-label="Alpha opacity slider"
         />

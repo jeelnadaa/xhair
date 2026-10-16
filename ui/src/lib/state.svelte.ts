@@ -1399,8 +1399,10 @@ export class EditorState {
     }
   }
 
-  setLayerColor(color: string) {
-    this.pushUndo();
+  setLayerColor(color: string, pushUndoState: boolean = true) {
+    if (pushUndoState) {
+      this.pushUndo();
+    }
     const targets = this.crosshair.layers.filter((l) => this.selectedLayerIds.includes(l.id));
     if (targets.length === 0 && this.selectedLayer) {
       targets.push(this.selectedLayer);

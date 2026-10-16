@@ -93,3 +93,58 @@ fn test_spawn_and_render_overlay() {
     std::thread::sleep(std::time::Duration::from_millis(100));
     handle.stop();
 }
+
+#[test]
+fn test_calibration_offset_shifts_overlay_rect() {
+    use xhair_geometry::{GeometryMapping, ResolutionProfile};
+    use xhair_model::crosshair::Crosshair;
+    use xhair_model::units::Vec2;
+    use xhair_platform_win::compute_overlay_window_rect;
+
+    let xhair = Crosshair::new_classic("Offset Test");
+    let profile = ResolutionProfile::default_1080p();
+    let mapping = GeometryMapping::compute(&profile, (0.0, 0.0), (1920.0, 1080.0));
+
+    let mut config = OverlayConfig::default();
+    config.calibration_offset = Vec2::ZERO;
+    let (x0, y0, w0, h0) = compute_overlay_window_rect(&xhair, &mapping, &config);
+
+    // Apply a calibration offset of +15px horizontal, -10px vertical
+    config.calibration_offset = Vec2::new(15.0, -10.0);
+    let (x1, y1, w1, h1) = compute_overlay_window_rect(&xhair, &mapping, &config);
+
+    assert_eq!(w0, w1);
+    assert_eq!(h0, h1);
+    assert_eq!(x1 - x0, 15);
+    assert_eq!(y1 - y0, -10);
+}
+
+#[test]
+fn test_large_offset_crosshair_bounds_zero_clipping() {
+    use xhair_geometry::{GeometryMapping, ResolutionProfile};
+    use xhair_model::crosshair::Crosshair;
+    use xhair_model::units::Vec2;
+    use xhair_platform_win::compute_overlay_window_rect;
+
+    let mut xhair = Crosshair::new_classic("Offset Reticle");
+    // Move reticle 60px right, 40px up
+    xhair.global.offset = Vec2::new(60.0, -40.0);
+
+    let profile = ResolutionProfile::default_1080p();
+    let mapping = GeometryMapping::compute(&profile, (0.0, 0.0), (1920.0, 1080.0));
+    let config = OverlayConfig::default();
+
+    let (win_x, win_y, win_w, win_h) = compute_overlay_window_rect(&xhair, &mapping, &config);
+
+    // Buffer must be at least large enough to contain the 60px offset + reticle extent symmetrically
+    assert!(win_w >= 140, "win_w ({}) should be at least 140px", win_w);
+    assert!(win_h >= 100, "win_h ({}) should be at least 100px", win_h);
+
+    // Reticle origin inside buffer is at (win_w/2, win_h/2).
+    // On screen, window is at win_x.
+    // The screen position of the reticle center (960.0) is exactly:
+    let screen_reticle_x = win_x as f32 + (win_w as f32 / 2.0);
+    let screen_reticle_y = win_y as f32 + (win_h as f32 / 2.0);
+    assert!((screen_reticle_x - 960.0).abs() <= 1.0);
+    assert!((screen_reticle_y - 540.0).abs() <= 1.0);
+}

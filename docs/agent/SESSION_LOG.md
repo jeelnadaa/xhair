@@ -538,3 +538,31 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph`: memory graph verified.
 
+## 2026-10-16 — Session 20
+- **Goal:** Production readiness audit, comprehensive documentation suite, master checklist creation, and Phase 1 implementation (overlay calibration offset, symmetrical zero-clipping bounds, canvas drag deadlock resolution, tool mapping, and color picker undo coalescing).
+- **Completed:**
+  1. **Production Readiness Documentation Suite (`docs/production-readiness/`):**
+     - `00_OVERVIEW_AND_EXECUTIVE_SUMMARY.md`: Architectural scorecard, critical gaps, and release plan.
+     - `01_WRONGLY_IMPLEMENTED_AND_BROKEN_FEATURES.md`: In-depth breakdown of 12 distinct flaws and disconnected subsystems.
+     - `02_MCP_ARCHITECTURE_AND_PARITY.md`: Blueprint for embedded loopback MCP server, `%TEMP%/xhair-endpoint.json` discovery, stdio proxying, and live UI streaming.
+     - `03_UI_UX_PRODUCTION_REDESIGN_SPEC.md`: Figma/Linear-grade 3-column studio layout, unified contextual inspector, drag-to-scrub inputs.
+     - `04_CORE_APP_AND_STORAGE_ENGINE.md`: Disk storage engine (`xhair-library`), atomic writes, multi-monitor display handling.
+     - `05_STEP_BY_STEP_IMPLEMENTATION_ROADMAP.md`: Granular 4-phase rollout roadmap.
+     - `CHECKLIST.md`: Full checklist tracking each task item across all 4 phases.
+  2. **Phase 1 Implementation:**
+     - `crates/xhair-platform-win/src/overlay.rs`: Added `compute_overlay_window_rect` applying `config.calibration_offset.x/y` directly to Win32 window positioning.
+     - `crates/xhair-platform-win/src/overlay.rs`: Symmetrized bounding box allocation around `(0, 0)` with 16px conservative padding, preventing asymmetric or offset reticles from clipping.
+     - `crates/xhair-platform-win/tests/platform_tests.rs`: Added unit tests `test_calibration_offset_shifts_overlay_rect` and `test_large_offset_crosshair_bounds_zero_clipping` (all 8 platform tests passing).
+     - `ui/src/components/CanvasGrid.svelte`: Added layer hit-testing separating layer dragging (`isDraggingTarget`) from marquee selection (`isMarquee`) with smooth 120fps redraw and `syncWithOverlay()` on release.
+     - `ui/src/components/CanvasGrid.svelte`: Mapped tool `R` to insert `Rect` (`RectProps: width: 8, height: 8`) instead of `TShape`, and brush tool `B` to add `Polygon`.
+     - `ui/src/lib/state.svelte.ts` & `ui/src/components/ColorPicker.svelte`: Added `pushUndoState?: boolean = true` to `setLayerColor`. Color picker pushes undo snapshot once on pointerdown, previews colors continuously without polluting undo history, and syncs on pointerup.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 88 Rust unit and integration tests passing (100% green).
+  - `pnpm -C ui test`: 23 Vitest tests passing (100% green).
+  - `pnpm -C ui lint`: 0 TypeScript errors (`tsc --noEmit`).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
+
+

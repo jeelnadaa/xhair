@@ -84,4 +84,9 @@
 | **V5-005** | Spec v5 | Tabbed Dock System & Layout Presets | done | v5 §10 | DockSystem.svelte with 11 default tabs, layout presets (Designer, Compact, Pixel Art, Agent Watch, Minimal), maximize, property search |
 | **V5-006** | Spec v5 | Appearance Modal, Neutral Themes & Styling | done | v5 §12, §13 | AppearanceModal.svelte with live theme cards & font specimens, app.css neutral styling |
 | **V5-007** | Spec v5 | Complete Documentation Deliverables | done | v5 §14.2 | AGENT_README.md, TYPOGRAPHY.md, LAYOUT.md, THEMING.md, MCP.md, COMMANDS.md |
+| **PR-001** | Phase 1 | Overlay Calibration Offset Wiring | done | PR §1.1 | Added compute_overlay_window_rect applying calibration_offset.x/y to Win32 window positioning |
+| **PR-002** | Phase 1 | Symmetrical Bounding Box & Zero-Clipping | done | PR §1.2 | Symmetrical bounds buffer allocation around (0,0) with 16px conservative padding |
+| **PR-003** | Phase 1 | Canvas Mouse Drag & Marquee State Separation | done | PR §1.3 | Layer hit-testing separating layer drag from marquee selection with 120fps redraw |
+| **PR-004** | Phase 1 | Tool Palette Mapping & Shape Creation Fixes | done | PR §1.4 | Tool 'R' inserts Rect instead of TShape, tool 'B' adds polygon |
+| **PR-005** | Phase 1 | Color Picker Undo Coalescing | done | PR §1.5 | Single undo snapshot on drag start, continuous live color preview, sync on release |
 
