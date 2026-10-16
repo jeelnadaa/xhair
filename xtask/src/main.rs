@@ -557,10 +557,47 @@ SectionEnd
     Ok(())
 }
 
+fn handle_export_mcp() -> Result<()> {
+    let tools = xhair_mcp::list_tools();
+    let user_home = env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\solarquack".to_string());
+    let mcp_base = PathBuf::from(user_home).join(".gemini/antigravity-ide/mcp");
+
+    let targets = [
+        (
+            mcp_base.join("xhair"),
+            "XHAIR Attached MCP Server\n\nConnects to live running xhair.exe via loopback proxy. All mutations immediately update the physical Win32 overlay in real time.\n"
+        ),
+        (
+            mcp_base.join("xhair-headless"),
+            "XHAIR Headless MCP Server\n\nRuns standalone against offline %APPDATA%/xhair/ disk library. Does not require GUI or active overlay window.\n"
+        ),
+    ];
+
+    for (dir, instructions) in &targets {
+        fs::create_dir_all(dir)?;
+        let instructions_path = dir.join("instructions.md");
+        fs::write(&instructions_path, instructions)?;
+
+        for tool in &tools {
+            let tool_name = tool.name.replace('.', "_");
+            let tool_path = dir.join(format!("{}.json", tool_name));
+            let json = serde_json::json!({
+                "name": tool_name,
+                "description": tool.description,
+                "parameters": tool.input_schema
+            });
+            fs::write(&tool_path, serde_json::to_string_pretty(&json)?)?;
+        }
+        println!("Exported {} MCP tool schemas to {:?}", tools.len(), dir);
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.is_empty() {
-        eprintln!("Usage: cargo xtask [graph | check-agent-state | schema | package] [args...]");
+        eprintln!("Usage: cargo xtask [graph | check-agent-state | schema | package | export-mcp] [args...]");
         return Ok(());
     }
 
@@ -569,9 +606,10 @@ fn main() -> Result<()> {
         "check-agent-state" => handle_check_agent_state(),
         "schema" => handle_schema(&args[1..]),
         "package" => handle_package(&args[1..]),
+        "export-mcp" => handle_export_mcp(),
         other => {
             eprintln!("Unknown xtask command: {}", other);
-            eprintln!("Available: graph, check-agent-state, schema, package");
+            eprintln!("Available: graph, check-agent-state, schema, package, export-mcp");
             std::process::exit(1);
         }
     }

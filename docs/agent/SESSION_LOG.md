@@ -683,4 +683,30 @@
   - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
   - `cargo run -p xtask -- graph`: memory graph verified.
 
+## 2026-10-16 — Session 25
+- **Goal:** Support attached MCP (`xhair`) and headless MCP (`xhair-headless`) with explicit CLI flags, tool name normalization (snake_case + dot-notation), Antigravity IDE schema generation, and README updates.
+- **Completed:**
+  1. **Explicit MCP Modes in `xhair-cli` (`crates/xhair-cli/src/main.rs`):**
+     - Added `--attached` flag to `xhair-cli mcp`: strictly binds to live running `xhair.exe` application over loopback; fails fast with clear error if app is closed.
+     - Added `--headless` flag to `xhair-cli mcp`: runs standalone offline headless engine with direct `%APPDATA%/xhair/` disk library access.
+     - Added direct aliases `xhair-cli mcp-attached` and `xhair-cli mcp-headless`.
+     - Added unit test `test_cli_mcp_attached_fails_when_no_server_running`.
+  2. **Tool Name Normalization in Dispatcher (`crates/xhair-mcp/src/tools/mod.rs`):**
+     - Added automatic mapping allowing tools to be called with either snake_case (`library_list`, `layer_add`, `overlay_activate`) or dot-notation (`library.list`, `layer.add`, `overlay.activate`).
+  3. **Antigravity IDE Schema Generation (`xtask/src/main.rs`):**
+     - Added `cargo xtask export-mcp` exporting 108 MCP tool JSON schemas and `instructions.md` to:
+       - `~/.gemini/antigravity-ide/mcp/xhair`
+       - `~/.gemini/antigravity-ide/mcp/xhair-headless`
+  4. **Updated Documentation (`README.md`):**
+     - Detailed setup blocks for Claude Desktop, Cursor, and Antigravity IDE explicitly defining both `xhair` (attached) and `xhair-headless` (offline) servers.
+- **Tests & Quality:**
+  - `cargo test --workspace`: 91 tests passing (100% green).
+  - `cargo test -p xhair-mcp --test parity`: 100% green.
+  - `pnpm -C ui test`: 24 tests passing (100% green).
+  - `cargo clippy --workspace -- -D warnings`: 0 warnings.
+  - `cargo fmt --check`: 0 diffs.
+  - `cargo run -p xtask -- check-agent-state`: all agent continuity files verified.
+  - `cargo run -p xtask -- graph`: memory graph verified.
+
+
 

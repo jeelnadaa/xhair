@@ -45,27 +45,42 @@ After building, all compiled binaries and packages are located in:
 
 ## How to Connect MCP
 
-XHAIR includes a full Model Context Protocol (MCP) server (35 tools, 25 commands) that lets AI agents (Claude, Cursor, Antigravity) design, calibrate, and live-update crosshairs in real time.
+XHAIR provides two MCP server modes allowing AI assistants (Claude, Cursor, Antigravity) to design, tune, calibrate, and manage crosshairs with 100% feature parity:
 
-### Connect via AI Assistants (Claude Desktop / Cursor / Antigravity)
+1. **`xhair` (Attached Mode):** Connects to the running desktop app (`xhair.exe`) over loopback. Tool calls update your active screen overlay reticle live in real time.
+2. **`xhair-headless` (Headless Mode):** Operates offline without the GUI or overlay window, reading and writing crosshair documents directly to disk (`%APPDATA%\xhair\`).
 
-Add this entry to your MCP configuration file:
+### Configuration (Claude Desktop / Cursor / Antigravity)
+
+Add this configuration block to your MCP settings file:
 - **Claude Desktop:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **Cursor:** `.cursor\mcp.json`
-- **Antigravity IDE:** `%APPDATA%\.gemini\antigravity-ide\mcp\xhair\mcp_config.json`
+- **Antigravity IDE:** `%APPDATA%\.gemini\antigravity-ide\mcp\mcp_config.json` (or `.agents\mcp_config.json`)
 
 ```json
 {
   "mcpServers": {
     "xhair": {
       "command": "D:\\cross-aim\\target\\release\\xhair-cli.exe",
-      "args": ["mcp"]
+      "args": ["mcp", "--attached"]
+    },
+    "xhair-headless": {
+      "command": "D:\\cross-aim\\target\\release\\xhair-cli.exe",
+      "args": ["mcp", "--headless"]
     }
   }
 }
 ```
 *(Replace `D:\\cross-aim` with your actual repository or installation path.)*
 
-### How It Works
-- **When `xhair.exe` is running:** `xhair-cli mcp` automatically connects to the live app via loopback HTTP (`127.0.0.1`) using token discovery in `%TEMP%\xhair-endpoint.json`. AI mutations update your on-screen crosshair in real time!
-- **When `xhair.exe` is closed:** `xhair-cli mcp` seamlessly runs in headless mode, managing crosshairs directly from disk storage (`%APPDATA%\xhair\`).
+### CLI Commands
+```powershell
+# Run in attached mode (controls active overlay window; requires xhair.exe running)
+.\target\release\xhair-cli.exe mcp --attached
+
+# Run in headless mode (standalone offline engine; no window required)
+.\target\release\xhair-cli.exe mcp --headless
+
+# Auto mode (connects to running xhair.exe if active; otherwise falls back to headless)
+.\target\release\xhair-cli.exe mcp
+```

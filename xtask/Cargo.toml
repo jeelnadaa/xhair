@@ -16,6 +16,7 @@ serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 xhair-commands = { path = "../crates/xhair-commands" }
+xhair-mcp = { path = "../crates/xhair-mcp" }
 zip.workspace = true
 sha2 = "0.10"
 chrono.workspace = true

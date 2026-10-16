@@ -155,7 +155,21 @@ fn handle_render(args: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn handle_mcp(_args: &[String]) -> Result<()> {
+fn handle_mcp(args: &[String]) -> Result<()> {
+    let is_headless = args.iter().any(|a| a == "--headless" || a == "headless");
+    let is_attached = args.iter().any(|a| a == "--attached" || a == "attached");
+
+    if is_headless {
+        eprintln!(
+            "[xhair-cli] Starting headless MCP engine (offline disk storage: %APPDATA%/xhair/)"
+        );
+        let data_dir = xhair_library::LibraryEngine::resolve_data_dir();
+        let library = xhair_library::LibraryEngine::new(data_dir).ok();
+        let ctx = xhair_mcp::ServerContext::new(library);
+        let server = xhair_mcp::McpServer::new(ctx);
+        return server.run_stdio().context("Headless MCP stdio loop exited");
+    }
+
     if let Some(info) = xhair_mcp::read_endpoint_info() {
         if xhair_mcp::is_endpoint_alive(&info) {
             eprintln!(
@@ -164,6 +178,12 @@ fn handle_mcp(_args: &[String]) -> Result<()> {
             );
             return xhair_mcp::run_stdio_proxy(info).context("MCP stdio proxy loop exited");
         }
+    }
+
+    if is_attached {
+        anyhow::bail!(
+            "No active xhair desktop application found on loopback. Please start xhair.exe to use attached MCP mode, or run 'xhair-cli mcp --headless' for offline mode."
+        );
     }
 
     eprintln!("[xhair-cli] No active xhair instance found; starting headless MCP engine");
@@ -199,7 +219,7 @@ fn print_help() {
     println!("High-performance crosshair overlay command-line utility\n");
     println!("USAGE:");
     println!("  xhair-cli render [input.xhair] [OPTIONS]");
-    println!("  xhair-cli mcp");
+    println!("  xhair-cli mcp [--attached|--headless]");
     println!("  xhair-cli startup [--enable|--disable]\n");
     println!("OPTIONS:");
     println!("  -i, --input <FILE>    Input .xhair or JSON file path");
@@ -226,6 +246,8 @@ fn main() -> Result<()> {
     match args[0].as_str() {
         "render" => handle_render(&args[1..]),
         "mcp" => handle_mcp(&args[1..]),
+        "mcp-headless" => handle_mcp(&["--headless".to_string()]),
+        "mcp-attached" => handle_mcp(&["--attached".to_string()]),
         "startup" => handle_startup(&args[1..]),
         other => {
             eprintln!("Unknown command: '{}'", other);
@@ -281,5 +303,15 @@ mod tests {
         assert!(out_file.exists());
         let meta = fs::metadata(&out_file).unwrap();
         assert!(meta.len() > 0);
+    }
+
+    #[test]
+    fn test_cli_mcp_attached_fails_when_no_server_running() {
+        let _ = xhair_mcp::clear_endpoint_info();
+        let args = vec!["--attached".to_string()];
+        let res = handle_mcp(&args);
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("No active xhair desktop application found"));
     }
 }

@@ -1240,7 +1240,113 @@ pub fn list_tools() -> Vec<ToolDefinition> {
 /// Dispatches an MCP tool call by name.
 pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult {
     let summary = format!("{:?}", args);
-    let result = match name {
+    let canonical_name = match name {
+        "library_list" => "library.list",
+        "library_search" => "library.search",
+        "crosshair_get" => "crosshair.get",
+        "crosshair_create" => "crosshair.create",
+        "crosshair_duplicate" => "crosshair.duplicate",
+        "crosshair_delete" => "crosshair.delete",
+        "crosshair_rename" => "crosshair.rename",
+        "crosshair_set_metadata" => "crosshair.set_metadata",
+        "crosshair_recenter" => "crosshair.recenter",
+        "crosshair_randomize" => "crosshair.randomize",
+        "group_list" => "group.list",
+        "group_create" => "group.create",
+        "group_rename" => "group.rename",
+        "group_delete" => "group.delete",
+        "group_reorder" => "group.reorder",
+        "group_set_icon" => "group.set_icon",
+        "group_add" => "group.add",
+        "group_remove" => "group.remove",
+        "group_set_game_binding" => "group.set_game_binding",
+        "group_set_resolution_profile" => "group.set_resolution_profile",
+        "group_set_active" => "group.set_active",
+        "group_next" => "group.next",
+        "group_previous" => "group.previous",
+        "group_activate" => "group.activate",
+        "export_pack" => "export.pack",
+        "import_pack" => "import.pack",
+        "edit_batch" => "edit.batch",
+        "layer_add" => "layer.add",
+        "layer_update" => "layer.update",
+        "layer_remove" => "layer.remove",
+        "layer_duplicate" => "layer.duplicate",
+        "layer_reorder" => "layer.reorder",
+        "layer_rename" => "layer.rename",
+        "layer_group" => "layer.group",
+        "layer_ungroup" => "layer.ungroup",
+        "layer_set_position" => "layer.set_position",
+        "layer_recenter" => "layer.recenter",
+        "paint_set" => "paint.set",
+        "selection_set" => "selection.set",
+        "selection_add" => "selection.add",
+        "selection_remove" => "selection.remove",
+        "selection_toggle" => "selection.toggle",
+        "selection_all" => "selection.all",
+        "selection_clear" => "selection.clear",
+        "selection_invert" => "selection.invert",
+        "global_set" => "global.set",
+        "symmetry_set" => "symmetry.set",
+        "effects_set" => "effects.set",
+        "render_preview" => "render.preview",
+        "analyze_alignment" => "analyze.alignment",
+        "analyze_visibility" => "analyze.visibility",
+        "overlay_get_state" => "overlay.get_state",
+        "overlay_set_enabled" => "overlay.set_enabled",
+        "overlay_activate" => "overlay.activate",
+        "overlay_next" => "overlay.next",
+        "overlay_previous" => "overlay.previous",
+        "display_list" => "display.list",
+        "calibration_show" => "calibration.show",
+        "calibration_hide" => "calibration.hide",
+        "calibration_set_offset" => "calibration.set_offset",
+        "export_code" => "export.code",
+        "import_code" => "import.code",
+        "import_valorant_code" => "import.valorant_code",
+        "meta_capabilities" => "meta.capabilities",
+        "meta_schema" => "meta.schema",
+        "meta_shortcuts" => "meta.shortcuts",
+        "gun_list" => "gun.list",
+        "dynamics_set_enabled" => "dynamics.set_enabled",
+        "dynamics_simulate" => "dynamics.simulate",
+        "property_list" => "property.list",
+        "property_get" => "property.get",
+        "property_set" => "property.set",
+        "property_set_many" => "property.set_many",
+        "property_reset" => "property.reset",
+        "property_link" => "property.link",
+        "property_search" => "property.search",
+        "style_copy" => "style.copy",
+        "style_paste" => "style.paste",
+        "style_save_preset" => "style.save_preset",
+        "style_apply_preset" => "style.apply_preset",
+        "style_list_presets" => "style.list_presets",
+        "style_delete_preset" => "style.delete_preset",
+        "theme_list" => "theme.list",
+        "theme_get" => "theme.get",
+        "theme_set" => "theme.set",
+        "theme_preview" => "theme.preview",
+        "appearance_get" => "appearance.get",
+        "appearance_set" => "appearance.set",
+        "font_pack_list" => "font_pack.list",
+        "ui_panel_open" => "ui.panel.open",
+        "ui_panel_close" => "ui.panel.close",
+        "ui_panel_move" => "ui.panel.move",
+        "ui_panel_split" => "ui.panel.split",
+        "ui_panel_float" => "ui.panel.float",
+        "ui_panel_detach" => "ui.panel.detach",
+        "ui_panel_pin" => "ui.panel.pin",
+        "ui_panel_maximize" => "ui.panel.maximize",
+        "ui_layout_list" => "ui.layout.list",
+        "ui_layout_save" => "ui.layout.save",
+        "ui_layout_apply" => "ui.layout.apply",
+        "ui_layout_reset" => "ui.layout.reset",
+        "ui_layout_export" => "ui.layout.export",
+        "ui_layout_import" => "ui.layout.import",
+        other => other,
+    };
+    let result = match canonical_name {
         // Library
         "library.list" => library::library_list(ctx, args),
         "library.search" => library::library_search(ctx, args),
@@ -1372,18 +1478,18 @@ pub fn call_tool(ctx: &ServerContext, name: &str, args: Value) -> CallToolResult
     };
 
     let status = if result.is_error { "error" } else { "success" };
-    ctx.log_activity(name, &summary, status);
+    ctx.log_activity(canonical_name, &summary, status);
 
     if !result.is_error
-        && (name.starts_with("layer.")
-            || name.starts_with("property.")
-            || name.starts_with("paint.")
-            || name.starts_with("crosshair.")
-            || name.starts_with("style.")
-            || name == "nudge"
-            || name == "undo"
-            || name == "redo"
-            || name == "edit.batch")
+        && (canonical_name.starts_with("layer.")
+            || canonical_name.starts_with("property.")
+            || canonical_name.starts_with("paint.")
+            || canonical_name.starts_with("crosshair.")
+            || canonical_name.starts_with("style.")
+            || canonical_name == "nudge"
+            || canonical_name == "undo"
+            || canonical_name == "redo"
+            || canonical_name == "edit.batch")
     {
         ctx.sync_overlay();
     }
